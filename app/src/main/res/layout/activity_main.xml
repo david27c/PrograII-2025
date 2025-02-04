@@ -57,7 +57,7 @@
         android:id="@+id/btnCalcular"
         android:layout_below="@id/lblRespuesta"
         android:layout_marginTop="40dp"
-        android:text="Calcular"
+        android:text="@string/calcular"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 </RelativeLayout>
