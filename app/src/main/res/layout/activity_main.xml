@@ -48,8 +48,8 @@
         android:id="@+id/lblRespuesta"
         android:layout_below="@id/spnOpciones"
         android:layout_marginTop="40dp"
-        android:layout_marginLeft="20dp"
-        android:text="Respuesta: ?"
+        android:layout_marginStart="20dp"
+        android:text="@string/respuesta"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 

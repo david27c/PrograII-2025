@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Calculadora</string>
     <string name="calcular">Calcular</string>
+    <string name="respuesta">Respuesta: ?</string>
     <string-array name="opciones">
         <item>Suma</item>
         <item>Resta</item>

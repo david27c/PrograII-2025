@@ -1,5 +1,6 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         spn = findViewById(R.id.spnOpciones);
 
         btn.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onClick(View v) {
                 if (txtNum1.getText().toString().isEmpty()) {
