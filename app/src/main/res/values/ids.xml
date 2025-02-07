@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="tabLongitud" type="id" />
+    <item name="tabTiempo" type="id" />
+    <item name="tabAlmacenamiento" type="id" />
+    <item name="tabMasa" type="id" />
+    <item name="tabVolumen" type="id" />
+    <item name="tabTransferencia" type="id" />
+</resources>
