@@ -1,53 +1,34 @@
 <resources>
-    <string name="app_name">miPrimeraAplicacion</string>
-    <string name="calcular">Calcular</string>
-    <string name="a">A:</string>
-
-    <!-- Monedas -->
+    <string name="app_name">MiPrimeraAplicacion</string>
     <string-array name="monedas">
-        <item>Dolar</item>
+        <item>Dólar</item>
         <item>Euro</item>
-        <item>Quetzalez</item>
-        <item>Lempiras</item>
-        <item>Cordobas</item>
-        <item>Colon CR</item>
-        <item>Colon SV</item>
+        <item>Libra Esterlina</item>
+        <item>Yen Japonés</item>
+        <item>Franco Suizo</item>
+        <item>Dólar Canadiense</item>
+        <item>Dólar Australiano</item>
+        <item>Peso Mexicano</item>
     </string-array>
-
-    <!-- Masa -->
-    <string-array name="masa">
-        <item>Gramo</item>
-        <item>Kilogramo</item>
-        <item>Tonelada</item>
-        <item>Microgramo</item>
-        <item>Decigramo</item>
-        <item>Libra</item>
-        <item>Onza</item>
-    </string-array>
-
-    <!-- Volumen -->
-    <string-array name="volumen">
-        <item>Litro</item>
-        <item>Mililitro</item>
-        <item>Metro Cúbico</item>
-        <item>Galón</item>
-        <item>Cuarto de Galón</item>
-        <item>Pinta</item>
-        <item>Copa</item>
-    </string-array>
-
-    <!-- Longitud -->
     <string-array name="longitud">
         <item>Metro</item>
-        <item>Kilómetro</item>
         <item>Centímetro</item>
-        <item>Pulgada</item>
+        <item>Milímetro</item>
+        <item>Kilómetro</item>
         <item>Pie</item>
+        <item>Pulgada</item>
         <item>Yarda</item>
         <item>Milla</item>
     </string-array>
-
-    <!-- Almacenamiento -->
+    <string-array name="tiempo">
+        <item>Segundo</item>
+        <item>Minuto</item>
+        <item>Hora</item>
+        <item>Día</item>
+        <item>Semana</item>
+        <item>Mes</item>
+        <item>Año</item>
+    </string-array>
     <string-array name="almacenamiento">
         <item>Byte</item>
         <item>Kilobyte</item>
@@ -55,28 +36,31 @@
         <item>Gigabyte</item>
         <item>Terabyte</item>
         <item>Petabyte</item>
-        <item>Exabyte</item>
     </string-array>
-
-    <!-- Tiempo -->
-    <string-array name="tiempo">
-        <item>Segundo</item>
-        <item>Minuto</item>
-        <item>Hora</item>
-        <item>Día</item>
-        <item>Año</item>
-        <item>Semana</item>
-        <item>Mes</item>
+    <string-array name="masa">
+        <item>Kilogramo</item>
+        <item>Gramo</item>
+        <item>Miligramo</item>
+        <item>Tonelada</item>
+        <item>Libra</item>
+        <item>Onza</item>
     </string-array>
-
-    <!-- Transferencia de Datos -->
-    <string-array name="transferencia_datos">
+    <string-array name="volumen">
+        <item>Litro</item>
+        <item>Mililitro</item>
+        <item>Microlitro</item>
+        <item>Galón</item>
+        <item>Cuarto</item>
+        <item>Pinta</item>
+        <item>Onza líquida</item>
+    </string-array>
+    <string-array name="transferencia">
         <item>Bit</item>
         <item>Kilobit</item>
         <item>Megabit</item>
         <item>Gigabit</item>
-        <item>Terabit</item>
-        <item>Petabit</item>
-        <item>Exabit</item>
+        <item>Kilobyte</item>
+        <item>Megabyte</item>
+        <item>Gigabyte</item>
     </string-array>
 </resources>

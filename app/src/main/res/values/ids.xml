@@ -6,4 +6,19 @@
     <item name="tabMasa" type="id" />
     <item name="tabVolumen" type="id" />
     <item name="tabTransferencia" type="id" />
+    <item name="tabMonedas" type="id" />
+    <item name="spnDeMonedas" type="id" />
+    <item name="spnAMonedas" type="id" />
+    <item name="spnDeLongitud" type="id" />
+    <item name="spnALongitud" type="id" />
+    <item name="spnDeTiempo" type="id" />
+    <item name="spnDeAlmacenamiento" type="id" />
+    <item name="spnDeMasa" type="id" />
+    <item name="spnDeVolumen" type="id" />
+    <item name="spnDeTransferencia" type="id" />
+    <item name="spnATiempo" type="id" />
+    <item name="spnAAlmacenamiento" type="id" />
+    <item name="spnAMasa" type="id" />
+    <item name="spnAVolumen" type="id" />
+    <item name="spnATransferencia" type="id" />
 </resources>
