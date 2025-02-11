@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
                     tempVal = findViewById(R.id.lblRespuesta);
                     double respuesta = objConversores.convertir(opcion, de, a, cantidad);
                     tempVal.setText("Respuesta: " + respuesta);
+                    Toast.makeText(MainActivity.this, "Respuesta: " + respuesta, Toast.LENGTH_SHORT).show();
 
                 } catch (NumberFormatException e) {
                     Toast.makeText(MainActivity.this, "Ingrese una cantidad válida", Toast.LENGTH_SHORT).show();
@@ -82,13 +83,13 @@ public class MainActivity extends AppCompatActivity {
 
 class conversores {
     double[][] valores = {
-            {1, 0.92, 0.80, 147.50, 0.98, 1.35, 1.50, 17.00}, // Monedas
-            {1, 100, 1000, 0.001, 3.28084, 39.3701, 1.09361, 0.000621371}, // Longitud
-            {1, 60, 3600, 86400, 604800, 2592000, 31536000}, // Tiempo
-            {1, 1024, 1048576, 1073741824, 1099511627776L, 1125899906842624L}, // Almacenamiento
-            {1, 1000, 1000000, 0.001, 2.20462, 35.274}, // Masa
-            {1, 1000, 1000000, 0.264172, 1.05669, 2.11338, 33.814}, // Volumen
-            {1, 1000, 1000000, 1000000000, 8000, 8000000, 8000000000L} // Transferencia
+            {1, 0.97, 7.73, 25.45, 36.78, 508.87, 8.74, 0.80, 151.964, 1450.94}, // Monedas
+            {1, 100, 1000, 0.001, 3.28084, 39.3701, 1.09361, 0.0006214, 10, 1000000}, // Longitud
+            {1, 0.016667, 0.0002778, 86400, 604800, 2592000, 31536000, 10, 100, 1000}, // Tiempo
+            {1, 1024, 1048576, 1073741824, 1099511627776L, 1125899906842624L, 10, 1000, 1000000, 1000000000}, // Almacenamiento
+            {1, 1000, 1000000, 0.001, 2.20462, 35.274, 10, 100, 1000, 10000000}, // Masa
+            {1, 1000, 1000000, 0.264172, 1.05669, 2.11338, 33.814, 10, 100, 1000}, // Volumen
+            {1, 1000, 1000000, 1000000000, 8000, 8000000, 8000000000L, 10, 100, 1000} // Transferencia
     };
 
     public double convertir(int opcion, int de, int a, double cantidad) {

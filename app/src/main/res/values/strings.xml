@@ -1,14 +1,16 @@
 <resources>
     <string name="app_name">MiPrimeraAplicacion</string>
     <string-array name="monedas">
-        <item>Dólar</item>
+        <item>Dolar</item>
         <item>Euro</item>
+        <item>Quetzalez</item>
+        <item>Lempiras</item>
+        <item>Cordobas</item>
+        <item>Colon CR</item>
+        <item>Colon SV</item>
         <item>Libra Esterlina</item>
-        <item>Yen Japonés</item>
-        <item>Franco Suizo</item>
-        <item>Dólar Canadiense</item>
-        <item>Dólar Australiano</item>
-        <item>Peso Mexicano</item>
+        <item>Yen</item>
+        <item>Won</item>
     </string-array>
     <string-array name="longitud">
         <item>Metro</item>
@@ -19,6 +21,8 @@
         <item>Pulgada</item>
         <item>Yarda</item>
         <item>Milla</item>
+        <item>Decímetro</item>
+        <item>Micrómetro</item>
     </string-array>
     <string-array name="tiempo">
         <item>Segundo</item>
@@ -28,6 +32,9 @@
         <item>Semana</item>
         <item>Mes</item>
         <item>Año</item>
+        <item>Milisegundo</item>
+        <item>Microsegundo</item>
+        <item>Nanosegundo</item>
     </string-array>
     <string-array name="almacenamiento">
         <item>Byte</item>
@@ -36,6 +43,10 @@
         <item>Gigabyte</item>
         <item>Terabyte</item>
         <item>Petabyte</item>
+        <item>Exabyte</item>
+        <item>Zettabyte</item>
+        <item>Yottabyte</item>
+        <item>Brontobyte</item>
     </string-array>
     <string-array name="masa">
         <item>Kilogramo</item>
@@ -44,6 +55,10 @@
         <item>Tonelada</item>
         <item>Libra</item>
         <item>Onza</item>
+        <item>Quintal</item>
+        <item>Arroba</item>
+        <item>Fanega</item>
+        <item>Tonelada corta</item>
     </string-array>
     <string-array name="volumen">
         <item>Litro</item>
@@ -53,6 +68,9 @@
         <item>Cuarto</item>
         <item>Pinta</item>
         <item>Onza líquida</item>
+        <item>Barril</item>
+        <item>Pie cúbico</item>
+        <item>Pulgada cúbica</item>
     </string-array>
     <string-array name="transferencia">
         <item>Bit</item>
@@ -62,5 +80,8 @@
         <item>Kilobyte</item>
         <item>Megabyte</item>
         <item>Gigabyte</item>
+        <item>Terabyte</item>
+        <item>Petabyte</item>
+        <item>Exabyte</item>
     </string-array>
 </resources>
