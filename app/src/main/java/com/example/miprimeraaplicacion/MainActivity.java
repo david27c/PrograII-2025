@@ -1,5 +1,6 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         sensorManager.unregisterListener(sensorEventListener);
     }
 
+    @SuppressLint("SetTextI18n")
     private void sensorLuz() {
         tempVal = findViewById(R.id.lblSensorProximidad);
         tempVal = findViewById(R.id.lblSensorAcelerometro);
