@@ -1,166 +1,113 @@
 package com.example.miprimeraaplicacion;
 
-import android.annotation.SuppressLint;
+import android.app.TabActivity;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
+@SuppressWarnings("deprecation")
+public class MainActivity extends TabActivity {
 
-public class MainActivity extends AppCompatActivity {
-
-    private EditText etMetrosConsumidos, etAreaValor;
-    private TextView tvResultado, tvAreaResultado;
-    private Button btnConvertir;
-    private Spinner spUnidadOrigen, spUnidadDestino;
-
-    private final double TARIFA_POR_METRO = 0.65; // Tarifa por metro cúbico mayor a 28 metros
-    private final double TARIFA_BASE = 6.00; // Tarifa base fija (1-18 metros)
-    private final double TARIFA_INTERMEDIA = 0.45; // Tarifa intermedia (19-28 metros)
-
-    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Configuración del TabHost
-        TabHost tabHost = findViewById(R.id.tabHost);
-        tabHost.setup();
+        TabHost tabHost = getTabHost();
 
-        // Pestaña 1: Cálculo del pago de agua potable
-        TabHost.TabSpec spec1 = tabHost.newTabSpec("Pago Agua");
-        spec1.setIndicator("Pago Agua");
+        // Configuración de la primera pestaña (Cálculo de consumo de agua)
+        TabHost.TabSpec spec1 = tabHost.newTabSpec("Consumo");
+        spec1.setIndicator("Consumo de Agua");
         spec1.setContent(R.id.tab1);
         tabHost.addTab(spec1);
 
-        // Pestaña 2: Conversor de Área
-        TabHost.TabSpec spec2 = tabHost.newTabSpec("Conversor Área");
-        spec2.setIndicator("Conversor Área");
+        // Configuración de la segunda pestaña (Conversor de Área)
+        TabHost.TabSpec spec2 = tabHost.newTabSpec("Conversor");
+        spec2.setIndicator("Conversor de Área");
         spec2.setContent(R.id.tab2);
         tabHost.addTab(spec2);
 
-        // Asignación de vistas
-        etMetrosConsumidos = findViewById(R.id.etMetrosConsumidos);
-        etAreaValor = findViewById(R.id.etAreaValor);
-        tvResultado = findViewById(R.id.tvResultado);
-        tvAreaResultado = findViewById(R.id.tvAreaResultado);
-        Button btnCalcular = findViewById(R.id.btnCalcular);
-        btnConvertir = findViewById(R.id.btnConvertir);
-        spUnidadOrigen = findViewById(R.id.spUnidadOrigen);
-        spUnidadDestino = findViewById(R.id.spUnidadDestino);
+        // Cálculo del consumo de agua
+        Button calcular = findViewById(R.id.btnCalcular);
+        EditText txtMetros = findViewById(R.id.txtMetros);
+        TextView txtResultado = findViewById(R.id.txtResultado);
 
-        // Configuración de Spinner
-        String[] unidades = {"Pie Cuadrado", "Vara Cuadrada", "Yarda Cuadrada", "Metro Cuadrado", "Tareas", "Manzana", "Hectárea"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, unidades);
-        spUnidadOrigen.setAdapter(adapter);
-        spUnidadDestino.setAdapter(adapter);
-
-        // Listeners de botones
-        btnCalcular.setOnClickListener(v -> calcularPago());
-        btnConvertir.setOnClickListener(v -> convertirArea());
-    }
-
-    private void calcularPago() {
-        String metrosStr = etMetrosConsumidos.getText().toString();
-        if (!metrosStr.isEmpty()) {
-            double metrosConsumidos = Double.parseDouble(metrosStr);
-            double totalPagar;
-
-            if (metrosConsumidos >= 1 && metrosConsumidos <= 18) {
-                totalPagar = TARIFA_BASE;
-            } else if (metrosConsumidos > 18 && metrosConsumidos <= 28) {
-                totalPagar = TARIFA_BASE + ((metrosConsumidos - 18) * TARIFA_INTERMEDIA);
+        calcular.setOnClickListener(v -> {
+            String valor = txtMetros.getText().toString();
+            if (!valor.isEmpty()) {
+                int metros = Integer.parseInt(valor);
+                double totalPagar = calcularPago(metros);
+                txtResultado.setText("Total a pagar: $" + totalPagar);
             } else {
-                totalPagar = TARIFA_BASE + (10 * TARIFA_INTERMEDIA) + ((metrosConsumidos - 28) * TARIFA_POR_METRO);
+                txtResultado.setText("Ingrese un valor válido.");
             }
+        });
 
-            tvResultado.setText("Total a pagar: $" + String.format("%.2f", totalPagar));
-        } else {
-            tvResultado.setText("Ingrese los metros consumidos");
-        }
+        // Conversor de Área con selección de unidades
+        Button convertir = findViewById(R.id.btnConvertir);
+        EditText txtValor = findViewById(R.id.txtValor);
+        Spinner spinnerOrigen = findViewById(R.id.spinnerOrigen);
+        Spinner spinnerDestino = findViewById(R.id.spinnerDestino);
+        TextView txtConversion = findViewById(R.id.txtConversion);
+
+        convertir.setOnClickListener(v -> {
+            String valor = txtValor.getText().toString();
+            if (!valor.isEmpty()) {
+                double area = Double.parseDouble(valor);
+                String unidadOrigen = spinnerOrigen.getSelectedItem().toString();
+                String unidadDestino = spinnerDestino.getSelectedItem().toString();
+                String resultado = convertirArea(area, unidadOrigen, unidadDestino);
+                txtConversion.setText(resultado);
+            } else {
+                txtConversion.setText("Ingrese un valor válido.");
+            }
+        });
     }
 
-    private void convertirArea() {
-        String valorStr = etAreaValor.getText().toString();
-        if (!valorStr.isEmpty()) {
-            double valor = Double.parseDouble(valorStr);
-            String unidadOrigen = spUnidadOrigen.getSelectedItem().toString();
-            String unidadDestino = spUnidadDestino.getSelectedItem().toString();
-            double factorConversion = obtenerFactorConversion(unidadOrigen, unidadDestino);
-            double resultado = valor * factorConversion;
-
-            tvAreaResultado.setText("Resultado: " + String.format("%.2f", resultado) + " " + unidadDestino);
-        } else {
-            tvAreaResultado.setText("Ingrese un valor");
+    private double calcularPago(int metros) {
+        double total = 6;
+        if (metros > 18 && metros <= 28) {
+            total += (metros - 18) * 0.45;
+        } else if (metros > 28) {
+            total += (10 * 0.45) + ((metros - 28) * 0.65);
         }
+        return total;
+    }
+
+    private String convertirArea(double valor, String origen, String destino) {
+        double factor = obtenerFactorConversion(origen, destino);
+        return destino + ": " + (valor * factor);
     }
 
     private double obtenerFactorConversion(String origen, String destino) {
-        // Factores de conversión básicos (referencia en metros cuadrados)
-        double metroCuadrado = 1.0;
-        double pieCuadrado = 0.092903;
-        double varaCuadrada = 0.6987;
-        double yardaCuadrada = 0.836127;
-        double tareas = 628.86;
-        double manzana = 7000.0;
-        double hectarea = 10000.0;
+        // Factores de conversión entre unidades
+        double[][] factores = {
+                {1, 10.764, 1.431, 1.196, 0.00228, 0.000142, 0.0001}, // Metro Cuadrado
+                {0.0929, 1, 0.1337, 0.1111, 0.00021, 0.000013, 0.000009}, // Pie Cuadrado
+                {0.6929, 6.9600, 1, 0.8361, 0.017, 0.00108, 0.00074}, // Vara Cuadrada
+                {0.8361, 9.0000, 1.1950, 1, 0.020, 0.00127, 0.00088}, // Yarda Cuadrada
+                {435.6, 4840.0, 643.0, 535.0, 1, 0.0625, 0.0436}, // Tarea
+                {0.0625, 0.555, 0.0735, 0.0625, 23.44, 1, 0.69}, // Manzana
+                {10000, 107639, 1360, 1196, 23.44, 1.44, 1} // Hectárea
+        };
 
-        double factorOrigen = 1.0;
-        double factorDestino = 1.0;
+        int indexOrigen = obtenerIndiceUnidad(origen);
+        int indexDestino = obtenerIndiceUnidad(destino);
+        return factores[indexOrigen][indexDestino];
+    }
 
-        switch (origen) {
-            case "Pie Cuadrado":
-                factorOrigen = pieCuadrado;
-                break;
-            case "Vara Cuadrada":
-                factorOrigen = varaCuadrada;
-                break;
-            case "Yarda Cuadrada":
-                factorOrigen = yardaCuadrada;
-                break;
-            case "Metro Cuadrado":
-                factorOrigen = metroCuadrado;
-                break;
-            case "Tareas":
-                factorOrigen = tareas;
-                break;
-            case "Manzana":
-                factorOrigen = manzana;
-                break;
-            case "Hectárea":
-                factorOrigen = hectarea;
-                break;
+    private int obtenerIndiceUnidad(String unidad) {
+        switch (unidad) {
+            case "Pie Cuadrado": return 1;
+            case "Vara Cuadrada": return 2;
+            case "Yarda Cuadrada": return 3;
+            case "Tareas": return 4;
+            case "Manzanas": return 5;
+            case "Hectáreas": return 6;
+            default: return 0; // Metro Cuadrado
         }
-
-        switch (destino) {
-            case "Pie Cuadrado":
-                factorDestino = pieCuadrado;
-                break;
-            case "Vara Cuadrada":
-                factorDestino = varaCuadrada;
-                break;
-            case "Yarda Cuadrada":
-                factorDestino = yardaCuadrada;
-                break;
-            case "Metro Cuadrado":
-                factorDestino = metroCuadrado;
-                break;
-            case "Tareas":
-                factorDestino = tareas;
-                break;
-            case "Manzana":
-                factorDestino = manzana;
-                break;
-            case "Hectárea":
-                factorDestino = hectarea;
-                break;
-        }
-
-        return factorOrigen / factorDestino;
     }
 }

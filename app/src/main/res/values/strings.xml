@@ -1,20 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Calculadora de Agua y Conversor de Área</string>
-    <string name="tab_pago_agua">Pago Agua</string>
-    <string name="tab_conversor_area">Conversor Área</string>
-    <string name="hint_metros_consumidos">Ingrese los metros consumidos</string>
-    <string name="btn_calcular">Calcular</string>
-    <string name="resultado_pago">Total a pagar: $%1$.2f</string>
-    <string name="hint_valor_convertir">Ingrese el valor a convertir</string>
-    <string name="btn_convertir">Convertir</string>
-    <string name="resultado_conversion">Resultado: %1$.2f %2$s</string>
+    <string name="app_name">Consumo de Agua</string>
+    <string name="ingrese_metros">Ingrese los metros cúbicos de agua</string>
+    <string name="calcular">Calcular</string>
+    <string name="resultado">Total a pagar: </string>
+    <string name="ingrese_area">Ingrese el área</string>
+    <string name="convertir">Convertir</string>
+    <string name="conversion">Resultado de la conversión</string>
     <string-array name="unidades_area">
+        <item>Metro Cuadrado</item>
         <item>Pie Cuadrado</item>
         <item>Vara Cuadrada</item>
         <item>Yarda Cuadrada</item>
-        <item>Metro Cuadrado</item>
         <item>Tareas</item>
-        <item>Manzana</item>
-        <item>Hectárea</item>
+        <item>Manzanas</item>
+        <item>Hectáreas</item>
     </string-array>
 </resources>

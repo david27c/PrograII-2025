@@ -1,74 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/tabhost"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="10dp">
+    android:layout_height="match_parent">
 
-    <TabHost
-        android:id="@+id/tabHost"
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <LinearLayout
+        <TabWidget
+            android:id="@android:id/tabs"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content" />
 
-            <TabWidget
-                android:id="@android:id/tabs"
+        <FrameLayout
+            android:id="@android:id/tabcontent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- Pestaña de Consumo de Agua -->
+            <LinearLayout
+                android:id="@+id/tab1"
+                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="match_parent"
+                android:padding="16dp">
 
-            <FrameLayout
-                android:id="@android:id/tabcontent"
+                <EditText
+                    android:id="@+id/txtMetros"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/ingrese_metros"
+                    android:inputType="number" />
+
+                <Button
+                    android:id="@+id/btnCalcular"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/calcular" />
+
+                <TextView
+                    android:id="@+id/txtResultado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/resultado"
+                    android:textSize="18sp"
+                    android:paddingTop="10dp" />
+            </LinearLayout>
+
+            <!-- Pestaña de Conversor de Área -->
+            <LinearLayout
+                android:id="@+id/tab2"
+                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:padding="16dp">
 
-                <!-- Pestaña 1: Pago de Agua -->
-                <LinearLayout
-                    android:id="@+id/tab1"
+                <EditText
+                    android:id="@+id/txtValor"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:padding="10dp">
+                    android:layout_height="wrap_content"
+                    android:hint="@string/ingrese_area"
+                    android:inputType="numberDecimal" />
 
-                    <EditText
-                        android:id="@+id/etMetrosConsumidos"
-                        android:layout_width="match_parent"
-                        android:hint="Metros consumidos" />
-
-                    <Button
-                        android:id="@+id/btnCalcular"
-                        android:layout_width="wrap_content"
-                        android:text="Calcular" />
-
-                    <TextView
-                        android:id="@+id/tvResultado"
-                        android:layout_width="match_parent" />
-                </LinearLayout>
-
-                <!-- Pestaña 2: Conversor de Área -->
-                <LinearLayout
-                    android:id="@+id/tab2"
+                <Spinner
+                    android:id="@+id/spinnerOrigen"
                     android:layout_width="match_parent"
-                    android:orientation="vertical"
-                    android:padding="10dp">
+                    android:layout_height="wrap_content"
+                    android:entries="@array/unidades_area" />
 
-                    <EditText
-                        android:id="@+id/etAreaValor"
-                        android:layout_width="match_parent"
-                        android:hint="Valor a convertir" />
+                <Spinner
+                    android:id="@+id/spinnerDestino"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:entries="@array/unidades_area" />
 
-                    <Button
-                        android:id="@+id/btnConvertir"
-                        android:text="Convertir" />
+                <Button
+                    android:id="@+id/btnConvertir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/convertir" />
 
-                    <TextView
-                        android:id="@+id/tvAreaResultado"
-                        android:layout_width="match_parent" />
-                </LinearLayout>
-            </FrameLayout>
-        </LinearLayout>
-    </TabHost>
-</LinearLayout>
+                <TextView
+                    android:id="@+id/txtConversion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/conversion"
+                    android:textSize="18sp"
+                    android:paddingTop="10dp" />
+            </LinearLayout>
+
+        </FrameLayout>
+    </LinearLayout>
+</TabHost>
