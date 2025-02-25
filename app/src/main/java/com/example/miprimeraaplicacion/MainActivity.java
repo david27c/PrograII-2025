@@ -1,102 +1,166 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    TabHost tbh;
-    Button btn;
-    TextView tempVal;
-    Spinner spnDe, spnA;
-    conversores objConversores = new conversores();
 
+    private EditText etMetrosConsumidos, etAreaValor;
+    private TextView tvResultado, tvAreaResultado;
+    private Button btnConvertir;
+    private Spinner spUnidadOrigen, spUnidadDestino;
+
+    private final double TARIFA_POR_METRO = 0.65; // Tarifa por metro cúbico mayor a 28 metros
+    private final double TARIFA_BASE = 6.00; // Tarifa base fija (1-18 metros)
+    private final double TARIFA_INTERMEDIA = 0.45; // Tarifa intermedia (19-28 metros)
+
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tbh = findViewById(R.id.tbhConversor);
-        tbh.setup();
+        // Configuración del TabHost
+        TabHost tabHost = findViewById(R.id.tabHost);
+        tabHost.setup();
 
-        tbh.addTab(tbh.newTabSpec("Monedas").setContent(R.id.tabMonedas).setIndicator("MONEDAS"));
-        tbh.addTab(tbh.newTabSpec("Longitud").setContent(R.id.tabLongitud).setIndicator("LONGITUD"));
-        tbh.addTab(tbh.newTabSpec("Tiempo").setContent(R.id.tabTiempo).setIndicator("TIEMPO"));
-        tbh.addTab(tbh.newTabSpec("Almacenamiento").setContent(R.id.tabAlmacenamiento).setIndicator("ALMACENAMIENTO"));
-        tbh.addTab(tbh.newTabSpec("Masa").setContent(R.id.tabMasa).setIndicator("MASA"));
-        tbh.addTab(tbh.newTabSpec("Volumen").setContent(R.id.tabVolumen).setIndicator("VOLUMEN"));
-        tbh.addTab(tbh.newTabSpec("Transferencia").setContent(R.id.tabTransferencia).setIndicator("TRANSFERENCIA"));
+        // Pestaña 1: Cálculo del pago de agua potable
+        TabHost.TabSpec spec1 = tabHost.newTabSpec("Pago Agua");
+        spec1.setIndicator("Pago Agua");
+        spec1.setContent(R.id.tab1);
+        tabHost.addTab(spec1);
 
-        btn = findViewById(R.id.btnCalcular);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int opcion = tbh.getCurrentTab();
-                double cantidad = 0;
+        // Pestaña 2: Conversor de Área
+        TabHost.TabSpec spec2 = tabHost.newTabSpec("Conversor Área");
+        spec2.setIndicator("Conversor Área");
+        spec2.setContent(R.id.tab2);
+        tabHost.addTab(spec2);
 
-                try {
-                    tempVal = findViewById(R.id.txtCantidad);
-                    cantidad = Double.parseDouble(tempVal.getText().toString());
+        // Asignación de vistas
+        etMetrosConsumidos = findViewById(R.id.etMetrosConsumidos);
+        etAreaValor = findViewById(R.id.etAreaValor);
+        tvResultado = findViewById(R.id.tvResultado);
+        tvAreaResultado = findViewById(R.id.tvAreaResultado);
+        Button btnCalcular = findViewById(R.id.btnCalcular);
+        btnConvertir = findViewById(R.id.btnConvertir);
+        spUnidadOrigen = findViewById(R.id.spUnidadOrigen);
+        spUnidadDestino = findViewById(R.id.spUnidadDestino);
 
-                    spnDe = getSpinner(opcion, true);
-                    spnA = getSpinner(opcion, false);
+        // Configuración de Spinner
+        String[] unidades = {"Pie Cuadrado", "Vara Cuadrada", "Yarda Cuadrada", "Metro Cuadrado", "Tareas", "Manzana", "Hectárea"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, unidades);
+        spUnidadOrigen.setAdapter(adapter);
+        spUnidadDestino.setAdapter(adapter);
 
-                    int de = spnDe.getSelectedItemPosition();
-                    int a = spnA.getSelectedItemPosition();
+        // Listeners de botones
+        btnCalcular.setOnClickListener(v -> calcularPago());
+        btnConvertir.setOnClickListener(v -> convertirArea());
+    }
 
-                    tempVal = findViewById(R.id.lblRespuesta);
-                    double respuesta = objConversores.convertir(opcion, de, a, cantidad);
-                    tempVal.setText("Respuesta: " + respuesta);
-                    Toast.makeText(MainActivity.this, "Respuesta: " + respuesta, Toast.LENGTH_SHORT).show();
+    private void calcularPago() {
+        String metrosStr = etMetrosConsumidos.getText().toString();
+        if (!metrosStr.isEmpty()) {
+            double metrosConsumidos = Double.parseDouble(metrosStr);
+            double totalPagar;
 
-                } catch (NumberFormatException e) {
-                    Toast.makeText(MainActivity.this, "Ingrese una cantidad válida", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Error en la conversión", Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
-                }
+            if (metrosConsumidos >= 1 && metrosConsumidos <= 18) {
+                totalPagar = TARIFA_BASE;
+            } else if (metrosConsumidos > 18 && metrosConsumidos <= 28) {
+                totalPagar = TARIFA_BASE + ((metrosConsumidos - 18) * TARIFA_INTERMEDIA);
+            } else {
+                totalPagar = TARIFA_BASE + (10 * TARIFA_INTERMEDIA) + ((metrosConsumidos - 28) * TARIFA_POR_METRO);
             }
-        });
+
+            tvResultado.setText("Total a pagar: $" + String.format("%.2f", totalPagar));
+        } else {
+            tvResultado.setText("Ingrese los metros consumidos");
+        }
     }
 
-    private Spinner getSpinner(int opcion, boolean isDe) {
-        int idSpinner;
-        switch (opcion) {
-            case 0: idSpinner = isDe ? R.id.spnDeMonedas : R.id.spnAMonedas; break;
-            case 1: idSpinner = isDe ? R.id.spnDeLongitud : R.id.spnALongitud; break;
-            case 2: idSpinner = isDe ? R.id.spnDeTiempo : R.id.spnATiempo; break;
-            case 3: idSpinner = isDe ? R.id.spnDeAlmacenamiento : R.id.spnAAlmacenamiento; break;
-            case 4: idSpinner = isDe ? R.id.spnDeMasa : R.id.spnAMasa; break;
-            case 5: idSpinner = isDe ? R.id.spnDeVolumen : R.id.spnAVolumen; break;
-            case 6: idSpinner = isDe ? R.id.spnDeTransferencia : R.id.spnATransferencia; break;
-            default: throw new IllegalStateException("Opción no válida");
+    private void convertirArea() {
+        String valorStr = etAreaValor.getText().toString();
+        if (!valorStr.isEmpty()) {
+            double valor = Double.parseDouble(valorStr);
+            String unidadOrigen = spUnidadOrigen.getSelectedItem().toString();
+            String unidadDestino = spUnidadDestino.getSelectedItem().toString();
+            double factorConversion = obtenerFactorConversion(unidadOrigen, unidadDestino);
+            double resultado = valor * factorConversion;
+
+            tvAreaResultado.setText("Resultado: " + String.format("%.2f", resultado) + " " + unidadDestino);
+        } else {
+            tvAreaResultado.setText("Ingrese un valor");
         }
-        return findViewById(idSpinner);
     }
-}
 
-class conversores {
-    double[][] valores = {
-            {1, 0.97, 7.73, 25.45, 36.78, 508.87, 8.74, 0.80, 151.964, 1450.94}, // Monedas
-            {1, 100, 1000, 0.001, 3.28084, 39.3701, 1.09361, 0.0006214, 10, 1000000}, // Longitud
-            {1, 0.016667, 0.0002778, 86400, 604800, 2592000, 31536000, 10, 100, 1000}, // Tiempo
-            {1, 1024, 1048576, 1073741824, 1099511627776L, 1125899906842624L, 10, 1000, 1000000, 1000000000}, // Almacenamiento
-            {1, 1000, 1000000, 0.001, 2.20462, 35.274, 10, 100, 1000, 10000000}, // Masa
-            {1, 1000, 1000000, 0.264172, 1.05669, 2.11338, 33.814, 10, 100, 1000}, // Volumen
-            {1, 1000, 1000000, 1000000000, 8000, 8000000, 8000000000L, 10, 100, 1000} // Transferencia
-    };
+    private double obtenerFactorConversion(String origen, String destino) {
+        // Factores de conversión básicos (referencia en metros cuadrados)
+        double metroCuadrado = 1.0;
+        double pieCuadrado = 0.092903;
+        double varaCuadrada = 0.6987;
+        double yardaCuadrada = 0.836127;
+        double tareas = 628.86;
+        double manzana = 7000.0;
+        double hectarea = 10000.0;
 
-    public double convertir(int opcion, int de, int a, double cantidad) {
-        try {
-            return valores[opcion][a] / valores[opcion][de] * cantidad;
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return 0;
+        double factorOrigen = 1.0;
+        double factorDestino = 1.0;
+
+        switch (origen) {
+            case "Pie Cuadrado":
+                factorOrigen = pieCuadrado;
+                break;
+            case "Vara Cuadrada":
+                factorOrigen = varaCuadrada;
+                break;
+            case "Yarda Cuadrada":
+                factorOrigen = yardaCuadrada;
+                break;
+            case "Metro Cuadrado":
+                factorOrigen = metroCuadrado;
+                break;
+            case "Tareas":
+                factorOrigen = tareas;
+                break;
+            case "Manzana":
+                factorOrigen = manzana;
+                break;
+            case "Hectárea":
+                factorOrigen = hectarea;
+                break;
         }
+
+        switch (destino) {
+            case "Pie Cuadrado":
+                factorDestino = pieCuadrado;
+                break;
+            case "Vara Cuadrada":
+                factorDestino = varaCuadrada;
+                break;
+            case "Yarda Cuadrada":
+                factorDestino = yardaCuadrada;
+                break;
+            case "Metro Cuadrado":
+                factorDestino = metroCuadrado;
+                break;
+            case "Tareas":
+                factorDestino = tareas;
+                break;
+            case "Manzana":
+                factorDestino = manzana;
+                break;
+            case "Hectárea":
+                factorDestino = hectarea;
+                break;
+        }
+
+        return factorOrigen / factorDestino;
     }
 }

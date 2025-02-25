@@ -1,87 +1,20 @@
 <resources>
-    <string name="app_name">MiPrimeraAplicacion</string>
-    <string-array name="monedas">
-        <item>Dolar</item>
-        <item>Euro</item>
-        <item>Quetzalez</item>
-        <item>Lempiras</item>
-        <item>Cordobas</item>
-        <item>Colon CR</item>
-        <item>Colon SV</item>
-        <item>Libra Esterlina</item>
-        <item>Yen</item>
-        <item>Won</item>
-    </string-array>
-    <string-array name="longitud">
-        <item>Metro</item>
-        <item>Centímetro</item>
-        <item>Milímetro</item>
-        <item>Kilómetro</item>
-        <item>Pie</item>
-        <item>Pulgada</item>
-        <item>Yarda</item>
-        <item>Milla</item>
-        <item>Decímetro</item>
-        <item>Micrómetro</item>
-    </string-array>
-    <string-array name="tiempo">
-        <item>Segundo</item>
-        <item>Minuto</item>
-        <item>Hora</item>
-        <item>Día</item>
-        <item>Semana</item>
-        <item>Mes</item>
-        <item>Año</item>
-        <item>Milisegundo</item>
-        <item>Microsegundo</item>
-        <item>Nanosegundo</item>
-    </string-array>
-    <string-array name="almacenamiento">
-        <item>Byte</item>
-        <item>Kilobyte</item>
-        <item>Megabyte</item>
-        <item>Gigabyte</item>
-        <item>Terabyte</item>
-        <item>Petabyte</item>
-        <item>Exabyte</item>
-        <item>Zettabyte</item>
-        <item>Yottabyte</item>
-        <item>Brontobyte</item>
-    </string-array>
-    <string-array name="masa">
-        <item>Kilogramo</item>
-        <item>Gramo</item>
-        <item>Miligramo</item>
-        <item>Tonelada</item>
-        <item>Libra</item>
-        <item>Onza</item>
-        <item>Quintal</item>
-        <item>Arroba</item>
-        <item>Fanega</item>
-        <item>Tonelada corta</item>
-    </string-array>
-    <string-array name="volumen">
-        <item>Litro</item>
-        <item>Mililitro</item>
-        <item>Microlitro</item>
-        <item>Galón</item>
-        <item>Cuarto</item>
-        <item>Pinta</item>
-        <item>Onza líquida</item>
-        <item>Barril</item>
-        <item>Pie cúbico</item>
-        <item>Pulgada cúbica</item>
-    </string-array>
-    <string-array name="transferencia">
-        <item>Bit</item>
-        <item>Kilobit</item>
-        <item>Megabit</item>
-        <item>Gigabit</item>
-        <item>Kilobyte</item>
-        <item>Megabyte</item>
-        <item>Gigabyte</item>
-        <item>Terabyte</item>
-        <item>Petabyte</item>
-        <item>Exabyte</item>
+    <string name="app_name">Calculadora de Agua y Conversor de Área</string>
+    <string name="tab_pago_agua">Pago Agua</string>
+    <string name="tab_conversor_area">Conversor Área</string>
+    <string name="hint_metros_consumidos">Ingrese los metros consumidos</string>
+    <string name="btn_calcular">Calcular</string>
+    <string name="resultado_pago">Total a pagar: $%1$.2f</string>
+    <string name="hint_valor_convertir">Ingrese el valor a convertir</string>
+    <string name="btn_convertir">Convertir</string>
+    <string name="resultado_conversion">Resultado: %1$.2f %2$s</string>
+    <string-array name="unidades_area">
+        <item>Pie Cuadrado</item>
+        <item>Vara Cuadrada</item>
+        <item>Yarda Cuadrada</item>
+        <item>Metro Cuadrado</item>
+        <item>Tareas</item>
+        <item>Manzana</item>
+        <item>Hectárea</item>
     </string-array>
 </resources>

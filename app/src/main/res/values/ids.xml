@@ -21,4 +21,6 @@
     <item name="spnAMasa" type="id" />
     <item name="spnAVolumen" type="id" />
     <item name="spnATransferencia" type="id" />
+    <item name="spUnidadOrigen" type="id" />
+    <item name="spUnidadDestino" type="id" />
 </resources>
