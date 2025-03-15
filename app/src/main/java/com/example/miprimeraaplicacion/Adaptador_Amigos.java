@@ -1,6 +1,5 @@
 package com.example.miprimeraaplicacion;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,7 +39,7 @@ public class AdaptadorAmigos extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        @SuppressLint("ViewHolder") View itemView = inflater.inflate(R.layout.fotos, parent, false);
+        View itemView = inflater.inflate(R.layout.fotos, parent, false);
         try {
             misAmigos = alAmigos.get(position);
 
