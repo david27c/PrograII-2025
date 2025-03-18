@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".lista_bebidas"
+    tools:ignore="ExtraText,VisualLintBounds">
+    <EditText
+        android:id="@+id/txtBuscarBebidas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:autofillHints=""
+        android:hint="@string/buscar_bebidas"
+        android:inputType="text"
+        android:padding="8dp"
+        android:textColorHint="#546E7A"
+        tools:ignore="TextFields,TouchTargetSizeCheck,VisualLintTextFieldSize" />
+
+    <ListView
+        android:id="@+id/ltsBebidas"
+        android:layout_below="@id/txtBuscarBebidas"
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="80dp" /> <com.google.android.material.floatingactionbutton.FloatingActionButton
+    android:id="@+id/fabAgregarBebida"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentEnd="true"
+    android:layout_alignParentBottom="true"
+    android:layout_margin="20dp"
+    android:contentDescription="@string/to"
+    android:src="@android:drawable/ic_input_add"
+    tools:ignore="SpeakableTextPresentCheck"/>
+
+#Exclude everything
+*
+</RelativeLayout>

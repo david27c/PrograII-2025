@@ -1,3 +1,22 @@
-<resources>
-    <string name="app_name">Agenda</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">TiendaAndroid</string>
+    <string name="agregar_bebida">Agregar Bebida</string>
+    <string name="modificar_bebida">Modificar Bebida</string>
+    <string name="eliminar_bebida">Eliminar Bebida</string>
+    <string name="buscar_bebidas">Buscar bebidas</string>
+    <string name="guardar_bebida">Guardar Bebida</string>
+    <string name="to">Agregar bebida</string>
+    <string name="todo">TODO</string>
+    <string name="descripci_n">Descripción</string>
+    <string name="c_digo">Código</string>
+    <string name="precio">Precio</string>
+    <string name="guardar_bebid">Guardar Bebida</string>
+    <string name="codigo">Código</string>
+    <string name="presentacion">Presentacion</string>
+    <string name="c_digo_123">Código: 123</string>
+    <string name="descripci_n_jugo_de_naranja" tools:ignore="DuplicateDefinition">Descripción: Jugo de naranja</string>
+    <string name="presentacion_500ml">Presentación: 500ml</string>
+    <string name="marca">Marca</string>
+    <string name="precio_1_99">Precio: $1.99</string>
+    <string name="marca_naranja_s_a">Marca: Naranja S.A.</string>
 </resources>
