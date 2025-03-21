@@ -1,7 +1,7 @@
 package com.example.miprimeraaplicacion;
 
 public class Bebidas {
-    private final String idBebida;
+    private String idBebida;
     String codigo;
     String descripcion;
     String marca;
@@ -19,15 +19,23 @@ public class Bebidas {
         this.foto = foto;
     }
 
-    public Bebidas() {
-        this.idBebida = "";
+    public String getIdBebida() {
+        return idBebida;
+    }
+
+    public void setIdBebida(String idBebida) {
+        this.idBebida = idBebida;
     }
 
     public String getCodigo() {
         return codigo;
     }
 
-    public String getDescripcion() {
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public String getDescripcion(String descripcion) {this.descripcion = descripcion;
         return descripcion;
     }
 
@@ -58,7 +66,6 @@ public class Bebidas {
     public void setPrecio(String precio) {
         this.precio = precio;
     }
-
     public String getFoto() {
         return foto;
     }
@@ -67,7 +74,7 @@ public class Bebidas {
         this.foto = foto;
     }
 
-    public String getIdBebida() {
-        return idBebida;
+    public String getDescripcion() {
+        return "";
     }
 }

@@ -4,108 +4,77 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    tools:ignore="ExtraText">
+    tools:context=".MainActivity">
 
  <EditText
      android:id="@+id/txtCodigo"
-     android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     android:layout_marginLeft="20dp"
-     android:layout_marginTop="20dp"
-     android:layout_marginRight="20dp"
      android:hint="@string/c_digo"
-     android:inputType="text"
-     android:minHeight="48dp"
-     tools:ignore="Autofill,VisualLintTextFieldSize" />
-
+     android:layout_marginTop="20dp"
+     android:layout_marginLeft="20dp"
+     android:layout_marginRight="20dp"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtDescripcion"
-     android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     android:layout_below="@id/txtCodigo"
-     android:layout_marginLeft="20dp"
-     android:layout_marginTop="20dp"
-     android:layout_marginRight="20dp"
      android:hint="@string/descripci_n"
-     android:inputType="textMultiLine"
-     android:minHeight="48dp"
-     android:textColorHint="#546E7A"
-     tools:ignore="Autofill,VisualLintTextFieldSize" />
-
+     android:layout_below="@id/txtCodigo"
+     android:layout_marginTop="20dp"
+     android:layout_marginLeft="20dp"
+     android:layout_marginRight="20dp"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtMarca"
-     android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     android:layout_below="@id/txtDescripcion"
-     android:layout_marginLeft="20dp"
-     android:layout_marginTop="20dp"
-     android:layout_marginRight="20dp"
      android:hint="@string/marca"
-     android:inputType="text"
-     android:minHeight="48dp"
-     tools:ignore="Autofill,VisualLintTextFieldSize" />
-
+     android:layout_below="@id/txtDescripcion"
+     android:layout_marginTop="20dp"
+     android:layout_marginLeft="20dp"
+     android:layout_marginRight="20dp"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtPresentacion"
-     android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     android:layout_below="@id/txtMarca"
-     android:layout_marginLeft="20dp"
-     android:layout_marginTop="20dp"
-     android:layout_marginRight="20dp"
      android:hint="@string/presentacion"
-     android:importantForAutofill="no"
-     android:inputType="text"
-     android:minHeight="48dp"
-     android:textColorHint="#546E7A"
-     tools:ignore="VisualLintTextFieldSize" />
-
+     android:layout_below="@id/txtMarca"
+     android:layout_marginTop="20dp"
+     android:layout_marginLeft="20dp"
+     android:layout_marginRight="20dp"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtPrecio"
-     android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     android:layout_below="@id/txtPresentacion"
-     android:layout_marginLeft="20dp"
-     android:layout_marginTop="20dp"
-     android:layout_marginRight="20dp"
      android:hint="@string/precio"
-     android:importantForAutofill="no"
-     android:inputType="numberDecimal"
-     android:minHeight="48dp"
-     tools:ignore="VisualLintTextFieldSize" />
-
- <ImageButton
-     android:id="@+id/imgFotoBebida"
-     android:layout_width="100dp"
-     android:layout_height="100dp"
-     android:layout_below="@id/txtPrecio"
-     android:layout_centerHorizontal="true"
+     android:layout_below="@id/txtPresentacion"
      android:layout_marginTop="20dp"
-     android:scaleType="centerCrop"
+     android:layout_marginLeft="20dp"
+     android:layout_marginRight="20dp"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"/>
+ <ImageButton
+     android:id="@+id/imgfotoBebida"
+     android:layout_below="@id/txtPrecio"
+     android:layout_marginTop="20dp"
+     android:layout_centerHorizontal="true"
      android:src="@mipmap/ic_launcher_round"
-     tools:ignore="ContentDescription,SpeakableTextPresentCheck,ImageContrastCheck" />
-
+     android:layout_width="100dp"
+     android:layout_height="100dp"/>
  <Button
-     android:id="@+id/btnguardarBebida"
+     android:id="@+id/btnGuardarBebida"
+     android:contentDescription="@string/todo"
      android:text="@string/guardar_bebida"
-     android:layout_below="@id/imgFotoBebida"
+     android:layout_below="@id/imgfotoBebida"
      android:layout_marginTop="20dp"
      android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     tools:ignore="VisualLintButtonSize" />
+     android:layout_height="wrap_content"/>
+
 
  <com.google.android.material.floatingactionbutton.FloatingActionButton
      android:id="@+id/fabListaBebidas"
-     android:layout_width="wrap_content"
-     android:layout_height="wrap_content"
-     android:layout_alignParentEnd="true"
-     android:layout_alignParentBottom="true"
-     android:layout_margin="20dp"
+     android:contentDescription="@string/todo"
      android:src="@android:drawable/ic_menu_revert"
-     tools:ignore="ContentDescription,SpeakableTextPresentCheck" />
-
-
-#Exclude everything
-*
+     android:layout_alignParentBottom="true"
+     android:layout_alignParentEnd="true"
+     android:layout_margin="20dp"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"/>
 </RelativeLayout>

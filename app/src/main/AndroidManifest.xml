@@ -12,21 +12,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MiPrimeraAplicacion"
         tools:targetApi="31">
+        <activity android:name=".MainActivity"
+            android:exported="true"/>
         <activity
-            android:name=".MainActivity"
+            android:name=".lista_bebidas"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".lista_bebidas"
-            android:exported="true" />
-
         <provider
+            android:authorities="com.example.miprimeraaplicacion.fileprovider"
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.miprimeraaplicacion"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

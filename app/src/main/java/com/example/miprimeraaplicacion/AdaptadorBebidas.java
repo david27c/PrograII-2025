@@ -1,5 +1,6 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 public class AdaptadorBebidas extends BaseAdapter {
     Context context;
     ArrayList<Bebidas> alBebidas;
-    Bebidas miBebida;
+    Bebidas misBebidas;
     LayoutInflater inflater;
 
     public AdaptadorBebidas(Context context, ArrayList<Bebidas> alBebidas) {
@@ -33,7 +34,6 @@ public class AdaptadorBebidas extends BaseAdapter {
     public Object getItem(int position) {
         return alBebidas.get(position);
     }
-
     @Override
     public long getItemId(int position) {
         return 0;
@@ -41,50 +41,33 @@ public class AdaptadorBebidas extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
-        if (convertView == null) {
-            inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.fotos_bebidas, parent, false);
-            holder = new ViewHolder();
-            holder.lblCodigoAdaptador = convertView.findViewById(R.id.lblCodigoAdaptador);
-            holder.lblDescripcionAdaptador = convertView.findViewById(R.id.lblDescripcionAdaptador);
-            holder.lblMarcaAdaptador = convertView.findViewById(R.id.lblMarcaAdaptador);
-            holder.lblPresentacionAdaptador = convertView.findViewById(R.id.lblPresentacionAdaptador);
-            holder.lblPrecioAdaptador = convertView.findViewById(R.id.lblPrecioAdaptador);
-            holder.imgFotoAdaptador = convertView.findViewById(R.id.imgFotoAdaptador);
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
-        }
-
+        inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        @SuppressLint("ViewHolder") View itemView = inflater.inflate(R.layout.fotos_bebidas, parent, false);
         try {
-            miBebida = alBebidas.get(position);
+            misBebidas = alBebidas.get(position);
 
-            holder.lblCodigoAdaptador.setText(miBebida.getCodigo());
-            holder.lblDescripcionAdaptador.setText(miBebida.getDescripcion());
-            holder.lblMarcaAdaptador.setText(miBebida.getMarca());
-            holder.lblPresentacionAdaptador.setText(miBebida.getPresentacion());
-            holder.lblPrecioAdaptador.setText(miBebida.getPrecio());
+            TextView tempVal = itemView.findViewById(R.id.lblCodigoAdaptador);
+            tempVal.setText(misBebidas.getIdBebida());
 
-            Bitmap bitmap = BitmapFactory.decodeFile(miBebida.getFoto());
-            if (bitmap != null) {
-                holder.imgFotoAdaptador.setImageBitmap(bitmap);
-            } else {
-                holder.imgFotoAdaptador.setImageResource(R.drawable.placeholder_image);
-                Toast.makeText(context, "Error al cargar la imagen", Toast.LENGTH_SHORT).show();
-            }
+            tempVal = itemView.findViewById(R.id.lblDescripcionAdaptador);
+            tempVal.setText(misBebidas.getIdBebida());
+
+            tempVal = itemView.findViewById(R.id.lblMarcaAdaptador);
+            tempVal.setText(misBebidas.getIdBebida());
+
+            tempVal = itemView.findViewById(R.id.lblPresentacionAdaptador);
+            tempVal.setText(misBebidas.getIdBebida());
+
+            tempVal = itemView.findViewById(R.id.lblPrecioAdaptador);
+            tempVal.setText(misBebidas.getIdBebida());
+
+            ImageView img = itemView.findViewById(R.id.imgFotoAdaptador);
+
+            Bitmap bitmap = BitmapFactory.decodeFile(misBebidas.getFoto());
+            img.setImageBitmap(bitmap);
         } catch (Exception e) {
             Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
-        return convertView;
-    }
-
-    static class ViewHolder {
-        TextView lblCodigoAdaptador;
-        TextView lblDescripcionAdaptador;
-        TextView lblMarcaAdaptador;
-        TextView lblPresentacionAdaptador;
-        TextView lblPrecioAdaptador;
-        ImageView imgFotoAdaptador;
+        return itemView;
     }
 }

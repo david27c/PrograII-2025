@@ -4,14 +4,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.content.ContentValues;
 
 public class DB extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "bebidas";
     private static final int DATABASE_VERSION = 1;
-
     private static final String SQLdb = "CREATE TABLE bebidas (idBebida INTEGER PRIMARY KEY AUTOINCREMENT, codigo TEXT, descripcion TEXT, marca TEXT, presentacion TEXT, precio TEXT, urlFoto TEXT)";
-
     public DB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -20,49 +17,32 @@ public class DB extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(SQLdb);
     }
-
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        //Actualizar la estrucutra de la base de datos si es necesario
     }
-
     public String administrar_bebidas(String accion, String[] datos) {
-        try {
+        try{
             SQLiteDatabase db = getWritableDatabase();
-            String mensaje = "ok";
-            ContentValues values = new ContentValues();
-
+            String mensaje = "ok", sql = "";
             switch (accion) {
                 case "nuevo":
-                    values.put("codigo", datos[1]);
-                    values.put("descripcion", datos[2]);
-                    values.put("marca", datos[3]);
-                    values.put("presentacion", datos[4]);
-                    values.put("precio", datos[5]);
-                    values.put("urlFoto", datos[6]);
-                    db.insert("bebidas", null, values);
+                    sql = "INSERT INTO bebidas (codigo, descripcion, marca, presentacion, precio, urlFoto) VALUES ('"+ datos[1] +"', '" + datos[2] + "', '" + datos[3] + "', '" + datos[4] + "', '" + datos[5] + "', '" + datos[6] + "')";
                     break;
                 case "modificar":
-                    values.put("codigo", datos[1]);
-                    values.put("descripcion", datos[2]);
-                    values.put("marca", datos[3]);
-                    values.put("presentacion", datos[4]);
-                    values.put("precio", datos[5]);
-                    values.put("urlFoto", datos[6]);
-                    db.update("bebidas", values, "idBebida = ?", new String[]{datos[0]});
+                    sql = "UPDATE bebidas SET codigo = '" + datos[1] + "', descricpion = '" + datos[2] + "', marca = '" + datos[3] + "', presentacion = '" + datos[4] + "', precio = '" + datos[5] + "', urlFoto = '" + datos[6] + "' WHERE idBebida = " + datos[0];
                     break;
                 case "eliminar":
-                    db.delete("bebidas", "idBebida = ?", new String[]{datos[0]});
+                    sql = "DELETE FROM bebidas WHERE idBebida = " + datos[0];
                     break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + accion);
             }
+            db.execSQL(sql);
             db.close();
             return mensaje;
         } catch (Exception e) {
             return e.getMessage();
         }
     }
-
     public Cursor lista_bebidas() {
         SQLiteDatabase db = getReadableDatabase();
         return db.rawQuery("SELECT * FROM bebidas", null);
