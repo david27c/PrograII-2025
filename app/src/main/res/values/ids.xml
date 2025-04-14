@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="txtBuscar" type="id" />
+    <item name="etDescripcion" type="id" />
+    <item name="etCodigoCrearEditar" type="id" />
+    <item name="etDescripcionCrearEditar" type="id" />
+    <item name="etMarcaCrearEditar" type="id" />
+    <item name="etPresentacionCrearEditar" type="id" />
+    <item name="btnAbrirGaleriaCrearEditar" type="id" />
+    <item name="etPrecioCrearEditar" type="id" />
+    <item name="layoutFotosSeleccionadasCrearEditar" type="id" />
+    <item name="btnGuardarCrearEditar" type="id" />
+    <item name="fabAgregarBebida" type="id" />
+    <item name="ltsBebidas" type="id" />
+    <item name="txtBuscarBebidas" type="id" />
 </resources>

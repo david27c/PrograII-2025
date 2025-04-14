@@ -18,4 +18,7 @@
     <string name="marca">Marca</string>
     <string name="precio_1_99">Precio: $1.99</string>
     <string name="marca_naranja_s_a">Marca: Naranja S.A.</string>
+    <string name="presentacion_botella_500ml">Botella</string>
+    <string name="guardar">Guardar</string>
+    <string name="seleccionar_fotos">Seleccionar Fotos</string>
 </resources>

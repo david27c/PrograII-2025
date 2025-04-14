@@ -4,50 +4,51 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".CrearEditarBebidaActivity">
 
  <EditText
      android:id="@+id/txtCodigo"
      android:hint="@string/c_digo"
      android:layout_marginTop="20dp"
-     android:layout_marginLeft="20dp"
-     android:layout_marginRight="20dp"
+     android:layout_marginStart="20dp"
+     android:layout_marginEnd="20dp"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtDescripcion"
      android:hint="@string/descripci_n"
      android:layout_below="@id/txtCodigo"
-     android:layout_marginTop="20dp"
-     android:layout_marginLeft="20dp"
-     android:layout_marginRight="20dp"
+     android:layout_marginTop="16dp"
+     android:layout_marginStart="20dp"
+     android:layout_marginEnd="20dp"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtMarca"
      android:hint="@string/marca"
      android:layout_below="@id/txtDescripcion"
-     android:layout_marginTop="20dp"
-     android:layout_marginLeft="20dp"
-     android:layout_marginRight="20dp"
+     android:layout_marginTop="16dp"
+     android:layout_marginStart="20dp"
+     android:layout_marginEnd="20dp"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtPresentacion"
      android:hint="@string/presentacion"
      android:layout_below="@id/txtMarca"
-     android:layout_marginTop="20dp"
-     android:layout_marginLeft="20dp"
-     android:layout_marginRight="20dp"
+     android:layout_marginTop="16dp"
+     android:layout_marginStart="20dp"
+     android:layout_marginEnd="20dp"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"/>
  <EditText
      android:id="@+id/txtPrecio"
      android:hint="@string/precio"
+     android:inputType="numberDecimal"
      android:layout_below="@id/txtPresentacion"
-     android:layout_marginTop="20dp"
-     android:layout_marginLeft="20dp"
-     android:layout_marginRight="20dp"
+     android:layout_marginTop="16dp"
+     android:layout_marginStart="20dp"
+     android:layout_marginEnd="20dp"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"/>
  <ImageButton
@@ -64,6 +65,8 @@
      android:text="@string/guardar_bebida"
      android:layout_below="@id/imgfotoBebida"
      android:layout_marginTop="20dp"
+     android:layout_marginStart="20dp"
+     android:layout_marginEnd="20dp"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"/>
 

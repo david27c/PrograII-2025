@@ -50,23 +50,27 @@ public class AdaptadorBebidas extends BaseAdapter {
             tempVal.setText(misBebidas.getIdBebida());
 
             tempVal = itemView.findViewById(R.id.lblDescripcionAdaptador);
-            tempVal.setText(misBebidas.getIdBebida());
+            tempVal.setText(misBebidas.getDescripcion());
 
             tempVal = itemView.findViewById(R.id.lblMarcaAdaptador);
-            tempVal.setText(misBebidas.getIdBebida());
+            tempVal.setText(misBebidas.getMarca());
 
             tempVal = itemView.findViewById(R.id.lblPresentacionAdaptador);
-            tempVal.setText(misBebidas.getIdBebida());
+            tempVal.setText(misBebidas.getPresentacion());
 
             tempVal = itemView.findViewById(R.id.lblPrecioAdaptador);
-            tempVal.setText(misBebidas.getIdBebida());
+            tempVal.setText(String.valueOf(misBebidas.getPrecio()));
 
             ImageView img = itemView.findViewById(R.id.imgFotoAdaptador);
+            String fotoPath = misBebidas.getFoto();
+            if (fotoPath != null && !fotoPath.isEmpty()) {
+                Bitmap bitmap = BitmapFactory.decodeFile(fotoPath);
+                img.setImageBitmap(bitmap);
+            }
 
-            Bitmap bitmap = BitmapFactory.decodeFile(misBebidas.getFoto());
-            img.setImageBitmap(bitmap);
         } catch (Exception e) {
-            Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Error en AdaptadorBebidas: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
         }
         return itemView;
     }

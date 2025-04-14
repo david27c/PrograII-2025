@@ -3,60 +3,78 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:ignore="ExtraText">
+    android:layout_height="wrap_content">
+
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewFoto"
         android:layout_width="60dp"
         android:layout_height="60dp"
-        app:cardCornerRadius="150dp"
-        android:layout_margin="10dp">
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:layout_margin="10dp"
+        app:cardCornerRadius="30dp">
+
         <ImageView
             android:id="@+id/imgFotoAdaptador"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@mipmap/ic_launcher_round"/>
+            android:src="@mipmap/ic_launcher_round"
+            tools:ignore="ContentDescription" />
     </androidx.cardview.widget.CardView>
+
     <TextView
         android:id="@+id/lblCodigoAdaptador"
-        android:layout_marginTop="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:layout_marginStart="80dp"
+        android:layout_marginTop="10dp"
         android:text="@string/c_digo_123"
         android:textColor="@color/black"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
     <TextView
         android:id="@+id/lblDescripcionAdaptador"
-        android:layout_marginTop="30dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lblCodigoAdaptador"
         android:layout_marginStart="80dp"
+        android:layout_marginTop="4dp"
         android:text="@string/descripci_n_jugo_de_naranja"
         android:textColor="@color/black"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         tools:ignore="VisualLintOverlap" />
+
     <TextView
         android:id="@+id/lblMarcaAdaptador"
-        android:layout_marginTop="30dp"
-        android:layout_marginStart="80dp"
-        android:text="@string/marca_naranja_s_a"
-        android:textColor="@color/black"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:id="@+id/lblPresentacionAdaptador"
-        android:layout_marginTop="30dp"
-        android:layout_marginStart="80dp"
-        android:text="@string/presentacion_500ml"
-        android:textColor="@color/black"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/lblDescripcionAdaptador"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/marca_naranja_s_a"
+        android:textColor="@color/black" />
+
+    <TextView
+        android:id="@+id/lblPresentacionAdaptador"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lblMarcaAdaptador"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/presentacion_botella_500ml"
+        android:textColor="@color/black"
         tools:ignore="VisualLintOverlap" />
+
     <TextView
         android:id="@+id/lblPrecioAdaptador"
-        android:layout_marginTop="30dp"
-        android:layout_marginStart="80dp"
-        android:text="@string/precio_1_99"
-        android:textColor="@color/black"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lblPresentacionAdaptador"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/precio_1_99"
+        android:textColor="@color/black" />
+
 </RelativeLayout>
