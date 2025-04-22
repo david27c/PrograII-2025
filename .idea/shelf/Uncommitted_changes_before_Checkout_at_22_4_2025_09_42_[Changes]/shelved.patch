@@ -1,0 +1,48 @@
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\">\r\n\r\n    <!-- Permiso para escribir en almacenamiento externo -->\r\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" android:maxSdkVersion=\"28\"/>\r\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" android:maxSdkVersion=\"28\"/>\r\n\r\n    <!-- Para manejar almacenamiento en versiones de Android 11 o superior -->\r\n    <uses-permission android:name=\"android.permission.MANAGE_EXTERNAL_STORAGE\" android:requestLegacyExternalStorage=\"true\"/>\r\n\r\n    <!-- Otros permisos si es necesario -->\r\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\r\n    <uses-permission android:name=\"android.permission.INTERNET\"/>\r\n\r\n    <application\r\n        android:allowBackup=\"true\"\r\n        android:dataExtractionRules=\"@xml/data_extraction_rules\"\r\n        android:fullBackupContent=\"@xml/backup_rules\"\r\n        android:icon=\"@mipmap/ic_launcher\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/ic_launcher_round\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/Theme.MiPrimeraAplicacion\"\r\n        tools:targetApi=\"31\">\r\n\r\n        <activity android:name=\".MainActivity\"\r\n            android:exported=\"true\"/>\r\n\r\n        <activity\r\n            android:name=\".lista_bebidas\"\r\n            android:exported=\"true\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n        </activity>\r\n\r\n        <provider\r\n            android:authorities=\"com.example.miprimeraaplicacion.fileprovider\"\r\n            android:name=\"androidx.core.content.FileProvider\"\r\n            android:exported=\"false\"\r\n            android:grantUriPermissions=\"true\">\r\n            <meta-data\r\n                android:name=\"android.support.FILE_PROVIDER_PATHS\"\r\n                android:resource=\"@xml/file_paths\" />\r\n        </provider>\r\n    </application>\r\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+--- a/app/src/main/AndroidManifest.xml	(revision 6bd06fedf80796c3e2c3d131640caf17f9d1b7a9)
++++ b/app/src/main/AndroidManifest.xml	(date 1744592028390)
+@@ -2,12 +2,12 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:tools="http://schemas.android.com/tools">
+ 
+-    <!-- Permiso para escribir en almacenamiento externo -->
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+ 
+     <!-- Para manejar almacenamiento en versiones de Android 11 o superior -->
+-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:requestLegacyExternalStorage="true"/>
++    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:requestLegacyExternalStorage="true"
++        tools:ignore="ScopedStorage" />
+ 
+     <!-- Otros permisos si es necesario -->
+     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+Index: app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.miprimeraaplicacion;\r\n\r\nimport android.content.Context;\r\nimport android.os.AsyncTask;\r\nimport java.io.BufferedInputStream;\r\nimport java.io.BufferedReader;\r\nimport java.io.BufferedWriter;\r\nimport java.io.InputStream;\r\nimport java.io.InputStreamReader;\r\nimport java.io.OutputStreamWriter;\r\nimport java.io.Writer;\r\nimport java.net.HttpURLConnection;\r\nimport java.net.URL;\r\n\r\nimport android.content.Context;\r\nimport android.os.AsyncTask;\r\nimport android.os.Build;\r\nimport android.util.Log;\r\n\r\nimport androidx.annotation.RequiresApi;\r\n\r\nimport java.io.BufferedReader;\r\nimport java.io.BufferedWriter;\r\nimport java.io.InputStream;\r\nimport java.io.InputStreamReader;\r\nimport java.io.OutputStreamWriter;\r\nimport java.io.Writer;\r\nimport java.net.HttpURLConnection;\r\nimport java.net.URL;\r\n\r\npublic class enviarDatosServidor extends AsyncTask<String, String, String> {\r\n    Context context;\r\n    String respuesta = \"\";\r\n    HttpURLConnection httpURLConnection;\r\n\r\n    public enviarDatosServidor(Context context) {\r\n        this.context = context;\r\n    }\r\n\r\n    @Override\r\n    protected void onPostExecute(String s) {\r\n        super.onPostExecute(s);\r\n        // Aquí puedes procesar la respuesta del servidor (s) en el hilo principal\r\n        Log.d(\"enviarDatosServidor\", \"Respuesta del servidor: \" + s);\r\n    }\r\n\r\n    @RequiresApi(api = Build.VERSION_CODES.O)\r\n    @Override\r\n    protected String doInBackground(String... parametros) {\r\n        String jsonResponse = null; // Inicializar a null\r\n        String jsonDatos = parametros[0];\r\n        String metodo = parametros[1];\r\n        String _url = parametros[2];\r\n        BufferedReader bufferedReader = null; // Inicializar a null\r\n        try {\r\n            URL url = new URL(_url);\r\n            httpURLConnection = (HttpURLConnection) url.openConnection();\r\n            httpURLConnection.setDoInput(true);\r\n            httpURLConnection.setDoOutput(true);\r\n            httpURLConnection.setRequestMethod(metodo);\r\n            httpURLConnection.setRequestProperty(\"Content-Type\", \"application/json\");\r\n            httpURLConnection.setRequestProperty(\"Accept\", \"application/json\");\r\n            httpURLConnection.setRequestProperty(\"Authorization\", \"Basic \" + utilidades.credencialesCodificadas);\r\n            // Enviar los datos al servidor\r\n            Writer writer = new BufferedWriter(new OutputStreamWriter(httpURLConnection.getOutputStream(), \"UTF-8\"));\r\n            writer.write(jsonDatos);\r\n            writer.close();\r\n            // Obtener/leer la respuesta del servidor\r\n            InputStream inputStream = httpURLConnection.getInputStream();\r\n            if (inputStream == null) {\r\n                return null;\r\n            }\r\n            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));\r\n            StringBuilder stringBuffer = new StringBuilder();\r\n            String linea;\r\n            while ((linea = bufferedReader.readLine()) != null) {\r\n                stringBuffer.append(linea);\r\n            }\r\n            if (stringBuffer.length() > 0) {\r\n                jsonResponse = stringBuffer.toString();\r\n            }\r\n        } catch (Exception e) {\r\n            Log.e(\"enviarDatosServidor\", \"Error: \" + e.getMessage());\r\n            return e.getMessage();\r\n        } finally {\r\n            if (bufferedReader != null) {\r\n                try {\r\n                    bufferedReader.close();\r\n                } catch (Exception e) {\r\n                    Log.e(\"enviarDatosServidor\", \"Error al cerrar el BufferedReader: \" + e.getMessage());\r\n                }\r\n            }\r\n            if (httpURLConnection != null) {\r\n                httpURLConnection.disconnect();\r\n            }\r\n        }\r\n        return jsonResponse;\r\n    }\r\n\r\n    public void setCallback(BebidaManager.ServerCallback<String> serverCallback) {\r\n    }\r\n}
+===================================================================
+diff --git a/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java b/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java
+--- a/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java	(revision 6bd06fedf80796c3e2c3d131640caf17f9d1b7a9)
++++ b/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java	(date 1744592812579)
+@@ -1,5 +1,6 @@
+ package com.example.miprimeraaplicacion;
+ 
++import android.annotation.SuppressLint;
+ import android.content.Context;
+ import android.os.AsyncTask;
+ import java.io.BufferedInputStream;
+@@ -29,6 +30,7 @@
+ import java.net.URL;
+ 
+ public class enviarDatosServidor extends AsyncTask<String, String, String> {
++    @SuppressLint("StaticFieldLeak")
+     Context context;
+     String respuesta = "";
+     HttpURLConnection httpURLConnection;

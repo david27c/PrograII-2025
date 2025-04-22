@@ -1,0 +1,757 @@
+Index: app/src/main/java/com/example/miprimeraaplicacion/lista_bebidas.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.miprimeraaplicacion;\r\n\r\nimport android.app.Activity;\r\nimport android.app.AlertDialog;\r\nimport android.content.Intent;\r\nimport android.database.Cursor;\r\nimport android.os.Bundle;\r\nimport android.text.Editable;\r\nimport android.text.TextWatcher;\r\nimport android.view.ContextMenu;\r\nimport android.view.MenuInflater;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.widget.AdapterView;\r\nimport android.widget.ListView;\r\nimport android.widget.TextView;\r\nimport android.widget.Toast;\r\n\r\nimport androidx.annotation.NonNull;\r\n\r\nimport com.google.android.material.floatingactionbutton.FloatingActionButton;\r\n\r\nimport org.json.JSONArray;\r\nimport org.json.JSONObject;\r\n\r\nimport java.util.ArrayList;\r\n\r\npublic class lista_bebidas extends Activity {\r\n    Bundle parametros = new Bundle();\r\n    ListView ltsBebidas;\r\n    Cursor cBebidas;\r\n    DB db;\r\n    public final ArrayList<Bebidas> alBebidas = new ArrayList<Bebidas>();\r\n    final ArrayList<Bebidas> alBebidasCopia = new ArrayList<Bebidas>();\r\n    JSONArray jsonArray;\r\n    JSONObject jsonObject;\r\n    Bebidas misBebidas;\r\n    FloatingActionButton fab;\r\n    int posicion = 0;\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_lista_bebidas);\r\n\r\n        parametros.putString(\"accion\", \"nuevo\");\r\n        db = new DB(this);\r\n\r\n        fab = findViewById(R.id.fabAgregarBebida);\r\n        fab.setOnClickListener(view -> abriVentana());\r\n        obtenerDatosBebida();\r\n        buscarBebida();\r\n    }\r\n    @Override\r\n    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {\r\n        super.onCreateContextMenu(menu, v, menuInfo);\r\n        MenuInflater inflater = getMenuInflater();\r\n        inflater.inflate(R.menu.mimenu, menu);\r\n        try {\r\n            AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;\r\n            posicion = info.position;\r\n            menu.setHeaderTitle(jsonArray.getJSONObject(posicion).getString(\"codigo\"));\r\n        } catch (Exception e) {\r\n            mostrarMsg(\"Error: \" + e.getMessage());\r\n        }\r\n    }\r\n    @Override\r\n    public boolean onContextItemSelected(@NonNull MenuItem item) {\r\n        try{\r\n            if( item.getItemId()==R.id.mnxNuevo){\r\n                abriVentana();\r\n            }else if( item.getItemId()==R.id.mnxModificar){\r\n                parametros.putString(\"accion\", \"modificar\");\r\n                parametros.putString(\"bebidas\", jsonArray.getJSONObject(posicion).toString());\r\n                abriVentana();\r\n            } else if (item.getItemId()==R.id.mnxEliminar) {\r\n                eliminarBebida();\r\n            }\r\n            return true;\r\n        }catch (Exception e){\r\n            mostrarMsg(\"Error: \" + e.getMessage());\r\n            return super.onContextItemSelected(item);\r\n        }\r\n    }\r\n    private void eliminarBebida(){\r\n        try{\r\n            String codigo = jsonArray.getJSONObject(posicion).getString(\"codigo\");\r\n            AlertDialog.Builder confirmacion = new AlertDialog.Builder(this);\r\n            confirmacion.setTitle(\"Esta seguro de eliminar a: \");\r\n            confirmacion.setMessage(codigo);\r\n            confirmacion.setPositiveButton(\"Si\", (dialog, which) -> {\r\n                try {\r\n                    String respuesta = db.administrar_bebidas(\"eliminar\", new String[]{jsonArray.getJSONObject(posicion).getString(\"idBebida\")});\r\n                    if(respuesta.equals(\"ok\")) {\r\n                        obtenerDatosBebida();\r\n                        mostrarMsg(\"Registro eliminado con exito\");\r\n                    }else{\r\n                        mostrarMsg(\"Error: \" + respuesta);\r\n                    }\r\n                }catch (Exception e){\r\n                    mostrarMsg(\"Error: \" + e.getMessage());\r\n                }\r\n            });\r\n            confirmacion.setNegativeButton(\"No\", (dialog, which) -> {\r\n                dialog.dismiss();\r\n            });\r\n            confirmacion.create().show();\r\n        }catch (Exception e){\r\n            mostrarMsg(\"Error: \" + e.getMessage());\r\n        }\r\n    }\r\n    private void abriVentana(){\r\n        Intent intent = new Intent(this, MainActivity.class);\r\n        intent.putExtras(parametros);\r\n        startActivity(intent);\r\n    }\r\n    private void obtenerDatosBebida(){\r\n        try{\r\n            cBebidas = db.lista_bebidas();\r\n            if(cBebidas.moveToFirst()){\r\n                jsonArray = new JSONArray();\r\n                do{\r\n                    jsonObject = new JSONObject();\r\n                    jsonObject.put(\"idBebida\", cBebidas.getString(0));\r\n                    jsonObject.put(\"codigo\", cBebidas.getString(1));\r\n                    jsonObject.put(\"descripcion\", cBebidas.getString(2));\r\n                    jsonObject.put(\"marca\", cBebidas.getString(3));\r\n                    jsonObject.put(\"presentacion\", cBebidas.getString(4));\r\n                    jsonObject.put(\"precio\", cBebidas.getString(5));\r\n                    jsonObject.put(\"foto\", cBebidas.getString(6));\r\n                    jsonArray.put(jsonObject);\r\n\r\n                }while(cBebidas.moveToNext());\r\n                mostrarDatosBebida();\r\n            }else{\r\n                mostrarMsg(\"No hay bebidas registradas.\");\r\n                abriVentana();\r\n            }\r\n        }catch (Exception e){\r\n            mostrarMsg(\"Error: \" + e.getMessage());\r\n        }\r\n    }\r\n    private void mostrarDatosBebida(){\r\n        try{\r\n            if(jsonArray.length()>0){\r\n                ltsBebidas = findViewById(R.id.ltsBebidas);\r\n                alBebidas.clear();\r\n                alBebidasCopia.clear();\r\n\r\n                for (int i=0; i<jsonArray.length(); i++){\r\n                    jsonObject = jsonArray.getJSONObject(i);\r\n                    misBebidas = new Bebidas(\r\n                            jsonObject.getString(\"idBebida\"),\r\n                            jsonObject.getString(\"codigo\"),\r\n                            jsonObject.getString(\"descripcion\"),\r\n                            jsonObject.getString(\"marca\"),\r\n                            jsonObject.getString(\"presentacion\"),\r\n                            jsonObject.getString(\"precio\"),\r\n                            jsonObject.getString(\"foto\")\r\n                    );\r\n                    alBebidas.add(misBebidas);\r\n                }\r\n                alBebidasCopia.addAll(alBebidas);\r\n                ltsBebidas.setAdapter(new AdaptadorBebidas(this, alBebidas));\r\n                registerForContextMenu(ltsBebidas);\r\n            }else{\r\n                mostrarMsg(\"No hay bebidas registrados.\");\r\n                abriVentana();\r\n            }\r\n        }catch (Exception e){\r\n            mostrarMsg(\"Error: \" + e.getMessage());\r\n        }\r\n    }\r\n    private void buscarBebida(){\r\n        TextView tempVal = findViewById(R.id.txtBuscarBebidas);\r\n        tempVal.addTextChangedListener(new TextWatcher() {\r\n            @Override\r\n            public void beforeTextChanged(CharSequence s, int start, int count, int after) {\r\n\r\n            }\r\n            @Override\r\n            public void onTextChanged(CharSequence s, int start, int before, int count) {\r\n                alBebidas.clear();\r\n                String buscar = tempVal.getText().toString().trim().toLowerCase();\r\n                if( buscar.length()<=0){\r\n                    alBebidas.addAll(alBebidasCopia);\r\n                }else{\r\n                    for (Bebidas item: alBebidasCopia){\r\n                        if(item.getCodigo().toLowerCase().contains(buscar) ||\r\n                                item.getMarca().toLowerCase().contains(buscar) ||\r\n                                item.getPresentacion().toLowerCase().contains(buscar)){\r\n                            alBebidas.add(item);\r\n                        }\r\n                    }\r\n                    ltsBebidas.setAdapter(new AdaptadorBebidas(getApplicationContext(), alBebidas));\r\n                }\r\n            }\r\n            @Override\r\n            public void afterTextChanged(Editable s) {\r\n\r\n            }\r\n        });\r\n    }\r\n    private void mostrarMsg(String msg){\r\n        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/miprimeraaplicacion/lista_bebidas.java b/app/src/main/java/com/example/miprimeraaplicacion/lista_bebidas.java
+--- a/app/src/main/java/com/example/miprimeraaplicacion/lista_bebidas.java	(revision 8c1314920f1d488b592a114899a18554dc57a081)
++++ b/app/src/main/java/com/example/miprimeraaplicacion/lista_bebidas.java	(date 1745336546117)
+@@ -1,22 +1,39 @@
+ package com.example.miprimeraaplicacion;
+ 
++import android.Manifest;
++import android.annotation.SuppressLint;
+ import android.app.Activity;
+-import android.app.AlertDialog;
+ import android.content.Intent;
++import android.content.pm.PackageManager;
+ import android.database.Cursor;
++import android.graphics.Bitmap;
++import android.graphics.BitmapFactory;
++import android.net.Uri;
++import android.os.Build;
+ import android.os.Bundle;
++import android.provider.MediaStore;
+ import android.text.Editable;
+ import android.text.TextWatcher;
++import android.util.Log;
+ import android.view.ContextMenu;
+ import android.view.MenuInflater;
+ import android.view.MenuItem;
+ import android.view.View;
+ import android.widget.AdapterView;
++import android.widget.Button;
++import android.widget.EditText;
++import android.widget.ImageView;
++import android.widget.LinearLayout;
+ import android.widget.ListView;
+-import android.widget.TextView;
+ import android.widget.Toast;
+ 
++import androidx.activity.result.ActivityResultLauncher;
++import androidx.activity.result.contract.ActivityResultContracts;
+ import androidx.annotation.NonNull;
++import androidx.appcompat.app.AlertDialog;
++import androidx.appcompat.app.AppCompatActivity;
++import androidx.core.app.ActivityCompat;
++import androidx.core.content.ContextCompat;
+ 
+ import com.google.android.material.floatingactionbutton.FloatingActionButton;
+ 
+@@ -24,19 +41,40 @@
+ import org.json.JSONObject;
+ 
+ import java.util.ArrayList;
++import java.util.Arrays;
+ 
+-public class lista_bebidas extends Activity {
++public class lista_bebidas extends AppCompatActivity {
+     Bundle parametros = new Bundle();
+     ListView ltsBebidas;
+     Cursor cBebidas;
+     DB db;
+-    public final ArrayList<Bebidas> alBebidas = new ArrayList<Bebidas>();
+-    final ArrayList<Bebidas> alBebidasCopia = new ArrayList<Bebidas>();
++    public final ArrayList<Bebidas> alBebidas = new ArrayList<>();
++    final ArrayList<Bebidas> alBebidasCopia = new ArrayList<>();
+     JSONArray jsonArray;
+     JSONObject jsonObject;
+     Bebidas misBebidas;
+     FloatingActionButton fab;
++    obtenerDatosServidor datosServidor;
++    detectarInternet di;
+     int posicion = 0;
++    EditText txtBuscarBebidas;
++
++    // Elementos de la interfaz para crear/editar
++    EditText etCodigoCrearEditar;
++    EditText etDescripcionCrearEditar;
++    EditText etMarcaCrearEditar;
++    EditText etPresentacionCrearEditar;
++    EditText etPrecioCrearEditar;
++    Button btnAbrirGaleriaCrearEditar;
++    LinearLayout layoutFotosSeleccionadasCrearEditar;
++    Button btnGuardarCrearEditar;
++    ArrayList<String> selectedImagePaths = new ArrayList<>();
++    private static final int REQUEST_READ_EXTERNAL_STORAGE = 102;
++    private String bebidaIdEditando = null;
++
++    private ActivityResultLauncher<Intent> imagePickerLauncher;
++
++    @SuppressLint("MissingInflatedId")
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+@@ -46,10 +84,105 @@
+         db = new DB(this);
+ 
+         fab = findViewById(R.id.fabAgregarBebida);
+-        fab.setOnClickListener(view -> abriVentana());
+-        obtenerDatosBebida();
++        fab.setOnClickListener(view -> mostrarFormularioCrear());
++
++        ltsBebidas = findViewById(R.id.ltsBebidas);
++        txtBuscarBebidas = findViewById(R.id.txtBuscarBebidas);
++
++        etCodigoCrearEditar = findViewById(R.id.etCodigoCrearEditar);
++        etDescripcionCrearEditar = findViewById(R.id.etDescripcionCrearEditar);
++        etMarcaCrearEditar = findViewById(R.id.etMarcaCrearEditar);
++        etPresentacionCrearEditar = findViewById(R.id.etPresentacionCrearEditar);
++        etPrecioCrearEditar = findViewById(R.id.etPrecioCrearEditar);
++        btnAbrirGaleriaCrearEditar = findViewById(R.id.btnAbrirGaleriaCrearEditar);
++        layoutFotosSeleccionadasCrearEditar = findViewById(R.id.layoutFotosSeleccionadasCrearEditar);
++        btnGuardarCrearEditar = findViewById(R.id.btnGuardarCrearEditar);
++
++        imagePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
++                new androidx.activity.result.ActivityResultCallback<androidx.activity.result.ActivityResult>() {
++                    @Override
++                    public void onActivityResult(androidx.activity.result.ActivityResult result) {
++                        if (result.getResultCode() == Activity.RESULT_OK) {
++                            Intent data = result.getData();
++                            if (data != null) {
++                                if (data.getClipData() != null) {
++                                    int clipDataCount = data.getClipData().getItemCount();
++                                    for (int i = 0; i < clipDataCount; i++) {
++                                        Uri imageUri = data.getClipData().getItemAt(i).getUri();
++                                        String path = getPathFromUri(imageUri);
++                                        if (path != null) {
++                                            selectedImagePaths.add(path);
++                                            Log.d("Galeria", "Foto seleccionada (ClipData): " + path);
++                                            mostrarMiniaturasCrearEditar();
++                                        }
++                                    }
++                                } else if (data.getData() != null) {
++                                    Uri imageUri = data.getData();
++                                    String path = getPathFromUri(imageUri);
++                                    if (path != null) {
++                                        selectedImagePaths.add(path);
++                                        Log.d("Galeria", "Foto seleccionada (Single): " + path);
++                                        mostrarMiniaturasCrearEditar();
++                                    }
++                                }
++                                mostrarMsg("Se seleccionaron " + selectedImagePaths.size() + " fotos.");
++                            } else {
++                                mostrarMsg("No se seleccionó ninguna imagen.");
++                            }
++                        } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
++                            mostrarMsg("Selección de imagen cancelada.");
++                        }
++                    }
++                });
++
++        if (btnAbrirGaleriaCrearEditar != null) {
++            btnAbrirGaleriaCrearEditar.setOnClickListener(v -> checkPermissionsAndOpenGallery());
++        }
++
++        if (btnGuardarCrearEditar != null) {
++            btnGuardarCrearEditar.setOnClickListener(v -> guardarBebida());
++        }
++
++        // Muevo la llamada a ocultarFormularioCrearEditar() al final del onCreate()
++        listarBebidas();
+         buscarBebida();
++        ocultarFormularioCrearEditar();
+     }
++
++    private void listarBebidas() {
++        try {
++            di = new detectarInternet(this);
++            if (di.hayConexionInternet()) { //online
++                datosServidor = new obtenerDatosServidor();
++                datosServidor.setCallback(new obtenerDatosServidor.Callback() {
++                    @Override
++                    public void onRespuestaRecibida(String respuesta) {
++                        try {
++                            jsonObject = new JSONObject(respuesta);
++                            jsonArray = jsonObject.getJSONArray("rows");
++                            mostrarDatosBebida(true); // Indica que los datos son online
++                        } catch (Exception e) {
++                            mostrarMsg("Error al procesar datos del servidor: " + e.getMessage());
++                            obtenerDatosBebidaLocal(); // Fallback a datos locales en caso de error de procesamiento
++                        }
++                    }
++
++                    @Override
++                    public void onFallo(String mensajeError) {
++                        mostrarMsg("Error al obtener datos del servidor: " + mensajeError);
++                        obtenerDatosBebidaLocal(); // Fallback a datos locales en caso de fallo de la red
++                    }
++                });
++                datosServidor.execute();
++            } else { //offline
++                obtenerDatosBebidaLocal();
++                mostrarDatosBebida(false); // Indica que los datos son offline
++            }
++        } catch (Exception e) {
++            mostrarMsg("Error al listar bebidas: " + e.getMessage());
++        }
++    }
++
+     @Override
+     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+         super.onCreateContextMenu(menu, v, menuInfo);
+@@ -58,149 +191,371 @@
+         try {
+             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+             posicion = info.position;
+-            menu.setHeaderTitle(jsonArray.getJSONObject(posicion).getString("codigo"));
++            JSONObject bebidaValue;
++            if (di.hayConexionInternet() && jsonArray != null && jsonArray.length() > posicion) {
++                bebidaValue = jsonArray.getJSONObject(posicion).getJSONObject("value");
++            } else if (!di.hayConexionInternet() && alBebidas.size() > posicion) {
++                bebidaValue = convertirBebidaAJSONObject(alBebidas.get(posicion));
++            } else {
++                return; // Evitar errores si la posición es inválida
++            }
++            menu.setHeaderTitle(bebidaValue.getString("codigo"));
+         } catch (Exception e) {
+-            mostrarMsg("Error: " + e.getMessage());
++            mostrarMsg("Error en el menú contextual: " + e.getMessage());
+         }
+     }
++
++    private JSONObject convertirBebidaAJSONObject(Bebidas bebida) {
++        JSONObject jsonObject = new JSONObject();
++        try {
++            jsonObject.put("idBebida", bebida.getIdBebida());
++            jsonObject.put("codigo", bebida.getCodigo());
++            jsonObject.put("descripcion", bebida.getDescripcion());
++            jsonObject.put("marca", bebida.getMarca());
++            jsonObject.put("presentacion", bebida.getPresentacion());
++            jsonObject.put("precio", bebida.getPrecio());
++            JSONArray fotosArray = new JSONArray(bebida.getFotos());
++            jsonObject.put("fotos", fotosArray);
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        return jsonObject;
++    }
++
+     @Override
+     public boolean onContextItemSelected(@NonNull MenuItem item) {
+-        try{
+-            if( item.getItemId()==R.id.mnxNuevo){
+-                abriVentana();
+-            }else if( item.getItemId()==R.id.mnxModificar){
+-                parametros.putString("accion", "modificar");
+-                parametros.putString("bebidas", jsonArray.getJSONObject(posicion).toString());
+-                abriVentana();
+-            } else if (item.getItemId()==R.id.mnxEliminar) {
+-                eliminarBebida();
++        try {
++            JSONObject bebidaValue = null;
++            if (di.hayConexionInternet() && jsonArray != null && jsonArray.length() > posicion) {
++                bebidaValue = jsonArray.getJSONObject(posicion).getJSONObject("value");
++            } else if (!di.hayConexionInternet() && alBebidas.size() > posicion) {
++                bebidaValue = convertirBebidaAJSONObject(alBebidas.get(posicion));
++            } else {
++                return super.onContextItemSelected(item);
++            }
++
++            if (item.getItemId() == R.id.mnxNuevo) {
++                mostrarFormularioCrear();
++            } else if (item.getItemId() == R.id.mnxModificar) {
++                mostrarFormularioEditar(bebidaValue.toString());
++            } else if (item.getItemId() == R.id.mnxEliminar) {
++                eliminarBebida(bebidaValue.getString("idBebida"), bebidaValue.optString("_id"), bebidaValue.optString("_rev"));
+             }
+             return true;
+-        }catch (Exception e){
+-            mostrarMsg("Error: " + e.getMessage());
++        } catch (Exception e) {
++            mostrarMsg("Error al seleccionar item del menú: " + e.getMessage());
+             return super.onContextItemSelected(item);
+         }
+     }
+-    private void eliminarBebida(){
+-        try{
+-            String codigo = jsonArray.getJSONObject(posicion).getString("codigo");
+-            AlertDialog.Builder confirmacion = new AlertDialog.Builder(this);
+-            confirmacion.setTitle("Esta seguro de eliminar a: ");
+-            confirmacion.setMessage(codigo);
+-            confirmacion.setPositiveButton("Si", (dialog, which) -> {
+-                try {
+-                    String respuesta = db.administrar_bebidas("eliminar", new String[]{jsonArray.getJSONObject(posicion).getString("idBebida")});
+-                    if(respuesta.equals("ok")) {
+-                        obtenerDatosBebida();
+-                        mostrarMsg("Registro eliminado con exito");
+-                    }else{
+-                        mostrarMsg("Error: " + respuesta);
+-                    }
+-                }catch (Exception e){
+-                    mostrarMsg("Error: " + e.getMessage());
+-                }
+-            });
+-            confirmacion.setNegativeButton("No", (dialog, which) -> {
+-                dialog.dismiss();
+-            });
+-            confirmacion.create().show();
+-        }catch (Exception e){
+-            mostrarMsg("Error: " + e.getMessage());
++
++    private void eliminarBebida(String idBebidaLocal, String _idServidor, String _revServidor) {
++        AlertDialog.Builder confirmacion = new AlertDialog.Builder(this);
++        confirmacion.setTitle("¿Seguro que desea eliminar?");
++        confirmacion.setMessage("Código: " + idBebidaLocal);
++        confirmacion.setPositiveButton("Sí", (dialog, which) -> {
++            try {
++                if (di.hayConexionInternet() && _idServidor != null && !_idServidor.isEmpty()) { //online
++                    String url = utilidades.URL_MTO + "/" + _idServidor + "?rev=" + _revServidor;
++                    enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
++                    String respuesta = objEnviarDatosServidor.execute(new JSONObject().toString(), "DELETE", url).get();
++                    if (respuesta != null) {
++                        JSONObject respuestaJSON = new JSONObject(respuesta);
++                        if (respuestaJSON.getBoolean("ok")) {
++                            listarBebidas();
++                            mostrarMsg("Bebida eliminada del servidor.");
++                        } else {
++                            mostrarMsg("Error al eliminar del servidor: " + respuesta);
++                        }
++                    } else {
++                        mostrarMsg("Error de conexión al eliminar del servidor.");
++                    }
++                }
++                String respuestaLocal = db.administrar_bebidas("eliminar", new String[]{idBebidaLocal});
++                if (respuestaLocal.equals("ok")) {
++                    listarBebidas();
++                    mostrarMsg("Bebida eliminada localmente.");
++                } else {
++                    mostrarMsg("Error al eliminar localmente: " + respuestaLocal);
++                }
++            } catch (Exception e) {
++                mostrarMsg("Error al eliminar bebida: " + e.getMessage());
++            }
++        });
++        confirmacion.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
++        confirmacion.create().show();
++    }
++
++    private void mostrarFormularioCrear() {
++        bebidaIdEditando = null;
++        limpiarFormularioCrearEditar();
++        mostrarElementosCrearEditar();
++    }
++
++    private void mostrarFormularioEditar(String bebidaJson) {
++        mostrarElementosCrearEditar();
++        try {
++            JSONObject bebida = new JSONObject(bebidaJson);
++            bebidaIdEditando = bebida.getString("idBebida");
++            etCodigoCrearEditar.setText(bebida.getString("codigo"));
++            etDescripcionCrearEditar.setText(bebida.getString("descripcion"));
++            etMarcaCrearEditar.setText(bebida.getString("marca"));
++            etPresentacionCrearEditar.setText(bebida.getString("presentacion"));
++            etPrecioCrearEditar.setText(bebida.getString("precio"));
++            selectedImagePaths.clear();
++            JSONArray fotosArray = bebida.optJSONArray("fotos");
++            if (fotosArray != null) {
++                for (int i = 0; i < fotosArray.length(); i++) {
++                    selectedImagePaths.add(fotosArray.getString(i));
++                }
++                mostrarMiniaturasCrearEditar();
++            }
++        } catch (Exception e) {
++            mostrarMsg("Error al cargar datos para editar.");
+         }
+     }
+-    private void abriVentana(){
+-        Intent intent = new Intent(this, MainActivity.class);
+-        intent.putExtras(parametros);
+-        startActivity(intent);
++
++    private void ocultarFormularioCrearEditar() {
++        if (etCodigoCrearEditar != null) etCodigoCrearEditar.setVisibility(View.GONE);
++        if (etDescripcionCrearEditar != null) etDescripcionCrearEditar.setVisibility(View.GONE);
++        if (etMarcaCrearEditar != null) etMarcaCrearEditar.setVisibility(View.GONE);
++        if (etPresentacionCrearEditar != null) etPresentacionCrearEditar.setVisibility(View.GONE);
++        if (etPrecioCrearEditar != null) etPrecioCrearEditar.setVisibility(View.GONE);
++        if (btnAbrirGaleriaCrearEditar != null) btnAbrirGaleriaCrearEditar.setVisibility(View.GONE);
++        if (layoutFotosSeleccionadasCrearEditar != null) layoutFotosSeleccionadasCrearEditar.setVisibility(View.GONE);
++        if (btnGuardarCrearEditar != null) btnGuardarCrearEditar.setVisibility(View.GONE);
+     }
+-    private void obtenerDatosBebida(){
+-        try{
++
++    private void mostrarElementosCrearEditar() {
++        if (etCodigoCrearEditar != null) etCodigoCrearEditar.setVisibility(View.VISIBLE);
++        if (etDescripcionCrearEditar != null) etDescripcionCrearEditar.setVisibility(View.VISIBLE);
++        if (etMarcaCrearEditar != null) etMarcaCrearEditar.setVisibility(View.VISIBLE);
++        if (etPresentacionCrearEditar != null) etPresentacionCrearEditar.setVisibility(View.VISIBLE);
++        if (etPrecioCrearEditar != null) etPrecioCrearEditar.setVisibility(View.VISIBLE);
++        if (btnAbrirGaleriaCrearEditar != null) btnAbrirGaleriaCrearEditar.setVisibility(View.VISIBLE);
++        if (layoutFotosSeleccionadasCrearEditar != null) layoutFotosSeleccionadasCrearEditar.setVisibility(View.VISIBLE);
++        if (btnGuardarCrearEditar != null) btnGuardarCrearEditar.setVisibility(View.VISIBLE);
++    }
++
++    private void limpiarFormularioCrearEditar() {
++        if (etCodigoCrearEditar != null) etCodigoCrearEditar.setText("");
++        if (etDescripcionCrearEditar != null) etDescripcionCrearEditar.setText("");
++        if (etMarcaCrearEditar != null) etMarcaCrearEditar.setText("");
++        if (etPresentacionCrearEditar != null) etPresentacionCrearEditar.setText("");
++        if (etPrecioCrearEditar != null) etPrecioCrearEditar.setText("");
++        selectedImagePaths.clear();
++        mostrarMiniaturasCrearEditar();
++    }
++
++    private void guardarBebida() {
++        String codigo = (etCodigoCrearEditar != null) ? etCodigoCrearEditar.getText().toString().trim() : "";
++        String descripcion = (etDescripcionCrearEditar != null) ? etDescripcionCrearEditar.getText().toString().trim() : "";
++        String marca = (etMarcaCrearEditar != null) ? etMarcaCrearEditar.getText().toString().trim() : "";
++        String presentacion = presentacion();
++        String precio = precio();
++        String fotos = String.join(";", selectedImagePaths);
++
++        if (!codigo.isEmpty() && !descripcion.isEmpty() && !marca.isEmpty() && !presentacion().isEmpty() && !precio().isEmpty()) {
++            String respuesta;
++            if (bebidaIdEditando != null) {
++                // Modificar
++                String[] datos = {bebidaIdEditando, codigo, descripcion, marca, presentacion, precio, fotos};
++                respuesta = db.administrar_bebidas("modificar", datos);
++                if (respuesta.equals("ok")) {
++                    mostrarMsg("Bebida modificada.");
++                } else {
++                    mostrarMsg("Error al modificar: " + respuesta);
++                }
++            } else {
++                // Crear nuevo
++                String[] datos = {null, codigo, descripcion, marca, presentacion, precio, fotos};
++                respuesta = db.administrar_bebidas("nuevo", datos);
++                if (respuesta.equals("ok")) {
++                    mostrarMsg("Nueva bebida guardada.");
++                } else {
++                    mostrarMsg("Error al guardar: " + respuesta);
++                }
++            }
++            listarBebidas();
++            ocultarFormularioCrearEditar();
++        } else {
++            mostrarMsg("Por favor, complete todos los campos.");
++        }
++    }
++
++    private void mostrarMiniaturasCrearEditar() {
++        if (layoutFotosSeleccionadasCrearEditar != null) {
++            layoutFotosSeleccionadasCrearEditar.removeAllViews();
++            for (String path : selectedImagePaths) {
++                mostrarMiniaturaEnLayout(layoutFotosSeleccionadasCrearEditar, path);
++            }
++        }
++    }
++
++    private void mostrarMiniaturaEnLayout(LinearLayout layout, String path) {
++        ImageView imageView = new ImageView(this);
++        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
++        params.setMargins(0, 0, 8, 0);
++        imageView.setLayoutParams(params);
++        Bitmap bitmap = BitmapFactory.decodeFile(path);
++        imageView.setImageBitmap(bitmap);
++        layout.addView(imageView);
++    }
++
++    private void checkPermissionsAndOpenGallery() {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
++            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
++                    != PackageManager.PERMISSION_GRANTED) {
++                ActivityCompat.requestPermissions(this,
++                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
++                        REQUEST_READ_EXTERNAL_STORAGE);
++                return;
++            }
++        }
++        openGallery();
++    }
++
++    @Override
++    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull
++    int[] grantResults) {
++        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
++        if (requestCode == REQUEST_READ_EXTERNAL_STORAGE) {
++            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
++                openGallery();
++            } else {
++                mostrarMsg("Permiso de lectura de almacenamiento necesario.");
++            }
++        }
++    }
++
++    private void openGallery() {
++        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
++        intent.setType("image/*");
++        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
++        imagePickerLauncher.launch(intent);
++    }
++
++    private String getPathFromUri(Uri uri) {
++        String filePath = null;
++        String[] projection = {MediaStore.Images.Media.DATA};
++        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
++        if (cursor != null && cursor.moveToFirst()) {
++            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
++            filePath = cursor.getString(columnIndex);
++            cursor.close();
++        }
++        return filePath;
++    }
++
++    private void obtenerDatosBebidaLocal() {
++        try {
+             cBebidas = db.lista_bebidas();
+-            if(cBebidas.moveToFirst()){
+-                jsonArray = new JSONArray();
+-                do{
+-                    jsonObject = new JSONObject();
+-                    jsonObject.put("idBebida", cBebidas.getString(0));
+-                    jsonObject.put("codigo", cBebidas.getString(1));
+-                    jsonObject.put("descripcion", cBebidas.getString(2));
+-                    jsonObject.put("marca", cBebidas.getString(3));
+-                    jsonObject.put("presentacion", cBebidas.getString(4));
+-                    jsonObject.put("precio", cBebidas.getString(5));
+-                    jsonObject.put("foto", cBebidas.getString(6));
+-                    jsonArray.put(jsonObject);
++            alBebidas.clear();
++            if (cBebidas != null && cBebidas.moveToFirst()) {
++                do {
++                    String idBebida = cBebidas.getString(cBebidas.getColumnIndexOrThrow("idBebida"));
++                    String codigo = cBebidas.getString(cBebidas.getColumnIndexOrThrow("codigo"));
++                    String descripcion = cBebidas.getString(cBebidas.getColumnIndexOrThrow("descripcion"));
++                    String marca = cBebidas.getString(cBebidas.getColumnIndexOrThrow("marca"));
++                    String presentacion = cBebidas.getString(cBebidas.getColumnIndexOrThrow("presentacion"));
++                    String precio = String.valueOf(cBebidas.getDouble(cBebidas.getColumnIndexOrThrow("precio")));
++                    String fotosCadena = cBebidas.getString(cBebidas.getColumnIndexOrThrow("urlFotos"));
++                    ArrayList<String> listaFotos = new ArrayList<>(Arrays.asList(fotosCadena.split(";")));
++                    if (fotosCadena.isEmpty()) listaFotos.clear(); // Evitar lista con un solo string vacío
+ 
+-                }while(cBebidas.moveToNext());
+-                mostrarDatosBebida();
+-            }else{
+-                mostrarMsg("No hay bebidas registradas.");
+-                abriVentana();
++                    misBebidas = new Bebidas(idBebida, codigo, descripcion, marca, presentacion, precio, listaFotos);
++                    alBebidas.add(misBebidas);
++                } while (cBebidas.moveToNext());
++            } else {
++                mostrarMsg("No hay bebidas registradas localmente. Puede agregar una.");
+             }
+-        }catch (Exception e){
+-            mostrarMsg("Error: " + e.getMessage());
++            if (cBebidas != null) {
++                cBebidas.close();
++            }
++            alBebidasCopia.clear();
++            alBebidasCopia.addAll(alBebidas);
++            ltsBebidas.setAdapter(new AdaptadorBebidas(this, alBebidas));
++            registerForContextMenu(ltsBebidas);
++        } catch (Exception e) {
++            mostrarMsg("Error al obtener datos locales: " + e.getMessage());
+         }
+     }
+-    private void mostrarDatosBebida(){
+-        try{
+-            if(jsonArray.length()>0){
+-                ltsBebidas = findViewById(R.id.ltsBebidas);
+-                alBebidas.clear();
+-                alBebidasCopia.clear();
+-
+-                for (int i=0; i<jsonArray.length(); i++){
+-                    jsonObject = jsonArray.getJSONObject(i);
+-                    misBebidas = new Bebidas(
+-                            jsonObject.getString("idBebida"),
+-                            jsonObject.getString("codigo"),
+-                            jsonObject.getString("descripcion"),
+-                            jsonObject.getString("marca"),
+-                            jsonObject.getString("presentacion"),
+-                            jsonObject.getString("precio"),
+-                            jsonObject.getString("foto")
+-                    );
++
++    private void mostrarDatosBebida(boolean online) {
++        try {
++            alBebidas.clear();
++            if (online && jsonArray != null) {
++                for (int i = 0; i < jsonArray.length(); i++) {
++                    JSONObject bebidaObject = jsonArray.getJSONObject(i).getJSONObject("value");
++                    String idBebida = bebidaObject.getString("idBebida");
++                    String codigo = bebidaObject.getString("codigo");
++                    String descripcion = bebidaObject.getString("descripcion");
++                    String marca = bebidaObject.getString("marca");
++                    String presentacion = bebidaObject.getString("presentacion");
++                    String precio = String.valueOf(bebidaObject.getDouble("precio"));
++                    JSONArray fotosJsonArray = bebidaObject.optJSONArray("fotos");
++                    ArrayList<String> listaFotos = new ArrayList<>();
++                    if (fotosJsonArray != null) {
++                        for (int j = 0; j < fotosJsonArray.length(); j++) {
++                            listaFotos.add(fotosJsonArray.getString(j));
++                        }
++                    }
++                    misBebidas = new Bebidas(idBebida, codigo, descripcion, marca, presentacion, precio, listaFotos);
+                     alBebidas.add(misBebidas);
+                 }
+-                alBebidasCopia.addAll(alBebidas);
+-                ltsBebidas.setAdapter(new AdaptadorBebidas(this, alBebidas));
+-                registerForContextMenu(ltsBebidas);
+-            }else{
+-                mostrarMsg("No hay bebidas registrados.");
+-                abriVentana();
+-            }
+-        }catch (Exception e){
+-            mostrarMsg("Error: " + e.getMessage());
++            } else if (!online) {
++                // Los datos offline ya se cargaron en obtenerDatosBebidaLocal
++            }
++
++            alBebidasCopia.clear();
++            alBebidasCopia.addAll(alBebidas);
++            ltsBebidas.setAdapter(new AdaptadorBebidas(this, alBebidas));
++            registerForContextMenu(ltsBebidas);
++
++        } catch (Exception e) {
++            mostrarMsg("Error al mostrar datos de bebida: " + e.getMessage());
+         }
+     }
+-    private void buscarBebida(){
+-        TextView tempVal = findViewById(R.id.txtBuscarBebidas);
+-        tempVal.addTextChangedListener(new TextWatcher() {
++
++    private void buscarBebida() {
++        txtBuscarBebidas.addTextChangedListener(new TextWatcher() {
+             @Override
+             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+-
+             }
++
+             @Override
+             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                 alBebidas.clear();
+-                String buscar = tempVal.getText().toString().trim().toLowerCase();
+-                if( buscar.length()<=0){
++                String buscar = s.toString().trim().toLowerCase();
++                if (buscar.isEmpty()) {
+                     alBebidas.addAll(alBebidasCopia);
+-                }else{
+-                    for (Bebidas item: alBebidasCopia){
+-                        if(item.getCodigo().toLowerCase().contains(buscar) ||
++                } else {
++                    for (Bebidas item : alBebidasCopia) {
++                        if (item.getCodigo().toLowerCase().contains(buscar) ||
++                                item.getDescripcion().toLowerCase().contains(buscar) ||
+                                 item.getMarca().toLowerCase().contains(buscar) ||
+-                                item.getPresentacion().toLowerCase().contains(buscar)){
++                                item.getPresentacion().toLowerCase().contains(buscar)) {
+                             alBebidas.add(item);
+                         }
+                     }
+-                    ltsBebidas.setAdapter(new AdaptadorBebidas(getApplicationContext(), alBebidas));
+-                }
++                }
++                ltsBebidas.setAdapter(new AdaptadorBebidas(getApplicationContext(), alBebidas));
+             }
++
+             @Override
+             public void afterTextChanged(Editable s) {
+-
+             }
+         });
+     }
+-    private void mostrarMsg(String msg){
++
++    private String presentacion() {
++        return (etPresentacionCrearEditar != null) ? etPresentacionCrearEditar.getText().toString().trim() : "";
++    }
++
++    private String precio() {
++        return (etPrecioCrearEditar != null) ? etPrecioCrearEditar.getText().toString().trim() : "";
++    }
++
++    private void mostrarMsg(String msg) {
+         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
+     }
+ }
+\ No newline at end of file
+Index: app/src/main/java/com/example/miprimeraaplicacion/utilidades.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/miprimeraaplicacion/utilidades.java b/app/src/main/java/com/example/miprimeraaplicacion/utilidades.java
+new file mode 100644
+--- /dev/null	(date 1745337577878)
++++ b/app/src/main/java/com/example/miprimeraaplicacion/utilidades.java	(date 1745337577878)
+@@ -0,0 +1,14 @@
++package com.example.miprimeraaplicacion;
++
++import java.util.Base64;
++
++public class utilidades {
++    static String url_consulta = "http:// 192.168.84.58:5984/jose/_design/david";
++    static String url_mto = "http:// 192.168.84.58:5984/jose";
++    static String user = "admin";
++    static String passwd = "12345";
++    static String credencialesCodificadas = Base64.getEncoder().encodeToString((user + ":" + passwd).getBytes());
++    public String generarUnicoId(){
++        return java.util.UUID.randomUUID().toString();
++    }
++}
+\ No newline at end of file
+Index: app/src/main/java/com/example/miprimeraaplicacion/detectarInternet.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/miprimeraaplicacion/detectarInternet.java b/app/src/main/java/com/example/miprimeraaplicacion/detectarInternet.java
+new file mode 100644
+--- /dev/null	(date 1745337617424)
++++ b/app/src/main/java/com/example/miprimeraaplicacion/detectarInternet.java	(date 1745337617424)
+@@ -0,0 +1,27 @@
++package com.example.miprimeraaplicacion;
++
++import android.content.Context;
++import android.net.ConnectivityManager;
++import android.net.NetworkInfo;
++
++public class detectarInternet {
++    private Context context;
++    public detectarInternet(Context context){
++        this.context = context;
++    }
++    public boolean hayConexionInternet(){
++        ConnectivityManager connectivityManager =
++                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
++        if(connectivityManager==null) return false;
++
++        NetworkInfo[] info = connectivityManager.getAllNetworkInfo();
++        if(info==null) return false;
++
++        for(int i=0; i<info.length; i++){
++            if(info[i].getState()==NetworkInfo.State.CONNECTED){
++                return true;
++            }
++        }
++        return false;
++    }
++}
+Index: app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java b/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java
+new file mode 100644
+--- /dev/null	(date 1745337649818)
++++ b/app/src/main/java/com/example/miprimeraaplicacion/enviarDatosServidor.java	(date 1745337649818)
+@@ -0,0 +1,4 @@
++package com.example.miprimeraaplicacion;
++
++public class enviarDatosServidor {
++}

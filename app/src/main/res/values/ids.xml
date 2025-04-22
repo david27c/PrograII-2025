@@ -13,4 +13,10 @@
     <item name="fabAgregarBebida" type="id" />
     <item name="ltsBebidas" type="id" />
     <item name="txtBuscarBebidas" type="id" />
+    <item name="imgFotoProducto" type="id" />
+    <item name="btnGuardarProducto" type="id" />
+    <item name="fabListaProductos" type="id" />
+    <item name="btnAtras" type="id" />
+    <item name="btnAdelante" type="id" />
+    <item name="lblPosicion" type="id" />
 </resources>
