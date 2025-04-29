@@ -21,15 +21,11 @@ public class DB extends SQLiteOpenHelper {
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 31) { // Asumiendo que la versión actual es 1 y quieres actualizar a la versión 2
-            // Agregar la primera columna
+        if (oldVersion < 31) {
             db.execSQL("ALTER TABLE productos ADD COLUMN urlFoto1 TEXT ;");
 
-            // Agregar la segunda columna
             db.execSQL("ALTER TABLE productos ADD COLUMN urlFoto2 TEXT ;");
-            //Crear tabla actualizados
             db.execSQL("CREATE TABLE actualizado (id TEX,actualizado TEXT)");
-            //insertar datos
             db.execSQL("INSERT INTO actualizado (id,actualizado) VALUES ('0','0')");
         }
 

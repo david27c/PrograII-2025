@@ -3,12 +3,12 @@ package com.example.miprimeraaplicacion;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,7 +48,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        utls = new utilidades();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            utls = new utilidades();
+        }
         img = findViewById(R.id.imgFotoProducto);
         db = new DB(this);
         btn = findViewById(R.id.btnGuardarProducto);
@@ -148,7 +150,9 @@ public class MainActivity extends AppCompatActivity {
                 urlCompletaFoto2 = datos.getString("foto2");
                 img.setImageURI(Uri.parse(urlCompletaFoto));
             }else {
-                idProducto = utls.generarUnicoId();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    idProducto = utls.generarUnicoId();
+                }
             }
         }catch (Exception e){
             mostrarMsg("Error: "+e.getMessage());
@@ -271,10 +275,12 @@ public class MainActivity extends AppCompatActivity {
             datosProductos.put("foto2", urlCompletaFoto2);
 
             di = new detectarInternet(this);
-            if(di.hayConexionInternet()) {//online
-                //enviar los datos al servidor
+            if(di.hayConexionInternet()) {
                 enviarDatosServidor objEnviarDatos = new enviarDatosServidor(this);
-                String respuesta = objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
+                String respuesta = null;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    respuesta = objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
+                }
 
                 JSONObject respuestaJSON = new JSONObject(respuesta);
                 if(respuestaJSON.getBoolean("ok")){

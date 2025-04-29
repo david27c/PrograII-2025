@@ -2,14 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permiso para escribir en almacenamiento externo -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
 
-    <!-- Para manejar almacenamiento en versiones de Android 11 o superior -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:requestLegacyExternalStorage="true"/>
 
-    <!-- Otros permisos si es necesario -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -18,7 +15,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="parcial-II"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MiPrimeraAplicacion"
@@ -28,7 +25,7 @@
             android:exported="true"/>
 
         <activity
-            android:name=".lista_bebidas"
+            android:name=".lista_productos"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

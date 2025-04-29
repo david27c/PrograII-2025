@@ -1,9 +1,12 @@
 package com.example.miprimeraaplicacion;
 
+import static java.util.Locale.filter;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -22,6 +25,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class lista_productos extends Activity {
@@ -60,6 +65,9 @@ public class lista_productos extends Activity {
         buscarproductos();
     }
 
+    private void DatosLocalRemoto() {
+    }
+
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
@@ -83,8 +91,6 @@ public class lista_productos extends Activity {
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         try {
-
-
             if (item.getItemId() == R.id.mnxNuevo) {
                 abriVentana();
             } else if (item.getItemId() == R.id.mnxModificar) {
@@ -96,11 +102,8 @@ public class lista_productos extends Activity {
                 } else {
                     parametros.putString("accion", "modificar");
                     parametros.putString("productos", jsonArray.getJSONObject(posicion).toString());
-
                     abriVentana();
                 }
-
-
             } else if (item.getItemId() == R.id.mnxEliminar) {
                 eliminarProducto();
             }
@@ -113,14 +116,15 @@ public class lista_productos extends Activity {
 
     private void eliminarProducto() {
         try {
-            String codigo = "";
+            String codigo;
+            String idProducto;
             di = new detectarInternet(this);
             if (di.hayConexionInternet()) {
                 codigo = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("codigo");
-
+                idProducto = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idProducto");
             } else {
                 codigo = jsonArray.getJSONObject(posicion).getString("codigo");
-
+                idProducto = jsonArray.getJSONObject(posicion).getString("idProducto");
             }
 
             AlertDialog.Builder confirmacion = new AlertDialog.Builder(this);
@@ -128,19 +132,19 @@ public class lista_productos extends Activity {
             confirmacion.setMessage(codigo);
             confirmacion.setPositiveButton("Si", (dialog, which) -> {
                 try {
-
-                    if (di.hayConexionInternet()) {//online
+                    if (di.hayConexionInternet()) {
                         JSONObject datosproductos = new JSONObject();
-
                         String _id = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("_id");
                         String _rev = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("_rev");
-
-                        String url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
+                        String url = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
+                        }
                         enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
                         String respuesta = objEnviarDatosServidor.execute(datosproductos.toString(), "DELETE", url).get();
                         JSONObject respuestaJSON = new JSONObject(respuesta);
 
-                        String respuestalocal = db.administrar_productos("eliminar", new String[]{jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idProducto")});
+                        String respuestalocal = db.administrar_productos("eliminar", new String[]{idProducto});
 
                         if (respuestaJSON.getBoolean("ok") && respuestalocal.equals("ok")) {
                             listarDatos();
@@ -149,28 +153,21 @@ public class lista_productos extends Activity {
                             mostrarMsg("Error:  3" + respuesta);
                         }
                     } else {
-                        db.administrarActualizados("modificar", "verdadero", jsonArray.getJSONObject(posicion).getString("idProducto"));
+                        db.administrarActualizados("modificar", "verdadero", idProducto);
+                        String respuestalocal = db.administrar_productos("eliminar", new String[]{idProducto});
 
-                        String respuestalocal = db.administrar_productos("eliminar", new String[]{jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idProducto")});
-
-                        if ( respuestalocal.equals("ok")) {
+                        if (respuestalocal.equals("ok")) {
                             listarDatos();
                             mostrarMsg("Registro eliminado con exito");
                         } else {
                             mostrarMsg("Error:  3" + respuestalocal);
                         }
-
                     }
-
-
-                    listarDatos();
                 } catch (Exception e) {
                     mostrarMsg("Error:  5" + e.getMessage());
                 }
             });
-            confirmacion.setNegativeButton("No", (dialog, which) -> {
-                dialog.dismiss();
-            });
+            confirmacion.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
             confirmacion.create().show();
         } catch (Exception e) {
             mostrarMsg("Error:  6" + e.getMessage());
@@ -186,11 +183,9 @@ public class lista_productos extends Activity {
     private void listarDatos() {
         try {
             di = new detectarInternet(this);
-            if (di.hayConexionInternet()) {//online
-
+            if (di.hayConexionInternet()) {
                 datosServidor = new obtenerDatosServidor();
                 String respuesta = datosServidor.execute().get();
-
                 jsonObject = new JSONObject(respuesta);
                 jsonArray = jsonObject.getJSONArray("rows");
 
@@ -198,18 +193,13 @@ public class lista_productos extends Activity {
 
                 if (cproductosAuxiliar.moveToFirst()) {
                     jsonArrayAuxiliar = new JSONArray();
-
                     String falso = "falso";
 
-                    if (Objects.equals(cproductosAuxiliar.getString(1), falso) || Objects.equals(cproductosAuxiliar.getString(1), "0")) {
+                    if (Objects.equals(cproductosAuxiliar.getString(1), falso)) {
                         mostrarDatosproductos();
                     }
-
                 }
-
-
-            } else {//offline
-
+            } else {
                 obtenerDatosproductos();
             }
         } catch (Exception e) {
@@ -220,7 +210,6 @@ public class lista_productos extends Activity {
     private void obtenerDatosproductos() {
         try {
             cproductos = db.lista_productos();
-
 
             if (cproductos.moveToFirst()) {
                 jsonArray = new JSONArray();
@@ -233,14 +222,11 @@ public class lista_productos extends Activity {
                     jsonObject.put("presentacion", cproductos.getString(4));
                     jsonObject.put("precio", cproductos.getString(5));
                     jsonObject.put("foto", cproductos.getString(6));
-
-
                     jsonObject.put("foto1", cproductos.getString(7));
                     jsonObject.put("foto2", cproductos.getString(8));
 
                     jsonArray.put(jsonObject);
                 } while (cproductos.moveToNext());
-
 
                 mostrarDatosproductos();
             } else {
@@ -254,8 +240,6 @@ public class lista_productos extends Activity {
 
     private void mostrarDatosproductos() {
         try {
-
-
             if (jsonArray.length() >= 1) {
                 ltsproductos = findViewById(R.id.ltsProductos);
                 alproductos.clear();
@@ -264,30 +248,21 @@ public class lista_productos extends Activity {
                 cproductosAuxiliar = db.lista_productosActializados();
 
                 boolean respuesta = di.hayConexionInternet();
-
                 boolean results = true;
 
-                cproductosAuxiliar = db.lista_productosActializados();
                 if (cproductosAuxiliar.moveToFirst()) {
-
-
                     String verdadero = "verdadero";
-
-                    if (Objects.equals(cproductosAuxiliar.getString(1), verdadero) || Objects.equals(cproductosAuxiliar.getString(1), "0")) {
+                    if (Objects.equals(cproductosAuxiliar.getString(1), verdadero)) {
                         results = false;
                     }
                 }
 
-
                 for (int i = 0; i < jsonArray.length(); i++) {
-
                     if (respuesta && results) {
                         jsonObject = jsonArray.getJSONObject(i).getJSONObject("value");
                     } else {
-
                         jsonObject = jsonArray.getJSONObject(i);
                     }
-
 
                     misProductos = new productos(
                             jsonObject.getString("idProducto"),
@@ -299,10 +274,8 @@ public class lista_productos extends Activity {
                             jsonObject.getString("foto"),
                             jsonObject.getString("foto1"),
                             jsonObject.getString("foto2")
-
                     );
                     alproductos.add(misProductos);
-
                 }
                 alProductosCopia.addAll(alproductos);
                 ltsproductos.setAdapter(new AdaptadorProductos(this, alproductos));
@@ -320,172 +293,29 @@ public class lista_productos extends Activity {
         TextView tempVal = findViewById(R.id.txtBuscarProductos);
         tempVal.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            public void beforeTextChanged(CharSequence charSequence, int start, int count, int after) {}
 
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                ((AdaptadorProductos) ltsproductos.getAdapter()).getFilter().filter(charSequence);
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                alproductos.clear();
-                String buscar = tempVal.getText().toString().trim().toLowerCase();
-                if (buscar.length() <= 0) {
-                    alproductos.addAll(alProductosCopia);
-                } else {
-                    for (productos item : alProductosCopia) {
-                        if (item.getcodigo().toLowerCase().contains(buscar) ||
-                                item.getmarca().toLowerCase().contains(buscar) ||
-                                item.getdescripcion().toLowerCase().contains(buscar)) {
-                            alproductos.add(item);
-                        }
-                    }
-                    ltsproductos.setAdapter(new AdaptadorProductos(getApplicationContext(), alproductos));
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-            }
+            public void afterTextChanged(Editable editable) {}
         });
     }
 
-    private void mostrarMsg(String msg) {
-        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
-    }
-
-    private void DatosLocalRemoto(){
+    private void datosNube() {
         try {
-
-            di = new detectarInternet(this);
             if (di.hayConexionInternet()) {
-                cproductosAuxiliar = db.lista_productosActializados();
-                if (cproductosAuxiliar.moveToFirst()) {
-                    jsonArrayAuxiliar = new JSONArray();
-
-                    String verdadero = "verdadero";
-                    if (Objects.equals(cproductosAuxiliar.getString(1), verdadero)) {
-                    /*    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                        builder.setTitle("Datos no guardados");
-                        builder.setMessage("¿Reestablecer datos?");
-                        builder.setPositiveButton("Usar datos del dispositivo", (dialogInterface, i) -> datosDispositivo());
-                        builder.setNegativeButton("Usar datos de gurdados en la nube", (dialogInterface, i) -> datosNube());
-                        builder.show();*/
-
-                        datosNube();
-                        datosDispositivo();
-                    }
-                }
+                db.administrarActualizados("modificar", "falso", "0");
             }
         } catch (Exception e) {
-            mostrarMsg("Error: 11" + e.getMessage());
-        }
-
-    }
-    private void datosDispositivo(){
-        try{
-            for (int i = 0; i < jsonArray.length(); i++){
-                JSONObject datosproductos = new JSONObject();
-                String _id = jsonArray.getJSONObject(i).getJSONObject("value").getString("_id");
-                String _rev = jsonArray.getJSONObject(i).getJSONObject("value").getString("_rev");
-                String url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
-                enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
-                String respuesta = objEnviarDatosServidor.execute(datosproductos.toString(), "DELETE", url).get();
-            }
-            obtenerDatosproductos();
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-
-
-                jsonObject = jsonArray.getJSONObject(i);
-
-                JSONObject datosProductos = new JSONObject();
-
-                datosProductos.put("idProducto", jsonObject.getString("idProducto"));
-                datosProductos.put("codigo", jsonObject.getString("codigo"));
-                datosProductos.put("descripcion", jsonObject.getString("descripcion"));
-                datosProductos.put("marca", jsonObject.getString("marca"));
-                datosProductos.put("presentacion", jsonObject.getString("presentacion"));
-                datosProductos.put("precio", jsonObject.getString("precio"));
-                datosProductos.put("foto", jsonObject.getString("foto"));
-                datosProductos.put("foto1", jsonObject.getString("foto1"));
-                datosProductos.put("foto2", jsonObject.getString("foto2"));
-
-                alproductos.add(misProductos);
-                enviarDatosServidor objEnviarDatos = new enviarDatosServidor(this);
-                String respuesta = objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
-            }
-            db = new DB(this);
-            String res =   db.administrarActualizados("modificar", "falso","0");
-            mostrarMsg(res + " Datos actualizados con exito");
-            listarDatos();
-        } catch (Exception e) {
-            mostrarMsg("Error: 101" + e.getMessage());
-        }
-
-    }
-
-    public void datosNube(){
-        try{
-            di = new detectarInternet(this);
-            if(di.hayConexionInternet()){
-                db = new DB(this);
-                obtenerDatosproductosmod();
-
-                datosServidor = new obtenerDatosServidor();
-                String respuestaServido = datosServidor.execute().get();
-
-                jsonObject = new JSONObject(respuestaServido);
-                jsonArray = jsonObject.getJSONArray("rows");
-
-                for (int i = 0; i < jsonArray.length(); i++) {
-
-                    String idProducto = jsonArray.getJSONObject(i).getJSONObject("value").getString("idProducto");
-
-                    String codigo = jsonArray.getJSONObject(i).getJSONObject("value").getString("codigo");
-                    String descripcion = jsonArray.getJSONObject(i).getJSONObject("value").getString("descripcion");
-                    String marca = jsonArray.getJSONObject(i).getJSONObject("value").getString("marca");
-                    String presentacion = jsonArray.getJSONObject(i).getJSONObject("value").getString("presentacion");
-                    String precio = jsonArray.getJSONObject(i).getJSONObject("value").getString("precio");
-                    String foto = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto");
-                    String foto1 = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto1");
-                    String foto2 = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto2");
-
-                    for (int index = 0; index < jsonArrayAuxiliar.length()-1; index++) {
-                        jsonObjectAuxiliar = jsonArrayAuxiliar.getJSONObject(index);
-
-                        if (jsonArray.getJSONObject(i).getJSONObject("value").getString("id") != jsonObjectAuxiliar.getString("idProducto")){
-                            String[] datos = {idProducto, codigo, descripcion, marca, presentacion, precio, foto,foto1,foto2};
-                            String respuesta = db.administrar_productos("nuevo", datos);
-                        }
-                    }
-
-                }
-            }
-
-
-        } catch (Exception e) {
-            mostrarMsg("Error: 10" + e.getMessage());
-        }
-
-    }
-
-    private void obtenerDatosproductosmod() {
-        try {
-            cproductosAuxiliar = db.lista_productosActializados();
-
-            if (cproductosAuxiliar.moveToFirst()) {
-                jsonArrayAuxiliar = new JSONArray();
-                do {
-                    jsonObjectAuxiliar = new JSONObject();
-                    jsonObjectAuxiliar.put("id", cproductosAuxiliar.getString(0));
-                    jsonObjectAuxiliar.put("actualizado", cproductosAuxiliar.getString(1));
-                    jsonArrayAuxiliar.put(jsonObjectAuxiliar);
-                } while (cproductosAuxiliar.moveToNext());
-
-            }
-        } catch (Exception e) {
-            mostrarMsg("Error:  8" + e.getMessage());
+            mostrarMsg("Error:  10" + e.getMessage());
         }
     }
 
+    private void mostrarMsg(String mensaje) {
+        Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show();
+    }
 }

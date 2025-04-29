@@ -33,9 +33,6 @@ public class obtenerDatosServidor extends AsyncTask<Void, Void, String> {
         return null;
     }
 
-    public void setCallback(BebidaManager.ServerCallback<String> serverCallback) {
-    }
-
     public interface Callback {
         void onRespuestaRecibida(String respuesta);
         void onFallo(String mensajeError);

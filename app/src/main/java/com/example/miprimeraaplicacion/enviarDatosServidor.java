@@ -96,7 +96,4 @@ public class enviarDatosServidor extends AsyncTask<String, String, String> {
         }
         return jsonResponse;
     }
-
-    public void setCallback(BebidaManager.ServerCallback<String> serverCallback) {
-    }
 }

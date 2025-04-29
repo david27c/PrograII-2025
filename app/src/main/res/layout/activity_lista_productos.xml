@@ -5,11 +5,11 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".lista_productos">
+    tools:context=".AdaptadorProductos">
 
     <EditText
         android:id="@+id/txtBuscarProductos"
-        android:hint="Buscar amigos"
+        android:hint="@string/buscar_productos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
     <ListView

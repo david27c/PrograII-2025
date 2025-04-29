@@ -22,4 +22,9 @@
     <string name="guardar">Guardar</string>
     <string name="seleccionar_fotos">Seleccionar Fotos</string>
     <string name="guardar_producto">Guardar Producto</string>
+    <string name="error_en_adaptadorproductos">"Error en AdaptadorProductos: "</string>
+    <string name="buscar_productos">Buscar productos</string>
+    <string name="adelante">Adelante</string>
+    <string name="atras">Atras</string>
+    <string name="prov0001">PROV0001</string>
 </resources>
