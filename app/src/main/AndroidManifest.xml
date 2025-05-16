@@ -20,7 +20,8 @@
             android:exported="true"/>
         <activity
             android:name=".lista_amigos"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="MissingClass">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
