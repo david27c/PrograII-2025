@@ -3,6 +3,7 @@ package com.example.miprimeraaplicacion;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStream;
