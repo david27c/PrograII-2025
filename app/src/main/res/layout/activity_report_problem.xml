@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pastel_green"
+    tools:context=".activities.Main.ReportProblemActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Reportar Nuevo Problema"
+            android:textColor="@color/dark_gray"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="@drawable/rounded_edittext"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:id="@+id/report_image_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                android:contentDescription="Vista previa de imagen del reporte"/>
+
+            <VideoView
+                android:id="@+id/report_video_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/no_media_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Toca para agregar imagen o video"
+                android:textColor="@color/dark_gray"
+                android:textSize="16sp"/>
+        </FrameLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/take_photo_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tomar Foto"
+                android:backgroundTint="@color/strong_pastel_blue"
+                android:textColor="@color/white"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/select_gallery_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Seleccionar de Galería"
+                android:backgroundTint="@color/strong_pastel_blue"
+                android:textColor="@color/white"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/report_title_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_edittext"
+            android:hint="Título corto del problema"
+            android:padding="12dp"
+            android:inputType="textCapSentences"
+            android:textColor="@color/dark_gray"
+            android:textColorHint="@color/dark_gray"
+            android:layout_marginBottom="16dp"/>
+
+        <EditText
+            android:id="@+id/report_description_et"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:background="@drawable/rounded_edittext"
+            android:hint="Descripción detallada del problema..."
+            android:gravity="top"
+            android:padding="12dp"
+            android:inputType="textMultiLine"
+            android:textColor="@color/dark_gray"
+            android:textColorHint="@color/dark_gray"
+            android:layout_marginBottom="16dp"/>
+
+        <Spinner
+            android:id="@+id/report_type_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_edittext"
+            android:padding="8dp"
+            android:spinnerMode="dropdown"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/location_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ubicación: Obteniendo GPS..."
+            android:textColor="@color/dark_gray"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"/>
+
+        <CheckBox
+            android:id="@+id/report_authorities_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="¿Reportar a autoridades relevantes?"
+            android:textColor="@color/dark_gray"
+            android:layout_marginBottom="24dp"/>
+
+        <Button
+            android:id="@+id/send_report_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enviar Reporte"
+            android:backgroundTint="@color/strong_pastel_blue"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:padding="12dp"
+            android:layout_marginBottom="30dp"/>
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:layout_gravity="center_horizontal"/>
+
+    </LinearLayout>
+</ScrollView>

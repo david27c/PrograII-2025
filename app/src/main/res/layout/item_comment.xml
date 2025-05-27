@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@drawable/rounded_edittext"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/comment_author_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nombre de Usuario"
+        android:textStyle="bold"
+        android:textColor="@color/dark_gray"
+        android:textSize="14sp"/>
+
+    <TextView
+        android:id="@+id/comment_text_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Este es un comentario de ejemplo sobre el reporte."
+        android:textColor="@color/dark_gray"
+        android:textSize="14sp"
+        android:layout_marginTop="4dp"/>
+
+    <TextView
+        android:id="@+id/comment_date_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hace 5 minutos"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="12sp"
+        android:layout_marginTop="4dp"/>
+
+</LinearLayout>
