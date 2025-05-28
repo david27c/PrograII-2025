@@ -3,38 +3,40 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28"/> <application
-    android:allowBackup="true"
-    android:dataExtractionRules="@xml/data_extraction_rules"
-    android:fullBackupContent="@xml/backup_rules"
-    android:icon="@mipmap/ic_launcher"
-    android:label="@string/app_name"
-    android:roundIcon="@mipmap/ic_launcher_round"
-    android:supportsRtl="true"
-    android:theme="@style/Theme.DenunciaCiudadana"
-    tools:targetApi="31">
+        android:maxSdkVersion="28" />
 
-    <activity
-        android:name=".activities.Auth.LoginActivity"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-    </activity>
-    <activity android:name=".activities.Auth.RegisterActivity" />
-    <activity android:name=".activities.Main.HomeActivity" />
-    <activity android:name=".activities.Main.ReportProblemActivity" />
-    <activity android:name=".activities.DetailReportActivity" />
-    <activity android:name=".activities.IndividualChatActivity" />
-    <service
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MiPrimeraAplicacion"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".activities.Auth.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".activities.Auth.RegisterActivity" />
+
+        <activity android:name=".activities.Main.HomeActivity" />
+        <activity android:name=".activities.Main.ReportProblemActivity" />
+        <activity android:name=".activities.DetailReportActivity" />
+        <activity android:name=".activities.IndividualChatActivity" />
+        <activity android:name=".activities.SettingsActivity" />
+        <activity android:name=".activities.EditProfileActivity" /> <service
         android:name=".services.MyFirebaseMessagingService"
         android:exported="false">
         <intent-filter>
@@ -42,6 +44,6 @@
         </intent-filter>
     </service>
 
-</application>
+    </application>
 
 </manifest>

@@ -3,57 +3,58 @@ package com.example.miprimeraaplicacion;
 public class User {
     private String uid;
     private String fullName;
-    private String username;
     private String email;
-    private String profileImageUrl; // Opcional
+    private String phoneNumber; // Nuevo campo
+    private String profileImageUrl; // Nuevo campo
 
     public User() {
         // Constructor vacío requerido para Firestore
     }
 
-    public User(String uid, String fullName, String username, String email, String profileImageUrl) {
+    public User(String uid, String fullName, String email, String phoneNumber, String profileImageUrl) {
         this.uid = uid;
         this.fullName = fullName;
-        this.username = username;
         this.email = email;
+        this.phoneNumber = phoneNumber;
         this.profileImageUrl = profileImageUrl;
     }
 
-    // Getters y Setters
+    // Getters
     public String getUid() {
         return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
     }
 
     public String getFullName() {
         return fullName;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getEmail() {
         return email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    // Setters
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public String getProfileImageUrl() {
-        return profileImageUrl;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public void setProfileImageUrl(String profileImageUrl) {
