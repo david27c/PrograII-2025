@@ -311,7 +311,7 @@ public class ReportProblemActivity extends AppCompatActivity {
         }
 
         // Crear un objeto Reporte
-        Report newReport = new Report(
+        com.example.miprimeraaplicacion.Report newReport = new com.example.miprimeraaplicacion.Report(
                 UUID.randomUUID().toString(), // ID único para el reporte
                 currentUser.getUid(),
                 currentUser.getEmail(), // O el nombre de usuario/nombre completo si lo obtienes de Firestore
@@ -353,7 +353,7 @@ public class ReportProblemActivity extends AppCompatActivity {
             return;
         }
 
-        ReporteLocal localReport = new ReporteLocal(
+        com.example.miprimeraaplicacion.ReporteLocal localReport = new com.example.miprimeraaplicacion.ReporteLocal(
                 title,
                 description,
                 mediaUri != null ? mediaUri.toString() : null, // Guarda la URI local del archivo
@@ -366,7 +366,7 @@ public class ReportProblemActivity extends AppCompatActivity {
         );
 
         // Ejecutar la operación de base de datos en un hilo separado
-        AppDatabase.getDatabase(this).reporteDao().insert(localReport);
+        com.example.miprimeraaplicacion.AppDatabase.getDatabase(this).reporteDao().insert(localReport);
         Toast.makeText(this, "No hay conexión. Reporte guardado localmente.", Toast.LENGTH_LONG).show();
         progressBar.setVisibility(View.GONE);
         sendReportButton.setEnabled(true);

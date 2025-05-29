@@ -11,9 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.squareup.picasso.Picasso;
 import com.example.miprimeraaplicacion.R;
-import com.example.miprimeraaplicacion.models.Report;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -49,7 +47,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
 
         holder.titleTextView.setText(report.getTitle());
         holder.locationTextView.setText(String.format("Ubicación: %.4f, %.4f", report.getLatitude(), report.getLongitude()));
-        holder.statusTextView.setText("Estado: " + capitalizeFirstLetter(report.getStatus()));
+        holder.statusTextView.setText("Estado: " + capitalizeFirstLetter(report.()));
 
         // Cargar imagen si existe
         if (report.getMediaUrl() != null && !report.getMediaUrl().isEmpty()) {

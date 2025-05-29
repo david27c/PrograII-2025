@@ -10,10 +10,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.squareup.picasso.Picasso;
-import com.example.miprimeraaplicacion.R;
-import com.example.miprimeraaplicacion.models.ChatTopic;
 
+import com.example.miprimeraaplicacion.R;
+
+
+import java.io.ObjectInputStream;
 import java.util.List;
 
 public class ChatTopicAdapter extends RecyclerView.Adapter<ChatTopicAdapter.ChatTopicViewHolder> {
@@ -47,8 +48,9 @@ public class ChatTopicAdapter extends RecyclerView.Adapter<ChatTopicAdapter.Chat
         holder.lastMessageTextView.setText(topic.getLastMessage());
 
         if (topic.getIconUrl() != null && !topic.getIconUrl().isEmpty()) {
+            ObjectInputStream.GetField Picasso = null;
             Picasso.get().load(topic.getIconUrl())
-                    .placeholder(R.drawable.ic_chat) // Icono por defecto si no carga
+                    .placeholder(R.drawable.ic_default_profile) // Icono por defecto si no carga
                     .error(R.drawable.ic_chat)
                     .into(holder.topicIcon);
         } else {

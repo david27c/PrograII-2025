@@ -1,5 +1,6 @@
 package com.example.miprimeraaplicacion;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.example.miprimeraaplicacion.R;
 import com.example.miprimeraaplicacion.activities.IndividualChatActivity;
 import com.example.miprimeraaplicacion.adapters.ChatTopicAdapter;
 import com.example.miprimeraaplicacion.models.ChatTopic;
@@ -23,7 +23,7 @@ import com.example.miprimeraaplicacion.models.ChatTopic;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommunityChatFragment extends Fragment implements ChatTopicAdapter.OnChatTopicClickListener {
+public class CommunityChatFragment extends Fragment implements com.example.miprimeraaplicacion.ChatTopicAdapter.OnChatTopicClickListener {
 
     private RecyclerView communityChatRecyclerView;
     private ChatTopicAdapter chatTopicAdapter;
@@ -32,6 +32,7 @@ public class CommunityChatFragment extends Fragment implements ChatTopicAdapter.
     private Button authoritiesListBtn;
 
     private FirebaseFirestore db;
+    private RecyclerView.Adapter ChatTopicAdapter;
 
     public CommunityChatFragment() {
         // Constructor público vacío requerido
@@ -45,7 +46,7 @@ public class CommunityChatFragment extends Fragment implements ChatTopicAdapter.
         db = FirebaseFirestore.getInstance();
 
         initViews(view);
-        setupRecyclerView();
+        setupRecyclerView(ChatTopicAdapter);
         loadChatTopics();
 
         authoritiesListBtn.setOnClickListener(v -> {
@@ -62,11 +63,11 @@ public class CommunityChatFragment extends Fragment implements ChatTopicAdapter.
         authoritiesListBtn = view.findViewById(R.id.authorities_list_btn);
     }
 
-    private void setupRecyclerView() {
+    private void setupRecyclerView(RecyclerView.Adapter ChatTopicAdapter) {
         chatTopicList = new ArrayList<>();
         chatTopicAdapter = new ChatTopicAdapter(getContext(), chatTopicList, this);
         communityChatRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        communityChatRecyclerView.setAdapter(chatTopicAdapter);
+        communityChatRecyclerView.setAdapter(ChatTopicAdapter);
     }
 
     private void loadChatTopics() {
@@ -100,7 +101,23 @@ public class CommunityChatFragment extends Fragment implements ChatTopicAdapter.
         // Abrir la actividad de chat individual para el tema seleccionado
         Intent intent = new Intent(getContext(), IndividualChatActivity.class);
         intent.putExtra("topicId", topic.getId());
-        intent.putExtra("topicName", topic.getTitle()); // Pasa el título del tema para mostrar en la barra
+        Intent topicName = intent.putExtra("topicName", topic.getTitle());// Pasa el título del tema para mostrar en la barra
         startActivity(intent);
+    }
+
+    @Override
+    public void onChatTopicClick(com.example.miprimeraaplicacion.ChatTopic topic) {
+        
+    }
+
+    private class ChatTopicAdapter {
+        public ChatTopicAdapter(Context context, List<ChatTopic> chatTopicList, CommunityChatFragment communityChatFragment) {
+        }
+    }
+
+    private class IndividualChatActivity {
+    }
+
+    private class ChatTopic {
     }
 }

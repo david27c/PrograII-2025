@@ -54,11 +54,11 @@ public class HomeActivity extends AppCompatActivity {
                     // No se carga ningún fragmento, por lo que regresamos true
                     return true;
                 } else if (itemId == R.id.nav_my_reports) {
-                    selectedFragment = new MyReportsFragment();
+                    selectedFragment = new com.example.miprimeraaplicacion.MyReportsFragment();
                 } else if (itemId == R.id.nav_community_chat) {
-                    selectedFragment = new CommunityChatFragment();
+                    selectedFragment = new com.example.miprimeraaplicacion.CommunityChatFragment();
                 } else if (itemId == R.id.nav_profile) {
-                    selectedFragment = new ProfileFragment();
+                    selectedFragment = new com.example.miprimeraaplicacion.ProfileFragment();
                 }
                 // Si tienes más de 5 elementos en la barra, considera un menú desplegable o menos iconos.
                 // Si añades Notificaciones (nav_notifications) o Configuración (nav_settings) a la barra,
