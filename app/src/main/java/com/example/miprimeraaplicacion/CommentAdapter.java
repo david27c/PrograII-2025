@@ -7,10 +7,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.miprimeraaplicacion.R;
-import com.example.miprimeraaplicacion.models.Comment;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -20,12 +16,9 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     private List<Comment> commentList;
 
+    // Constructor único y correcto para el adaptador
     public CommentAdapter(List<Comment> commentList) {
         this.commentList = commentList;
-    }
-
-    public CommentAdapter(List<com.example.miprimeraaplicacion.Comment> commentList) {
-
     }
 
     @NonNull
@@ -41,6 +34,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         holder.authorTextView.setText(comment.getAuthorName());
         holder.commentTextView.setText(comment.getText());
 
+        // Formato de fecha para mostrar el comentario
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault());
         holder.dateTextView.setText(sdf.format(new Date(comment.getTimestamp())));
     }
@@ -60,6 +54,31 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             authorTextView = itemView.findViewById(R.id.comment_author_tv);
             commentTextView = itemView.findViewById(R.id.comment_text_tv);
             dateTextView = itemView.findViewById(R.id.comment_date_tv);
+        }
+    }
+
+    // Método para actualizar los datos del adaptador (útil si los comentarios cambian dinámicamente)
+    public void updateComments(List<Comment> newCommentList) {
+        this.commentList = newCommentList;
+        notifyDataSetChanged(); // Notifica al RecyclerView que los datos han cambiado
+    }
+
+    private class Comment {
+        public int getAuthorName() {
+            int i = 0;
+            return i;
+        }
+
+        public int getText() {
+            int i = 0;
+            return i;
+        }
+
+        public long getTimestamp() {
+            return 0;
+        }
+
+        public void setTimestamp(long timestamp) {
         }
     }
 }

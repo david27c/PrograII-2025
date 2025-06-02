@@ -1,16 +1,15 @@
 package com.example.miprimeraaplicacion;
 
 public class ChatTopic {
-    private String id; // ID del documento en Firestore
+    private String id;
     private String title;
-    private String description; // Opcional
-    private String lastMessage; // Contenido del último mensaje
-    private long lastMessageTimestamp; // Timestamp del último mensaje
-    private String iconUrl; // URL del icono del tema
-    private int unreadMessagesCount; // Contador de mensajes no leídos (esto debería ser manejado por el cliente)
+    private String description;
+    private String lastMessage;
+    private long lastMessageTimestamp;
+    private String iconUrl;
+    private int unreadMessagesCount;
 
     public ChatTopic() {
-        // Constructor vacío requerido para Firestore
     }
 
     public ChatTopic(String id, String title, String description, String lastMessage, long lastMessageTimestamp, String iconUrl, int unreadMessagesCount) {
@@ -23,7 +22,6 @@ public class ChatTopic {
         this.unreadMessagesCount = unreadMessagesCount;
     }
 
-    // Getters y Setters
     public String getId() {
         return id;
     }

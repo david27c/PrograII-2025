@@ -1,3 +1,8 @@
+val implementation: Unit
+    get() {
+        TODO()
+    }
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -52,4 +57,5 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-messaging"))
     implementation(platform("com.google.firebase:firebase-storage"))
     implementation(platform("com.firebaseui:firebase-ui-storage:9.0.0"))
+    implementation (platform("com.squareup.picasso:picasso:2.71828"))
 }
