@@ -4,76 +4,65 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.example.miprimeraaplicacion.R;
-import com.example.miprimeraaplicacion.database.AppDatabase;
-import com.example.miprimeraaplicacion.database.ReporteLocal;
-import com.example.miprimeraaplicacion.models.Report; // Necesitarás crear esta clase
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class ReportProblemActivity extends AppCompatActivity {
+public abstract class ReportProblemActivity extends AppCompatActivity implements LocationListener {
 
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final int REQUEST_PICK_IMAGE = 2;
     private static final int PERMISSION_REQUEST_CODE = 100;
-    private static final int PICK_IMAGE_REQUEST = 1;
-    private static final int PICK_VIDEO_REQUEST = 2;
-    private static final int TAKE_PHOTO_REQUEST = 3;
-    private static final int TAKE_VIDEO_REQUEST = 4;
 
-    private EditText titleEditText, descriptionEditText;
-    private Spinner typeSpinner;
-    private TextView locationTextView;
-    private CheckBox reportAuthoritiesCheckBox;
-    private Button sendReportButton, takePhotoButton, selectGalleryButton;
-    private ImageView reportImagePreview;
-    private VideoView reportVideoPreview;
-    private TextView noMediaText;
-    private ProgressBar progressBar;
+    private EditText editTextDescription;
+    private Button buttonTakePhoto, buttonSelectGallery, buttonSendReport;
+    private ImageView imageViewPreview;
+    private Spinner spinnerReportType;
+    private TextView textViewLocation;
+    private CheckBox checkBoxReportToAuthorities;
+    private ProgressBar progressBarReport;
+    private BottomNavigationView bottomNavigationView;
+
+    private Uri imageUri;
+    private LocationManager locationManager;
+    private String currentLocation = "Ubicación desconocida";
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private StorageReference storageRef;
-    private FusedLocationProviderClient fusedLocationClient;
-
-    private Uri mediaUri; // URI del archivo multimedia (imagen o video)
-    private String mediaType; // "image" o "video"
-    private Location currentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,127 +71,118 @@ public class ReportProblemActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        storageRef = FirebaseStorage.getInstance().getReference("report_media");
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        storageRef = FirebaseStorage.getInstance().getReference();
 
-        initViews();
-        setupSpinner();
-        checkPermissionsAndGetLocation();
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        takePhotoButton.setOnClickListener(v -> showMediaSourceDialog(true)); // True para cámara
-        selectGalleryButton.setOnClickListener(v -> showMediaSourceDialog(false)); // False para galería
-        sendReportButton.setOnClickListener(v -> sendReport());
-    }
+        editTextDescription = findViewById(R.id.editTextDescription);
+        buttonTakePhoto = findViewById(R.id.buttonTakePhoto);
+        buttonSelectGallery = findViewById(R.id.buttonSelectGallery);
+        buttonSendReport = findViewById(R.id.buttonSendReport);
+        imageViewPreview = findViewById(R.id.imageViewPreview);
+        spinnerReportType = findViewById(R.id.spinnerReportType);
+        textViewLocation = findViewById(R.id.textViewLocation);
+        checkBoxReportToAuthorities = findViewById(R.id.checkBoxReportToAuthorities);
+        progressBarReport = findViewById(R.id.progressBarReport);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-    private void initViews() {
-        titleEditText = findViewById(R.id.report_title_et);
-        descriptionEditText = findViewById(R.id.report_description_et);
-        typeSpinner = findViewById(R.id.report_type_spinner);
-        locationTextView = findViewById(R.id.location_tv);
-        reportAuthoritiesCheckBox = findViewById(R.id.report_authorities_checkbox);
-        sendReportButton = findViewById(R.id.send_report_button);
-        takePhotoButton = findViewById(R.id.take_photo_button);
-        selectGalleryButton = findViewById(R.id.select_gallery_button);
-        reportImagePreview = findViewById(R.id.report_image_preview);
-        reportVideoPreview = findViewById(R.id.report_video_preview);
-        noMediaText = findViewById(R.id.no_media_text);
-        progressBar = findViewById(R.id.progress_bar);
-    }
-
-    private void setupSpinner() {
-        String[] reportTypes = {"Baches", "Basura", "Agua Potable", "Electricidad", "Seguridad", "Transporte", "Otros"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, reportTypes);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        typeSpinner.setAdapter(adapter);
-    }
-
-    private void showMediaSourceDialog(boolean fromCamera) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Seleccionar Tipo de Contenido");
-        String[] options = {"Imagen", "Video"};
-        builder.setItems(options, (dialog, which) -> {
-            if (which == 0) { // Imagen
-                if (fromCamera) {
-                    dispatchTakePictureIntent();
-                } else {
-                    openImageChooser();
+        // Configurar la navegación inferior
+        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int itemId = item.getItemId();
+                if (itemId == R.id.nav_home) {
+                    startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
+                    finish();
+                    return true;
+                } else if (itemId == R.id.nav_report) {
+                    // Ya estamos en ReportProblemActivity
+                    return true;
+                } else if (itemId == R.id.nav_my_reports) {
+                    startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
+                    finish();
+                    return true;
+                } else if (itemId == R.id.nav_chat) {
+                    startActivity(new Intent(ReportProblemActivity.this, CommunityChatActivity.class));
+                    finish();
+                    return true;
+                } else if (itemId == R.id.nav_profile) {
+                    startActivity(new Intent(ReportProblemActivity.this, ProfileActivity.class));
+                    finish();
+                    return true;
+                } else if (itemId == R.id.nav_notifications) {
+                    startActivity(new Intent(ReportProblemActivity.this, NotificationsActivity.class));
+                    finish();
+                    return true;
+                } else if (itemId == R.id.nav_settings) {
+                    startActivity(new Intent(ReportProblemActivity.this, SettingsActivity.class));
+                    finish();
+                    return true;
                 }
-            } else { // Video
-                if (fromCamera) {
-                    dispatchTakeVideoIntent();
-                } else {
-                    openVideoChooser();
-                }
+                return false;
             }
         });
-        builder.show();
+        // Asegurarse de que el ítem "Reportar" esté seleccionado al inicio
+        bottomNavigationView.setSelectedItemId(R.id.nav_report);
+
+        // Listeners para botones de imagen/video
+        buttonTakePhoto.setOnClickListener(v -> checkPermissionsAndDispatchTakePictureIntent());
+        buttonSelectGallery.setOnClickListener(v -> checkPermissionsAndPickImage());
+
+        // Listener para el botón Enviar Reporte
+        buttonSendReport.setOnClickListener(v -> sendReport());
+
+        // Iniciar la obtención de ubicación
+        requestLocationUpdates();
     }
 
-    private void openImageChooser() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Seleccionar Imagen"), PICK_IMAGE_REQUEST);
-    }
-
-    private void openVideoChooser() {
-        Intent intent = new Intent();
-        intent.setType("video/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Seleccionar Video"), PICK_VIDEO_REQUEST);
+    private void checkPermissionsAndDispatchTakePictureIntent() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSION_REQUEST_CODE);
+        } else {
+            dispatchTakePictureIntent();
+        }
     }
 
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, TAKE_PHOTO_REQUEST);
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
     }
 
-    private void dispatchTakeVideoIntent() {
-        Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-        if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takeVideoIntent, TAKE_VIDEO_REQUEST);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK && data != null) {
-            if (requestCode == PICK_IMAGE_REQUEST || requestCode == TAKE_PHOTO_REQUEST) {
-                mediaUri = data.getData();
-                mediaType = "image";
-                reportImagePreview.setVisibility(View.VISIBLE);
-                reportVideoPreview.setVisibility(View.GONE);
-                noMediaText.setVisibility(View.GONE);
-                reportImagePreview.setImageURI(mediaUri);
-            } else if (requestCode == PICK_VIDEO_REQUEST || requestCode == TAKE_VIDEO_REQUEST) {
-                mediaUri = data.getData();
-                mediaType = "video";
-                reportVideoPreview.setVisibility(View.VISIBLE);
-                reportImagePreview.setVisibility(View.GONE);
-                noMediaText.setVisibility(View.GONE);
-                reportVideoPreview.setVideoURI(mediaUri);
-                reportVideoPreview.start(); // Auto-play video preview
-            }
-        }
-    }
-
-    private void checkPermissionsAndGetLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-
+    private void checkPermissionsAndPickImage() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.CAMERA,
-                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE // Para guardar archivos de cámara en versiones antiguas de Android
-                    }, PERMISSION_REQUEST_CODE);
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    PERMISSION_REQUEST_CODE);
         } else {
-            getLocation();
+            pickImageFromGallery();
+        }
+    }
+
+    private void pickImageFromGallery() {
+        Intent pickPhotoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(pickPhotoIntent, REQUEST_PICK_IMAGE);
+    }
+
+    private void requestLocationUpdates() {
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
+        } else {
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, this);
+            } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, this);
+            } else {
+                textViewLocation.setText("GPS deshabilitado. No se pudo obtener la ubicación.");
+                Toast.makeText(this, "Por favor, habilita el GPS para obtener tu ubicación.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -210,175 +190,171 @@ public class ReportProblemActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            boolean allPermissionsGranted = true;
-            for (int result : grantResults) {
-                if (result != PackageManager.PERMISSION_GRANTED) {
-                    allPermissionsGranted = false;
-                    break;
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permiso concedido, intenta nuevamente la operación
+                if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    requestLocationUpdates();
+                } else if (permissions[0].equals(Manifest.permission.CAMERA) || permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    checkPermissionsAndDispatchTakePictureIntent();
+                } else if (permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    checkPermissionsAndPickImage();
                 }
-            }
-            if (allPermissionsGranted) {
-                getLocation();
             } else {
-                Toast.makeText(this, "Permisos denegados. Algunas funcionalidades no estarán disponibles.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Permisos denegados. Algunas funcionalidades no estarán disponibles.", Toast.LENGTH_SHORT).show();
+                if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    textViewLocation.setText("Permiso de ubicación denegado.");
+                }
             }
         }
     }
 
-    private void getLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(this, location -> {
-                        if (location != null) {
-                            currentLocation = location;
-                            locationTextView.setText("Ubicación: " + String.format("%.4f", location.getLatitude()) + ", " + String.format("%.4f", location.getLongitude()));
-                        } else {
-                            locationTextView.setText("Ubicación: No disponible. Asegúrate de tener el GPS activado.");
-                        }
-                    });
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_IMAGE_CAPTURE && data != null) {
+                Bundle extras = data.getExtras();
+                // Si la imagen viene como bitmap, conviértela a Uri o guárdala temporalmente
+                // Para simplificar, asumiremos que data.getData() contiene la Uri si es una foto
+                // Para fotos tomadas, a veces se necesita guardar el bitmap en un archivo y obtener la Uri.
+                // Aquí un ejemplo simplificado para mostrar la imagen:
+                // Bitmap imageBitmap = (Bitmap) extras.get("data");
+                // imageViewPreview.setImageBitmap(imageBitmap);
+                // imageViewPreview.setVisibility(View.VISIBLE);
+                // Puedes guardar este bitmap en un archivo temporal para obtener una URI y luego subirlo a Storage.
+                Toast.makeText(this, "Foto tomada (se necesita guardar y obtener URI real)", Toast.LENGTH_SHORT).show();
+                // Por ahora, para pruebas:
+                // imageUri = data.getData(); // Esto no siempre funciona para ACTION_IMAGE_CAPTURE
+                imageViewPreview.setVisibility(View.GONE); // Ocultar hasta tener una URI real
+            } else if (requestCode == REQUEST_PICK_IMAGE && data != null && data.getData() != null) {
+                imageUri = data.getData();
+                imageViewPreview.setImageURI(imageUri);
+                imageViewPreview.setVisibility(View.VISIBLE);
+            }
         }
+    }
+
+    @Override
+    public void onLocationChanged(@NonNull Location location) {
+        currentLocation = "Lat: " + location.getLatitude() + ", Lon: " + location.getLongitude();
+        textViewLocation.setText(currentLocation);
+        // Puedes detener las actualizaciones de ubicación si solo necesitas una vez
+        // locationManager.removeUpdates(this);
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+    @Override
+    public void onProviderEnabled(@NonNull String provider) {
+        textViewLocation.setText("Obteniendo ubicación...");
+    }
+
+    @Override
+    public void onProviderDisabled(@NonNull String provider) {
+        textViewLocation.setText("GPS deshabilitado.");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (locationManager != null) {
+            locationManager.removeUpdates(this); // Detener actualizaciones al pausar
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        requestLocationUpdates(); // Reanudar actualizaciones al volver
     }
 
     private void sendReport() {
-        String title = titleEditText.getText().toString().trim();
-        String description = descriptionEditText.getText().toString().trim();
-        String type = typeSpinner.getSelectedItem().toString();
-        boolean reportToAuthorities = reportAuthoritiesCheckBox.isChecked();
+        String description = editTextDescription.getText().toString().trim();
+        String reportType = spinnerReportType.getSelectedItem().toString();
+        boolean reportToAuthorities = checkBoxReportToAuthorities.isChecked();
 
-        if (TextUtils.isEmpty(title)) {
-            titleEditText.setError("El título es requerido.");
-            return;
-        }
         if (TextUtils.isEmpty(description)) {
-            descriptionEditText.setError("La descripción es requerida.");
-            return;
-        }
-        if (currentLocation == null) {
-            Toast.makeText(this, "Esperando ubicación GPS. Intenta de nuevo.", Toast.LENGTH_SHORT).show();
-            getLocation(); // Re-intentar obtener ubicación
+            Toast.makeText(this, "Por favor, describe el problema.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Mostrar ProgressBar
-        progressBar.setVisibility(View.VISIBLE);
-        sendReportButton.setEnabled(false);
-
-        // Verificar conexión a internet
-        if (isNetworkAvailable()) {
-            uploadMediaAndReport(title, description, type, reportToAuthorities);
-        } else {
-            saveReportLocally(title, description, type, reportToAuthorities);
+        if (mAuth.getCurrentUser() == null) {
+            Toast.makeText(this, "Debes iniciar sesión para reportar un problema.", Toast.LENGTH_SHORT).show();
+            return;
         }
-    }
 
-    private boolean isNetworkAvailable() {
-        // Implementar lógica para verificar la conexión a internet
-        // (Esto requiere el permiso ACCESS_NETWORK_STATE en AndroidManifest)
-        // Ejemplo simplificado:
-        // ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        // NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        // return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-        return true; // Por ahora, asumimos que siempre hay red para la demostración
-    }
+        progressBarReport.setVisibility(View.VISIBLE);
+        buttonSendReport.setEnabled(false); // Deshabilitar botón durante el envío
 
-    private void uploadMediaAndReport(String title, String description, String type, boolean reportToAuthorities) {
-        if (mediaUri != null) {
-            StorageReference fileRef = storageRef.child(System.currentTimeMillis() + "." + getFileExtension(mediaUri));
-            fileRef.putFile(mediaUri)
-                    .addOnSuccessListener(taskSnapshot -> fileRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                        String mediaUrl = uri.toString();
-                        saveReportToFirestore(title, description, type, reportToAuthorities, mediaUrl, mediaType);
-                    }))
-                    .addOnFailureListener(e -> {
-                        progressBar.setVisibility(View.GONE);
-                        sendReportButton.setEnabled(true);
-                        Toast.makeText(this, "Error al subir media: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        // Guardar sin media si falla la subida
-                        saveReportToFirestore(title, description, type, reportToAuthorities, null, null);
+        String userId = mAuth.getCurrentUser().getUid();
+        String reportId = UUID.randomUUID().toString(); // Generar un ID único para el reporte
+
+        if (imageUri != null) {
+            // Subir imagen a Firebase Storage
+            StorageReference fileRef = storageRef.child("reports_images/" + reportId + ".jpg");
+            fileRef.putFile(imageUri)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            fileRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                @Override
+                                public void onSuccess(Uri uri) {
+                                    String imageUrl = uri.toString();
+                                    saveReportToFirestore(userId, reportId, description, reportType, currentLocation, imageUrl, reportToAuthorities);
+                                }
+                            });
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            progressBarReport.setVisibility(View.GONE);
+                            buttonSendReport.setEnabled(true);
+                            Toast.makeText(ReportProblemActivity.this, "Error al subir imagen: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
                     });
         } else {
-            saveReportToFirestore(title, description, type, reportToAuthorities, null, null);
+            // Si no hay imagen, solo guardar el reporte
+            saveReportToFirestore(userId, reportId, description, reportType, currentLocation, null, reportToAuthorities);
         }
     }
 
-    private void saveReportToFirestore(String title, String description, String type, boolean reportToAuthorities, String mediaUrl, String mediaType) {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(this, "Usuario no autenticado.", Toast.LENGTH_SHORT).show();
-            progressBar.setVisibility(View.GONE);
-            sendReportButton.setEnabled(true);
-            return;
-        }
+    private void saveReportToFirestore(String userId, String reportId, String description, String reportType, String location, String imageUrl, boolean reportToAuthorities) {
+        Map<String, Object> report = new HashMap<>();
+        report.put("userId", userId);
+        report.put("description", description);
+        report.put("type", reportType);
+        report.put("location", location);
+        report.put("imageUrl", imageUrl); // Puede ser null
+        report.put("timestamp", System.currentTimeMillis()); // Marca de tiempo del reporte
+        report.put("status", "Pendiente"); // Estado inicial del reporte
+        report.put("reportToAuthorities", reportToAuthorities);
 
-        // Crear un objeto Reporte
-        com.example.miprimeraaplicacion.Report newReport = new com.example.miprimeraaplicacion.Report(
-                UUID.randomUUID().toString(), // ID único para el reporte
-                currentUser.getUid(),
-                currentUser.getEmail(), // O el nombre de usuario/nombre completo si lo obtienes de Firestore
-                title,
-                description,
-                type,
-                currentLocation.getLatitude(),
-                currentLocation.getLongitude(),
-                System.currentTimeMillis(),
-                "pendiente", // Estado inicial
-                mediaUrl,
-                mediaType,
-                reportToAuthorities
-        );
-
-        db.collection("reports")
-                .add(newReport) // Firestore generará un ID de documento
-                .addOnSuccessListener(documentReference -> {
-                    progressBar.setVisibility(View.GONE);
-                    sendReportButton.setEnabled(true);
-                    Toast.makeText(ReportProblemActivity.this, "Reporte enviado con éxito!", Toast.LENGTH_SHORT).show();
-                    finish(); // Cierra la actividad de reporte
+        db.collection("reports").document(reportId)
+                .set(report)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        progressBarReport.setVisibility(View.GONE);
+                        buttonSendReport.setEnabled(true);
+                        Toast.makeText(ReportProblemActivity.this, "Reporte enviado exitosamente!", Toast.LENGTH_LONG).show();
+                        // Opcional: Limpiar campos o navegar a otra pantalla
+                        editTextDescription.setText("");
+                        imageViewPreview.setVisibility(View.GONE);
+                        imageUri = null;
+                        // Regresar a la HomeActivity o a Mis Reportes
+                        startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
+                        finish();
+                    }
                 })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    sendReportButton.setEnabled(true);
-                    Toast.makeText(ReportProblemActivity.this, "Error al enviar reporte: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    // Si falla Firestore, podríamos intentar guardar localmente de nuevo
-                    saveReportLocally(title, description, type, reportToAuthorities);
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        progressBarReport.setVisibility(View.GONE);
+                        buttonSendReport.setEnabled(true);
+                        Toast.makeText(ReportProblemActivity.this, "Error al enviar reporte: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
-    }
-
-    private void saveReportLocally(String title, String description, String type, boolean reportToAuthorities) {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(this, "Error: Usuario no autenticado para guardar localmente.", Toast.LENGTH_SHORT).show();
-            progressBar.setVisibility(View.GONE);
-            sendReportButton.setEnabled(true);
-            return;
-        }
-
-        com.example.miprimeraaplicacion.ReporteLocal localReport = new com.example.miprimeraaplicacion.ReporteLocal(
-                title,
-                description,
-                mediaUri != null ? mediaUri.toString() : null, // Guarda la URI local del archivo
-                type,
-                currentLocation.getLatitude(),
-                currentLocation.getLongitude(),
-                System.currentTimeMillis(),
-                "pendiente_envio", // Estado para indicar que debe ser enviado luego
-                currentUser.getUid()
-        );
-
-        // Ejecutar la operación de base de datos en un hilo separado
-        com.example.miprimeraaplicacion.AppDatabase.getDatabase(this).reporteDao().insert(localReport);
-        Toast.makeText(this, "No hay conexión. Reporte guardado localmente.", Toast.LENGTH_LONG).show();
-        progressBar.setVisibility(View.GONE);
-        sendReportButton.setEnabled(true);
-        finish(); // Cierra la actividad de reporte
-    }
-
-    // Helper para obtener la extensión del archivo (para Firebase Storage)
-    private String getFileExtension(Uri uri) {
-        String type = getContentResolver().getType(uri);
-        if (type != null) {
-            return type.substring(type.lastIndexOf('/') + 1);
-        }
-        return "jpg"; // Por defecto, si no se puede determinar
     }
 }

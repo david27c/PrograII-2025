@@ -2,4 +2,5 @@
 <resources>
     <drawable name="circle_shape_red" />
     <drawable name="ic_chat" />
+    <drawable name="placeholder_image" />
 </resources>

@@ -1,131 +1,142 @@
 package com.example.miprimeraaplicacion;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
+import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-// No necesitas importar NotificationsFragment ni SettingsFragment aquí si no los pones directamente en la barra de navegación.
-// Si los pones, sí necesitarías importarlos y manejarlos en el listener.
+import java.util.ArrayList;
+import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+
+    private RecyclerView recyclerViewReports;
+    // private ReportAdapter reportAdapter; // Lo crearás más adelante
+    private List<Report> reportList; // Clase Report la definirás después
+
+    private ProgressBar progressBar;
+    private Spinner spinnerSortBy;
+    private FloatingActionButton fabReportProblem;
     private BottomNavigationView bottomNavigationView;
-    private static final int PERMISSION_REQUEST_CODE_NOTIFICATIONS = 101; // Código para solicitar permiso
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar); // Configura la Toolbar como ActionBar
+
+        recyclerViewReports = findViewById(R.id.recyclerViewReports);
+        progressBar = findViewById(R.id.progressBar);
+        spinnerSortBy = findViewById(R.id.spinnerSortBy);
+        fabReportProblem = findViewById(R.id.fabReportProblem);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // Solicita el permiso de notificaciones para Android 13+
-        requestNotificationPermission();
+        recyclerViewReports.setLayoutManager(new LinearLayoutManager(this));
+        reportList = new ArrayList<>();
+        // reportAdapter = new ReportAdapter(this, reportList); // Crea tu adaptador más tarde
+        // recyclerViewReports.setAdapter(reportAdapter);
 
-        // Carga el fragmento de inicio por defecto solo si la actividad se crea por primera vez
-        if (savedInstanceState == null) {
-            loadFragment(new com.example.miprimeraaplicacion.HomeFragment());
-        }
-
-        // Configura el listener para la barra de navegación inferior
-        bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+        // Configurar la navegación inferior
+        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                Fragment selectedFragment = null;
-                int itemId = item.getItemId(); // Usamos getItemId() para obtener el ID del ítem
-
-                // Maneja la selección de ítems en la barra de navegación
+                int itemId = item.getItemId();
                 if (itemId == R.id.nav_home) {
-                    selectedFragment = new com.example.miprimeraaplicacion.HomeFragment();
+                    // Ya estamos en HomeActivity, no hacer nada o refrescar
+                    return true;
                 } else if (itemId == R.id.nav_report) {
-                    // Cuando se selecciona "Reportar", iniciamos la ReportProblemActivity
                     startActivity(new Intent(HomeActivity.this, ReportProblemActivity.class));
-                    // No se carga ningún fragmento, por lo que regresamos true
                     return true;
                 } else if (itemId == R.id.nav_my_reports) {
-                    selectedFragment = new com.example.miprimeraaplicacion.MyReportsFragment();
-                } else if (itemId == R.id.nav_community_chat) {
-                    selectedFragment = new com.example.miprimeraaplicacion.CommunityChatFragment();
+                    startActivity(new Intent(HomeActivity.this, MyReportsActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_chat) {
+                    startActivity(new Intent(HomeActivity.this, CommunityChatActivity.class));
+                    return true;
                 } else if (itemId == R.id.nav_profile) {
-                    selectedFragment = new com.example.miprimeraaplicacion.ProfileFragment();
+                    startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_notifications) {
+                    startActivity(new Intent(HomeActivity.this, NotificationsActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_settings) {
+                    startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+                    return true;
                 }
-                // Si tienes más de 5 elementos en la barra, considera un menú desplegable o menos iconos.
-                // Si añades Notificaciones (nav_notifications) o Configuración (nav_settings) a la barra,
-                // también debes manejar sus IDs aquí para cargar sus respectivos Fragments.
-
-                // Si un fragmento ha sido seleccionado, cárgalo
-                if (selectedFragment != null) {
-                    loadFragment(selectedFragment);
-                    return true; // Indica que el ítem fue manejado
-                }
-                return false; // Indica que el ítem no fue manejado
+                return false;
             }
         });
-    }
 
-    /**
-     * Solicita el permiso POST_NOTIFICATIONS para Android 13 (API 33) y superior.
-     */
-    private void requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33+
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                // Si el permiso no está concedido, solicítalo al usuario
-                ActivityCompat.requestPermissions(this,
-                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
-                        PERMISSION_REQUEST_CODE_NOTIFICATIONS);
+        // Asegurarse de que el ítem "Inicio" esté seleccionado al inicio
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+
+        // Listener para el botón flotante
+        fabReportProblem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(HomeActivity.this, ReportProblemActivity.class);
+                startActivity(intent);
             }
+        });
+
+        loadReports(); // Cargar los reportes al iniciar
+    }
+
+    private void loadReports() {
+        progressBar.setVisibility(View.VISIBLE);
+        // Aquí iría la lógica para cargar reportes de Firestore
+        // Por ahora, un Toast y ocultar la barra de progreso
+        Toast.makeText(this, "Cargando reportes...", Toast.LENGTH_SHORT).show();
+
+        // Simula la carga de datos
+        new android.os.Handler().postDelayed(
+                new Runnable() {
+                    public void run() {
+                        progressBar.setVisibility(View.GONE);
+                        // Aquí deberías añadir tus reportes a reportList
+                        // reportAdapter.notifyDataSetChanged();
+                    }
+                },
+                2000 // 2 segundos de simulación
+        );
+    }
+
+    // Clase de ejemplo para un Reporte (la definirás mejor después)
+    public static class Report {
+        // Campos de tu reporte, por ejemplo:
+        public String title;
+        public String description;
+        public String location;
+        public String status;
+        // ... otros campos como fecha, URL de imagen, etc.
+
+        public Report(String title, String description, String location, String status) {
+            this.title = title;
+            this.description = description;
+            this.location = location;
+            this.status = status;
         }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE_NOTIFICATIONS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permiso concedido, puedes informar al usuario si lo deseas
-                Toast.makeText(this, "Permiso de notificaciones concedido", Toast.LENGTH_SHORT).show();
-            } else {
-                // Permiso denegado, puedes informar al usuario y quizás deshabilitar funcionalidades
-                Toast.makeText(this, "Permiso de notificaciones denegado. Algunas funcionalidades pueden no estar disponibles.", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    /**
-     * Carga un Fragmento en el contenedor principal de la actividad.
-     * @param fragment El Fragmento a cargar.
-     */
-    private void loadFragment(Fragment fragment) {
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment); // Reemplaza el fragmento actual
-        transaction.commit(); // Confirma la transacción
-    }
-
-    /**
-     * Método para cerrar sesión. Se llamará desde ProfileFragment o SettingsActivity.
-     */
-    public void logout() {
-        FirebaseAuth.getInstance().signOut(); // Cierra la sesión de Firebase Auth
-        Toast.makeText(this, "Sesión cerrada.", Toast.LENGTH_SHORT).show();
-
-        // Redirige al usuario a la LoginActivity y cierra todas las actividades anteriores
-        Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish(); // Finaliza HomeActivity
     }
 }

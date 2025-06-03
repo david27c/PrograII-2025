@@ -12,7 +12,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.miprimeraaplicacion.activities.Main.HomeActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -20,73 +19,76 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private EditText emailEditText, passwordEditText;
-    private Button loginButton;
-    private TextView forgotPasswordTextView, createAccountTextView;
-    private FirebaseAuth mAuth;
+    private EditText editTextEmail, editTextPassword;
+    private Button buttonLogin;
+    private TextView textViewForgotPassword, textViewCreateAccount, textViewError;
+    private FirebaseAuth mAuth; // Instancia de Firebase Authentication
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        // Inicializar Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // Si el usuario ya está logueado, redirigir a HomeActivity
-        if (mAuth.getCurrentUser() != null) {
-            startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-            finish();
-        }
+        // Enlazar elementos del diseño con las variables Java
+        editTextEmail = findViewById(R.id.editTextEmail);
+        editTextPassword = findViewById(R.id.editTextPassword);
+        buttonLogin = findViewById(R.id.buttonLogin);
+        textViewForgotPassword = findViewById(R.id.textViewForgotPassword);
+        textViewCreateAccount = findViewById(R.id.textViewCreateAccount);
+        textViewError = findViewById(R.id.textViewError);
 
-        emailEditText = findViewById(R.id.email_et);
-        passwordEditText = findViewById(R.id.password_et);
-        loginButton = findViewById(R.id.login_button);
-        forgotPasswordTextView = findViewById(R.id.forgot_password_tv);
-        createAccountTextView = findViewById(R.id.create_account_tv);
-
-        loginButton.setOnClickListener(new View.OnClickListener() {
+        // Listener para el botón de Iniciar Sesión
+        buttonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 loginUser();
             }
         });
 
-        createAccountTextView.setOnClickListener(new View.OnClickListener() {
+        // Listener para el enlace "¿Olvidaste tu contraseña?"
+        textViewForgotPassword.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+                // Aquí podrías abrir una nueva Activity para restablecer contraseña
+                Toast.makeText(LoginActivity.this, "Funcionalidad de restablecer contraseña (por implementar)", Toast.LENGTH_SHORT).show();
             }
         });
 
-        forgotPasswordTextView.setOnClickListener(new View.OnClickListener() {
+        // Listener para el enlace "Crear Cuenta"
+        textViewCreateAccount.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Aquí podrías abrir una nueva Activity para restablecer la contraseña
-                Toast.makeText(LoginActivity.this, "¿Olvidaste tu contraseña? (Funcionalidad por implementar)", Toast.LENGTH_SHORT).show();
+                // Abre la actividad para crear una cuenta
+                Intent intent = new Intent(LoginActivity.this, CreateAccountActivity.class);
+                startActivity(intent);
             }
         });
     }
 
+    // Método para iniciar sesión
     private void loginUser() {
-        String email = emailEditText.getText().toString().trim();
-        String password = passwordEditText.getText().toString().trim();
+        String email = editTextEmail.getText().toString().trim();
+        String password = editTextPassword.getText().toString().trim();
 
+        // Validaciones básicas
         if (TextUtils.isEmpty(email)) {
-            emailEditText.setError("El correo es requerido.");
+            textViewError.setText("Por favor, ingresa tu correo electrónico.");
+            textViewError.setVisibility(View.VISIBLE);
             return;
         }
-
         if (TextUtils.isEmpty(password)) {
-            passwordEditText.setError("La contraseña es requerida.");
+            textViewError.setText("Por favor, ingresa tu contraseña.");
+            textViewError.setVisibility(View.VISIBLE);
             return;
         }
 
-        if (password.length() < 6) {
-            passwordEditText.setError("La contraseña debe tener al menos 6 caracteres.");
-            return;
-        }
+        // Ocultar mensaje de error si todo está bien hasta ahora
+        textViewError.setVisibility(View.GONE);
 
-        // Iniciar sesión con Firebase
+        // Iniciar sesión con Firebase Authentication
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -94,13 +96,32 @@ public class LoginActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Inicio de sesión exitoso
                             Toast.makeText(LoginActivity.this, "¡Inicio de sesión exitoso!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-                            finish(); // Cierra la LoginActivity para que el usuario no pueda volver atrás con el botón de retroceso
+                            // Navegar a la pantalla principal (Inicio)
+                            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                            startActivity(intent);
+                            finish(); // Finaliza esta actividad para que el usuario no pueda volver atrás con el botón 'atrás'
                         } else {
-                            // Falló el inicio de sesión
-                            Toast.makeText(LoginActivity.this, "Error de inicio de sesión: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            // Si el inicio de sesión falla, muestra un mensaje al usuario.
+                            String errorMessage = "Error al iniciar sesión. Verifica tus credenciales.";
+                            if (task.getException() != null) {
+                                errorMessage += "\nDetalles: " + task.getException().getMessage();
+                            }
+                            textViewError.setText(errorMessage);
+                            textViewError.setVisibility(View.VISIBLE);
                         }
                     }
                 });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Verificar si el usuario ya ha iniciado sesión (persistencia de sesión)
+        if (mAuth.getCurrentUser() != null) {
+            // Si el usuario ya está logueado, lo enviamos directamente a la pantalla principal
+            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish(); // Finaliza esta actividad
+        }
     }
 }

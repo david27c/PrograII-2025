@@ -5,67 +5,66 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.miprimeraaplicacion.R;
-import com.example.miprimeraaplicacion.models.Message;
-
+import com.google.firebase.auth.FirebaseAuth;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private static final int VIEW_TYPE_MESSAGE_SENT = 1;
-    private static final int VIEW_TYPE_MESSAGE_RECEIVED = 2;
+    private static final int VIEW_TYPE_SENT = 1;
+    private static final int VIEW_TYPE_RECEIVED = 2;
 
     private Context context;
     private List<Message> messageList;
-    private String currentUserId; // ID del usuario actual para diferenciar mensajes
+    private String currentUserId;
 
-    public MessageAdapter(Context context, List<Message> messageList, String currentUserId) {
+    public MessageAdapter(Context context, List<Message> messageList) {
         this.context = context;
         this.messageList = messageList;
-        this.currentUserId = currentUserId;
+        this.currentUserId = FirebaseAuth.getInstance().getCurrentUser() != null ?
+                FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
     }
 
     @Override
     public int getItemViewType(int position) {
         Message message = messageList.get(position);
-        if (message.getSenderId().equals(currentUserId)) {
-            return VIEW_TYPE_MESSAGE_SENT;
+        if (currentUserId != null && message.getSenderId() != null && message.getSenderId().equals(currentUserId)) {
+            return VIEW_TYPE_SENT; // Mensaje enviado por el usuario actual
         } else {
-            return VIEW_TYPE_MESSAGE_RECEIVED;
+            return VIEW_TYPE_RECEIVED; // Mensaje recibido de otro usuario
         }
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view;
-        if (viewType == VIEW_TYPE_MESSAGE_SENT) {
-            view = LayoutInflater.from(context).inflate(R.layout.item_message_sent, parent, false);
-            return new SentMessageHolder(view);
+        if (viewType == VIEW_TYPE_SENT) {
+            View view = LayoutInflater.from(context).inflate(R.layout.item_message_sent, parent, false);
+            return new SentMessageViewHolder(view);
         } else {
-            view = LayoutInflater.from(context).inflate(R.layout.item_message_received, parent, false);
-            return new ReceivedMessageHolder(view);
+            View view = LayoutInflater.from(context).inflate(R.layout.item_message_received, parent, false);
+            return new ReceivedMessageViewHolder(view);
         }
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Message message = messageList.get(position);
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm a", Locale.getDefault());
+        String formattedTime = sdf.format(message.getTimestamp());
 
-        switch (holder.getItemViewType()) {
-            case VIEW_TYPE_MESSAGE_SENT:
-                ((SentMessageHolder) holder).bind(message);
-                break;
-            case VIEW_TYPE_MESSAGE_RECEIVED:
-                ((ReceivedMessageHolder) holder).bind(message);
-                break;
+        if (holder.getItemViewType() == VIEW_TYPE_SENT) {
+            SentMessageViewHolder sentHolder = (SentMessageViewHolder) holder;
+            sentHolder.textViewMessageSent.setText(message.getText());
+            sentHolder.textViewTimeSent.setText(formattedTime);
+        } else {
+            ReceivedMessageViewHolder receivedHolder = (ReceivedMessageViewHolder) holder;
+            receivedHolder.textViewSenderName.setText(message.getSenderName());
+            receivedHolder.textViewMessageReceived.setText(message.getText());
+            receivedHolder.textViewTimeReceived.setText(formattedTime);
         }
     }
 
@@ -74,39 +73,37 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return messageList.size();
     }
 
-    // ViewHolder para mensajes enviados
-    private static class SentMessageHolder extends RecyclerView.ViewHolder {
-        TextView messageText, timeText;
+    public static class SentMessageViewHolder extends RecyclerView.ViewHolder {
+        TextView textViewMessageSent, textViewTimeSent;
 
-        SentMessageHolder(View itemView) {
+        public SentMessageViewHolder(@NonNull View itemView) {
             super(itemView);
-            messageText = itemView.findViewById(R.id.message_text_sent);
-            timeText = itemView.findViewById(R.id.message_time_sent);
-        }
-
-        void bind(Message message) {
-            messageText.setText(message.getText());
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm a", Locale.getDefault());
-            timeText.setText(sdf.format(new Date(message.getTimestamp())));
+            textViewMessageSent = itemView.findViewById(R.id.textViewMessageSent);
+            textViewTimeSent = itemView.findViewById(R.id.textViewTimeSent);
         }
     }
 
-    // ViewHolder para mensajes recibidos
-    private static class ReceivedMessageHolder extends RecyclerView.ViewHolder {
-        TextView messageText, timeText, authorText;
+    public static class ReceivedMessageViewHolder extends RecyclerView.ViewHolder {
+        TextView textViewSenderName, textViewMessageReceived, textViewTimeReceived;
 
-        ReceivedMessageHolder(View itemView) {
+        public ReceivedMessageViewHolder(@NonNull View itemView) {
             super(itemView);
-            messageText = itemView.findViewById(R.id.message_text_received);
-            timeText = itemView.findViewById(R.id.message_time_received);
-            authorText = itemView.findViewById(R.id.message_author_received);
+            textViewSenderName = itemView.findViewById(R.id.textViewSenderName);
+            textViewMessageReceived = itemView.findViewById(R.id.textViewMessageReceived);
+            textViewTimeReceived = itemView.findViewById(R.id.textViewTimeReceived);
         }
+    }
 
-        void bind(Message message) {
-            messageText.setText(message.getText());
-            authorText.setText(message.getSenderName());
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm a", Locale.getDefault());
-            timeText.setText(sdf.format(new Date(message.getTimestamp())));
-        }
+    // Método para agregar un nuevo mensaje y notificar al adaptador
+    public void addMessage(Message newMessage) {
+        messageList.add(newMessage);
+        notifyItemInserted(messageList.size() - 1);
+    }
+
+    // Método para actualizar la lista de mensajes (por ejemplo, al cargar historial)
+    public void setMessages(List<Message> newMessages) {
+        messageList.clear();
+        messageList.addAll(newMessages);
+        notifyDataSetChanged();
     }
 }

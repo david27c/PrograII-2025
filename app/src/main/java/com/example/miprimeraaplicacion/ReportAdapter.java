@@ -1,7 +1,9 @@
 package com.example.miprimeraaplicacion;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,10 +13,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.miprimeraaplicacion.R;
-
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -22,22 +21,16 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
 
     private Context context;
     private List<Report> reportList;
-    private OnReportClickListener listener;
 
-    public interface OnReportClickListener {
-        void onReportClick(Report report);
-    }
-
-    public ReportAdapter(Context context, List<Report> reportList, OnReportClickListener listener) {
+    public ReportAdapter(Context context, List<Report> reportList) {
         this.context = context;
         this.reportList = reportList;
-        this.listener = listener;
     }
 
     @NonNull
     @Override
     public ReportViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_report_card, parent, false);
+        View view = LayoutInflater.from(context).inflate(R.layout.item_report, parent, false);
         return new ReportViewHolder(view);
     }
 
@@ -45,41 +38,47 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     public void onBindViewHolder(@NonNull ReportViewHolder holder, int position) {
         Report report = reportList.get(position);
 
-        holder.titleTextView.setText(report.getTitle());
-        holder.locationTextView.setText(String.format("Ubicación: %.4f, %.4f", report.getLatitude(), report.getLongitude()));
-        holder.statusTextView.setText("Estado: " + capitalizeFirstLetter(report.()));
-
-        // Cargar imagen si existe
-        if (report.getMediaUrl() != null && !report.getMediaUrl().isEmpty()) {
-            Picasso.get().load(report.getMediaUrl())
-                    .placeholder(R.drawable.ic_placeholder_image) // Imagen de carga
-                    .error(R.drawable.ic_broken_image) // Imagen si hay error
-                    .into(holder.reportImageView);
-        } else {
-            holder.reportImageView.setImageResource(R.drawable.ic_placeholder_image); // Imagen por defecto
-        }
+        holder.textViewReportTitle.setText(report.getType()); // Usamos el tipo como título
+        holder.textViewReportLocation.setText("Ubicación: " + report.getLocation());
 
         // Formatear la fecha
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        holder.dateTextView.setText(sdf.format(new Date(report.getTimestamp())));
+        holder.textViewReportDate.setText("Fecha: " + sdf.format(report.getTimestamp()));
 
-        // Cambiar color del indicador de estado
-        switch (report.getStatus().toLowerCase()) {
-            case "pendiente":
-                holder.statusColorIndicator.setBackgroundColor(Color.parseColor("#FFC107")); // Amarillo
+        holder.textViewReportStatus.setText("Estado: " + report.getStatus());
+
+        // Asignar color al estado
+        switch (report.getStatus()) {
+            case "Resuelto":
+                holder.textViewReportStatus.setTextColor(Color.parseColor("#4CAF50")); // Verde
                 break;
-            case "en_proceso":
-                holder.statusColorIndicator.setBackgroundColor(Color.parseColor("#2196F3")); // Azul
+            case "En Proceso":
+                holder.textViewReportStatus.setTextColor(Color.parseColor("#FFC107")); // Naranja
                 break;
-            case "resuelto":
-                holder.statusColorIndicator.setBackgroundColor(Color.parseColor("#4CAF50")); // Verde
-                break;
+            case "Pendiente":
             default:
-                holder.statusColorIndicator.setBackgroundColor(Color.parseColor("#9E9E9E")); // Gris
+                holder.textViewReportStatus.setTextColor(Color.parseColor("#F44336")); // Rojo
                 break;
         }
 
-        holder.itemView.setOnClickListener(v -> listener.onReportClick(report));
+        // Cargar imagen con Picasso
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (report.getImageUrl() != null && !report.getImageUrl().isEmpty()) {
+                Picasso.get().load(report.getImageUrl())
+                        .placeholder(R.drawable.placeholder_image) // Placeholder mientras carga
+                        .error(R.drawable.placeholder_image) // Imagen de error si falla la carga
+                        .into(holder.imageViewReportThumbnail);
+            } else {
+                holder.imageViewReportThumbnail.setImageResource(R.drawable.placeholder_image);
+            }
+        }
+
+        // Listener para abrir los detalles del reporte al hacer clic
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, ReportDetailActivity.class);
+            intent.putExtra("reportId", report.getId()); // Pasa el ID del reporte
+            context.startActivity(intent);
+        });
     }
 
     @Override
@@ -88,38 +87,62 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     }
 
     public static class ReportViewHolder extends RecyclerView.ViewHolder {
-        ImageView reportImageView;
-        TextView titleTextView;
-        TextView locationTextView;
-        TextView statusTextView;
-        View statusColorIndicator;
-        TextView dateTextView;
+        ImageView imageViewReportThumbnail;
+        TextView textViewReportTitle, textViewReportLocation, textViewReportStatus, textViewReportDate;
 
         public ReportViewHolder(@NonNull View itemView) {
             super(itemView);
-            reportImageView = itemView.findViewById(R.id.report_card_image);
-            titleTextView = itemView.findViewById(R.id.report_card_title);
-            locationTextView = itemView.findViewById(R.id.report_card_location);
-            statusTextView = itemView.findViewById(R.id.report_card_status);
-            statusColorIndicator = itemView.findViewById(R.id.status_color_indicator);
-            dateTextView = itemView.findViewById(R.id.report_card_date);
+            imageViewReportThumbnail = itemView.findViewById(R.id.imageViewReportThumbnail);
+            textViewReportTitle = itemView.findViewById(R.id.textViewReportTitle);
+            textViewReportLocation = itemView.findViewById(R.id.textViewReportLocation);
+            textViewReportStatus = itemView.findViewById(R.id.textViewReportStatus);
+            textViewReportDate = itemView.findViewById(R.id.textViewReportDate);
         }
     }
 
-    // Helper para capitalizar la primera letra de una cadena
-    private String capitalizeFirstLetter(String text) {
-        if (text == null || text.isEmpty()) {
-            return text;
-        }
-        return text.substring(0, 1).toUpperCase() + text.substring(1).toLowerCase();
+    // Método para actualizar la lista de reportes
+    public void updateReports(List<Report> newReports) {
+        reportList.clear();
+        reportList.addAll(newReports);
+        notifyDataSetChanged();
     }
 
     private class Report {
-        public Object getLatitude() {
+        private int type;
+
+        public int getType() {
+            return type;
         }
 
-        public int getTitle() {
-            return 0;
+        public void setType(int type) {
+            this.type = type;
+        }
+
+        public String getImageUrl() {
+            return null;
+        }
+
+        public boolean getId() {
+            return false;
+        }
+
+        public String getLocation() {
+            String o = null;
+            return o;
+        }
+
+        public Object getTimestamp() {
+            return null;
+        }
+
+        public String getStatus() {
+            return "";
+        }
+    }
+
+    private static class Picasso {
+        public static System get() {
+            return null;
         }
     }
 }

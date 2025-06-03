@@ -1,80 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/pastel_green"
-    tools:context=".activities.IndividualChatActivity">
+    android:background="#A8E6CF"
+    tools:context=".IndividualChatActivity">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/chat_toolbar"
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/strong_pastel_blue"
+        android:background="#7CA4D4"
         android:elevation="4dp"
-        app:titleTextColor="@color/white"
-        app:subtitleTextColor="@color/white"
-        app:navigationIcon="@drawable/ic_arrow_back">
-        <TextView
-            android:id="@+id/toolbar_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"/>
-    </androidx.appcompat.widget.Toolbar>
+        app:titleTextColor="@android:color/white"
+        app:title="Chat con [Tema]" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/chat_recycler_view"
+        android:id="@+id/recyclerViewMessages"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/chat_toolbar"
-        android:layout_above="@id/chat_input_layout"
+        android:layout_below="@id/toolbar"
+        android:layout_above="@+id/layout_message_input"
         android:padding="8dp"
         android:clipToPadding="false"
-        tools:listitem="@layout/item_message_sent"/>
+        android:background="@android:color/transparent"/>
+
+    <TextView
+        android:id="@+id/textViewNoMessages"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sé el primero en enviar un mensaje."
+        android:textColor="#333333"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
 
     <ProgressBar
-        android:id="@+id/chat_progress_bar"
+        android:id="@+id/progressBarChat"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:visibility="gone"/>
 
     <LinearLayout
-        android:id="@+id/chat_input_layout"
+        android:id="@+id/layout_message_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
         android:padding="8dp"
         android:background="@android:color/white"
-        android:elevation="8dp">
+        android:gravity="center_vertical">
 
         <EditText
-            android:id="@+id/message_edit_text"
+            android:id="@+id/editTextMessage"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:hint="Escribe un mensaje..."
-            android:padding="10dp"
             android:background="@drawable/rounded_edittext"
-            android:textColor="@color/dark_gray"
-            android:textColorHint="@color/dark_gray"
+            android:hint="Escribe un mensaje..."
             android:maxLines="5"
-            android:inputType="textCapSentences|textMultiLine"/>
+            android:minHeight="48dp"
+            android:padding="10dp" />
 
-        <Button
-            android:id="@+id/send_message_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Enviar"
-            android:backgroundTint="@color/strong_pastel_blue"
-            android:textColor="@color/white"
-            android:layout_marginStart="8dp"/>
+        <ImageButton
+            android:id="@+id/buttonSendMessage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_send"
+            android:background="@drawable/circle_send_button"
+            android:contentDescription="Enviar Mensaje"
+            app:tint="@android:color/white" />
+
     </LinearLayout>
 
 </RelativeLayout>

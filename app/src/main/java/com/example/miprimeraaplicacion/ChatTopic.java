@@ -2,79 +2,32 @@ package com.example.miprimeraaplicacion;
 
 public class ChatTopic {
     private String id;
-    private String title;
-    private String description;
+    private String name;
     private String lastMessage;
     private long lastMessageTimestamp;
-    private String iconUrl;
-    private int unreadMessagesCount;
+    private int unreadCount; // Esto podría ser calculado o mantenido en el backend
 
     public ChatTopic() {
+        // Constructor vacío requerido por Firestore
     }
 
-    public ChatTopic(String id, String title, String description, String lastMessage, long lastMessageTimestamp, String iconUrl, int unreadMessagesCount) {
+    public ChatTopic(String id, String name, String lastMessage, long lastMessageTimestamp, int unreadCount) {
         this.id = id;
-        this.title = title;
-        this.description = description;
+        this.name = name;
         this.lastMessage = lastMessage;
         this.lastMessageTimestamp = lastMessageTimestamp;
-        this.iconUrl = iconUrl;
-        this.unreadMessagesCount = unreadMessagesCount;
+        this.unreadCount = unreadCount;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getLastMessage() {
-        return lastMessage;
-    }
-
-    public void setLastMessage(String lastMessage) {
-        this.lastMessage = lastMessage;
-    }
-
-    public long getLastMessageTimestamp() {
-        return lastMessageTimestamp;
-    }
-
-    public void setLastMessageTimestamp(long lastMessageTimestamp) {
-        this.lastMessageTimestamp = lastMessageTimestamp;
-    }
-
-    public String getIconUrl() {
-        return iconUrl;
-    }
-
-    public void setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
-    }
-
-    public int getUnreadMessagesCount() {
-        return unreadMessagesCount;
-    }
-
-    public void setUnreadMessagesCount(int unreadMessagesCount) {
-        this.unreadMessagesCount = unreadMessagesCount;
-    }
+    // Getters y Setters
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getLastMessage() { return lastMessage; }
+    public void setLastMessage(String lastMessage) { this.lastMessage = lastMessage; }
+    public long getLastMessageTimestamp() { return lastMessageTimestamp; }
+    public void setLastMessageTimestamp(long lastMessageTimestamp) { this.lastMessageTimestamp = lastMessageTimestamp; }
+    public int getUnreadCount() { return unreadCount; }
+    public void setUnreadCount(int unreadCount) { this.unreadCount = unreadCount; }
 }

@@ -1,89 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/pastel_green"
-    android:padding="16dp"
-    tools:context=".activities.SettingsActivity">
+    android:background="#A8E6CF"
+    tools:context=".SettingsActivity">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/settings_toolbar"
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/strong_pastel_blue"
+        android:background="#7CA4D4"
         android:elevation="4dp"
-        app:titleTextColor="@color/white"
-        app:navigationIcon="@drawable/ic_arrow_back"
-        app:title="Configuración" />
+        app:titleTextColor="@android:color/white"
+        app:title="Ajustes" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Opciones de Configuración"
-        android:textColor="@color/dark_gray"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="30dp"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:layout_above="@+id/bottom_navigation"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/btn_edit_profile"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Configuraciones de la Aplicación"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="24dp"/>
+
+        <LinearLayout
+            android:id="@+id/layout_notification_settings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_notifications"
+                android:tint="#7CA4D4"
+                android:layout_marginEnd="16dp"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Preferencias de Notificaciones"
+                android:textSize="16sp"
+                android:textColor="#333333"/>
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="#888888"/>
+
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/layout_privacy_settings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_privacy"
+                android:tint="#7CA4D4"
+                android:layout_marginEnd="16dp"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Privacidad"
+                android:textSize="16sp"
+                android:textColor="#333333"/>
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="#888888"/>
+
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/textViewAppVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Versión de la App: 1.0.0"
+            android:textColor="#888888"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="50dp"/>
+
+    </LinearLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Editar Perfil"
-        android:backgroundTint="@color/strong_pastel_blue"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
+        android:layout_alignParentBottom="true"
+        android:background="?android:attr/windowBackground"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:menu="@menu/bottom_navigation_menu" />
 
-    <Button
-        android:id="@+id/btn_change_password"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cambiar Contraseña"
-        android:backgroundTint="@color/strong_pastel_blue"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <Button
-        android:id="@+id/btn_notifications"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Configurar Notificaciones"
-        android:backgroundTint="@color/strong_pastel_blue"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <Button
-        android:id="@+id/btn_privacy_policy"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Política de Privacidad"
-        android:backgroundTint="@color/strong_pastel_blue"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <Button
-        android:id="@+id/btn_delete_account"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Eliminar Cuenta"
-        android:backgroundTint="@android:color/holo_red_dark"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:padding="12dp"
-        android:layout_marginTop="20dp"/>
-
-</LinearLayout>
+</RelativeLayout>

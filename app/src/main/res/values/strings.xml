@@ -1,3 +1,23 @@
 <resources>
     <string name="app_name">Denuncia Ciudadana</string>
+    <string name="todo">TODO</string>
+    <string name="a_n_no_has_enviado_ning_n_reporte">Aún no has enviado ningún reporte.</string>
+    <string name="filtrar_por">Filtrar por:</string>
+    <string name="mis_reportes">Mis Reportes</string>
+    <string name="cambiar_foto_de_perfil">Cambiar foto de perfil</string>
+    <string-array name="sort_options">
+        <item>Más Recientes</item>
+        <item>Cercanía</item>
+        <item>Urgencia</item>
+       <item>Baches</item>
+       <item>Basura</item>
+       <item>Fuga de Agua</item>
+       <item>Alumbrado Público</item>
+       <item>Seguridad</item>
+       <item>Otros</item>
+        <item>Todos</item>
+        <item>Pendientes</item>
+        <item>En Proceso</item>
+        <item>Resueltos</item>
+    </string-array>
 </resources>
