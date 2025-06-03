@@ -5,6 +5,13 @@
     <string name="filtrar_por">Filtrar por:</string>
     <string name="mis_reportes">Mis Reportes</string>
     <string name="cambiar_foto_de_perfil">Cambiar foto de perfil</string>
+    <string name="inicio">Inicio</string>
+    <string name="reportar">Reportar</string>
+    <string name="mi_reporte">Mis Reportes</string>
+    <string name="chat">Chat</string>
+    <string name="perfil">Perfil</string>
+    <string name="notificaciones">Notificaciones</string>
+    <string name="configuraci_n">Configuración</string>
     <string-array name="sort_options">
         <item>Más Recientes</item>
         <item>Cercanía</item>

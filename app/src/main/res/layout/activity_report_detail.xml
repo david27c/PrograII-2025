@@ -181,9 +181,9 @@ android:padding="16dp">
             android:id="@+id/buttonPostComment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="#7CA4D4"
             android:text="Enviar"
-            android:textColor="@android:color/white"
-            android:background="#7CA4D4"/>
+            android:textColor="#4A148C" />
     </LinearLayout>
 
 </LinearLayout>

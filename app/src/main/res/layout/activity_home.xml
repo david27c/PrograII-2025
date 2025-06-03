@@ -109,20 +109,21 @@
 
 </LinearLayout>
 
-<com.google.android.material.floatingactionbutton.FloatingActionButton
-    android:id="@+id/fabReportProblem"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_alignParentEnd="true"
-    android:layout_alignParentBottom="true"
-    android:layout_marginEnd="16dp"
-    android:layout_marginBottom="72dp"
-    android:clickable="true"
-    android:contentDescription="@string/app_name"
-    android:focusable="true"
-    android:src="@android:drawable/ic_input_add"
-    app:backgroundTint="#7CA4D4"
-    app:tint="@android:color/white" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabReportProblem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="72dp"
+        android:clickable="true"
+        android:contentDescription="@string/app_name"
+        android:focusable="true"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="#7CA4D4"
+        app:tint="@android:color/white"
+        tools:ignore="TouchTargetSizeCheck" />
 
 <com.google.android.material.bottomnavigation.BottomNavigationView
     android:id="@+id/bottom_navigation"

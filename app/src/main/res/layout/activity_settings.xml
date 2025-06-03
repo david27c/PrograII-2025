@@ -48,8 +48,8 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:src="@drawable/ic_notifications"
-                android:tint="#7CA4D4"
-                android:layout_marginEnd="16dp"/>
+                android:layout_marginEnd="16dp"
+                app:tint="#7CA4D4" />
 
             <TextView
                 android:layout_width="0dp"
@@ -63,7 +63,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_arrow_right"
-                android:tint="#888888"/>
+                app:tint="#888888" />
 
         </LinearLayout>
         <View
@@ -87,8 +87,8 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:src="@drawable/ic_privacy"
-                android:tint="#7CA4D4"
-                android:layout_marginEnd="16dp"/>
+                android:layout_marginEnd="16dp"
+                app:tint="#7CA4D4" />
 
             <TextView
                 android:layout_width="0dp"
@@ -102,7 +102,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_arrow_right"
-                android:tint="#888888"/>
+                app:tint="#888888" />
 
         </LinearLayout>
         <View

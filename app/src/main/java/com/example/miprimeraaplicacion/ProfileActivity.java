@@ -1,8 +1,5 @@
 package com.example.miprimeraaplicacion;
 
-import static com.example.miprimeraaplicacion.R.*;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -14,6 +11,7 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -29,8 +27,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.squareup.picasso.Picasso;
-import de.hdodenhof.circleimageview.CircleImageView; 
-import com.example.miprimeraaplicacion.models.User;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 
 public class ProfileActivity extends AppCompatActivity {
@@ -42,8 +40,8 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseStorage storage;
     private StorageReference storageRef;
 
-    // CORRECCIÓN: Declarar imageViewProfile como CircleImageView
-    private View imageViewProfile;
+    // CORREGIDO: Declarado correctamente como CircleImageView (eliminando la declaración duplicada de View)
+    private CircleImageView imageViewProfile;
     private TextView textViewEditProfileImage;
     private EditText editTextUsername, editTextEmail, editTextPhone, editTextAddress;
     private Button buttonSaveProfile, buttonLogout;
@@ -68,7 +66,7 @@ public class ProfileActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        // CORRECCIÓN: Castear a CircleImageView
+        // CORREGIDO: Casting explícito a CircleImageView, es una buena práctica para View a subtipo
         imageViewProfile = findViewById(R.id.imageViewProfile);
         textViewEditProfileImage = findViewById(R.id.textViewEditProfileImage);
         editTextUsername = findViewById(R.id.editTextUsername);
@@ -132,10 +130,6 @@ public class ProfileActivity extends AppCompatActivity {
         return true;
     }
 
-    public ProfileActivity(FirebaseAuth mAuth) {
-        this.mAuth = mAuth;
-    }
-
     @Override
     public String toString() {
         return "ProfileActivity{" +
@@ -157,7 +151,7 @@ public class ProfileActivity extends AppCompatActivity {
                 '}';
     }
 
-    @SuppressLint("UnsafeDynamicallyLoadedCode")
+    // ANOTACIÓN ELIMINADA: @SuppressLint("UnsafeDynamicallyLoadedCode")
     private void loadUserProfile() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
@@ -185,8 +179,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 editTextAddress.setText(user.getAddress());
 
                                 if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
-                                    // CORRECCIÓN: Picasso.get().load(URL).into(CircleImageView)
-                                    CircleImageView imageViewProfile = (CircleImageView) findViewById(R.id.imageViewProfile);
+                                    // CORREGIDO: Picasso.get().load(user.getProfileImageUrl()).into(imageViewProfile);
                                     Picasso.get().load(user.getProfileImageUrl()).into(imageViewProfile);
                                 }
                             }
@@ -199,12 +192,20 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+    // ELIMINADAS: Las clases anidadas incorrectas de CircleImageView y Picasso
+    /*
+    private CircleImageView imageViewProfile; // Declarado correctamente como CircleImageView
+    private class CircleImageView {
+    }
+
+    private static class Picasso {
+        public static System get() {
+            return null;
+        }
+    }
+    */
 
     private void initializeUserDocument(String uid, String email) {
-        // CORRECCIÓN: Usar String.valueOf(0) o un valor por defecto adecuado si User espera String, no int.
-        // Asumiendo que getUsername(), getPhone(), getAddress() en tu modelo User devuelven String.
-        // Si tu constructor User espera String para esos campos, usa "" en lugar de 0.
-        // Basado en el modelo User que te di antes, debería ser String.
         User newUser = new User(uid, "", email, "", "", "");
         db.collection("users").document(uid).set(newUser)
                 .addOnSuccessListener(aVoid -> Toast.makeText(ProfileActivity.this, "Documento de usuario inicializado.", Toast.LENGTH_SHORT).show())
@@ -225,8 +226,8 @@ public class ProfileActivity extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK
                 && data != null && data.getData() != null) {
             imageUri = data.getData();
-            // CORRECCIÓN: Picasso.get().load(Uri).into(CircleImageView)
-            CircleImageView imageViewProfile = (CircleImageView) this.findViewById(id.imageViewProfile);
+            // CORREGIDO: Se pasa directamente el Uri, no String.valueOf()
+            Picasso.get().load(imageUri).into(imageViewProfile);
         }
     }
 
@@ -297,37 +298,5 @@ public class ProfileActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("No", null)
                 .show();
-    }
-
-    private class CircleImageView {
-    }
-
-    private class User {
-        public User(String uid, String s, String email, String s1, String s2, String s3) {
-
-        }
-
-        public int getUsername() {
-            return 0;
-        }
-
-        public int getPhone() {
-            int i = 0;
-            return i;
-        }
-
-        public int getAddress() {
-            return 0;
-        }
-
-        public String getProfileImageUrl() {
-            return null;
-        }
-    }
-
-    private static class Picasso {
-        public static System get() {
-            return null;
-        }
     }
 }

@@ -37,33 +37,28 @@ android {
 }
 
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(libs.firebase.inappmessaging)
-    implementation(libs.room.runtime.android)
-    implementation(libs.firebase.firestore)
+
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+
     implementation(libs.firebase.auth)
-    implementation(libs.mediation.test.suite)
+    implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.inappmessaging)
     implementation(libs.google.firebase.inappmessaging)
+
+    implementation(libs.room.runtime.android)
+    implementation("com.squareup.picasso:picasso:2.71828")
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("com.firebaseui:firebase-ui-storage:9.0.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-    implementation(platform("com.google.firebase:firebase-database"))
-    implementation(platform("com.google.firebase:firebase-messaging"))
-    implementation(platform("com.google.firebase:firebase-storage"))
-    implementation(platform("com.firebaseui:firebase-ui-storage:9.0.0"))
-    implementation (platform("com.squareup.picasso:picasso:2.71828"))
-    implementation (platform("androidx.cardview:cardview:1.0.0"))
-    implementation (platform("de.hdodenhof:circleimageview:3.1.0"))
-    implementation (platform("com.google.android.material:material:1.5.0"))
-    implementation (platform("com.squareup.picasso:picasso:2.71828"))
-    implementation (platform("com.google.firebase:firebase-storage:20.0.0"))
-    implementation (platform("de.hdodenhof:circleimageview:3.1.0"))
+    implementation(libs.mediation.test.suite)
 }

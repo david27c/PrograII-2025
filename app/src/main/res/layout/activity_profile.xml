@@ -46,14 +46,15 @@
                 android:id="@+id/textViewEditProfileImage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:minHeight="48dp"
+                android:padding="4dp"
                 android:text="@string/cambiar_foto_de_perfil"
                 android:textColor="#7CA4D4"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="4dp"
-                android:layout_marginBottom="24dp"/>
+                android:textStyle="bold" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"

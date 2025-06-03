@@ -85,19 +85,19 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_edit"
-            android:tint="#7CA4D4"
             android:clickable="true"
             android:focusable="true"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="8dp"
+            app:tint="#7CA4D4" />
 
             <ImageView
                 android:id="@+id/imageViewDelete"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_delete"
-                android:tint="@android:color/holo_red_dark"
                 android:clickable="true"
-                android:focusable="true"/>
+                android:focusable="true"
+                app:tint="@android:color/holo_red_dark" />
         </LinearLayout>
 
     </LinearLayout>

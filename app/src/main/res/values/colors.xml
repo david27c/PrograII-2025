@@ -9,5 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_blue">#7CA4D4</color>
     <color name="light_green">#A8E6CF</color>
-
-    <color name="unread_notification_background">#E3F2FD</color> </resources>
+    <color name="unread_notification_background">#E3F2FD</color>
+</resources>
