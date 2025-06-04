@@ -16,18 +16,24 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException; // Import specific Firebase exceptions
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;     // Import specific Firebase exceptions
 
 public class LoginActivity extends AppCompatActivity {
 
-    private EditText editTextEmail, editTextPassword;
-    private Button buttonLogin;
-    private TextView textViewForgotPassword, textViewCreateAccount, textViewError;
-    private FirebaseAuth mAuth; // Instancia de Firebase Authentication
+    EditText editTextEmail, editTextPassword;
+    Button buttonLogin;
+    TextView textViewForgotPassword, textViewCreateAccount, textViewError;
+    FirebaseAuth mAuth; // Instancia de Firebase Authentication
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // No es necesario un try-catch grande aquí, los findViewById suelen ser seguros
+        // a menos que el R.id no exista, lo cual sería un error de compilación o un crash inmediato.
+        // Las operaciones de inicialización son raramente la fuente de excepciones.
 
         // Inicializar Firebase Auth
         mAuth = FirebaseAuth.getInstance();
@@ -54,6 +60,14 @@ public class LoginActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Aquí podrías abrir una nueva Activity para restablecer contraseña
                 Toast.makeText(LoginActivity.this, "Funcionalidad de restablecer contraseña (por implementar)", Toast.LENGTH_SHORT).show();
+                // Opcional: Podrías abrir una AlertDialog para pedir el email para restablecer
+                // new AlertDialog.Builder(LoginActivity.this)
+                //     .setTitle("Restablecer Contraseña")
+                //     .setMessage("Ingresa tu correo electrónico para restablecer la contraseña.")
+                //     .setView(new EditText(LoginActivity.this)) // Example of adding an input
+                //     .setPositiveButton("Enviar", (dialog, which) -> { /* Logic to send reset email */ })
+                //     .setNegativeButton("Cancelar", null)
+                //     .show();
             }
         });
 
@@ -68,12 +82,16 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    private void mostrarmsg(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
     // Método para iniciar sesión
     private void loginUser() {
         String email = editTextEmail.getText().toString().trim();
         String password = editTextPassword.getText().toString().trim();
 
-        // Validaciones básicas
+        // Validaciones básicas (no necesitan try-catch a menos que TextUtils falle, lo cual es muy raro)
         if (TextUtils.isEmpty(email)) {
             textViewError.setText("Por favor, ingresa tu correo electrónico.");
             textViewError.setVisibility(View.VISIBLE);
@@ -89,6 +107,7 @@ public class LoginActivity extends AppCompatActivity {
         textViewError.setVisibility(View.GONE);
 
         // Iniciar sesión con Firebase Authentication
+        // Las excepciones de Firebase se manejan en el onComplete a través de task.getException()
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -99,12 +118,19 @@ public class LoginActivity extends AppCompatActivity {
                             // Navegar a la pantalla principal (Inicio)
                             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
                             startActivity(intent);
-                            finish(); // Finaliza esta actividad para que el usuario no pueda volver atrás con el botón 'atrás'
+                            finish(); // Finaliza esta actividad
                         } else {
                             // Si el inicio de sesión falla, muestra un mensaje al usuario.
                             String errorMessage = "Error al iniciar sesión. Verifica tus credenciales.";
                             if (task.getException() != null) {
-                                errorMessage += "\nDetalles: " + task.getException().getMessage();
+                                // Specific error messages for better user feedback
+                                if (task.getException() instanceof FirebaseAuthInvalidUserException) {
+                                    errorMessage = "Este correo electrónico no está registrado.";
+                                } else if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
+                                    errorMessage = "La contraseña es incorrecta.";
+                                } else {
+                                    errorMessage += "\nDetalles: " + task.getException().getMessage();
+                                }
                             }
                             textViewError.setText(errorMessage);
                             textViewError.setVisibility(View.VISIBLE);

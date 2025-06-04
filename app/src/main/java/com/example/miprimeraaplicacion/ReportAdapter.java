@@ -13,6 +13,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.squareup.picasso.Picasso;
+
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
@@ -137,12 +139,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
 
         public String getStatus() {
             return "";
-        }
-    }
-
-    private static class Picasso {
-        public static System get() {
-            return null;
         }
     }
 }

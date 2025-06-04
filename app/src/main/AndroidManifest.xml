@@ -10,7 +10,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" /> <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -31,14 +32,15 @@
             </intent-filter>
         </activity>
         <activity android:name=".CreateAccountActivity" />
-        <activity android:name=".HomeActivity" />
-        <activity android:name=".ReportProblemActivity" />
-        <activity android:name=".MyReportsActivity" />
-        <activity android:name=".CommunityChatActivity" />
-        <activity android:name=".IndividualChatActivity" />
-        <activity android:name=".ProfileActivity" />
-        <activity android:name=".NotificationsActivity" />
-        <activity android:name=".SettingsActivity" />
+
+        <activity android:name=".HomeActivity" android:exported="false" />
+        <activity android:name=".ReportProblemActivity" android:exported="false"/>
+        <activity android:name=".MyReportsActivity" android:exported="false"/>
+        <activity android:name=".CommunityChatActivity" android:exported="false"/>
+        <activity android:name=".IndividualChatActivity" android:exported="false"/>
+        <activity android:name=".ProfileActivity" android:exported="false"/>
+        <activity android:name=".NotificationsActivity" android:exported="false"/>
+        <activity android:name=".SettingsActivity" android:exported="false"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -50,6 +52,19 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/design_default_color_primary" />
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
     </application>
 
 </manifest>

@@ -5,6 +5,8 @@ val implementation: Unit
 
 plugins {
     alias(libs.plugins.android.application)
+    // AÑADIDO: Plugin de Google Services para Firebase
+    id("com.google.gms.google-services") // Esta línea es clave
 }
 
 android {
@@ -13,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.miprimeraaplicacion"
-        minSdk = 22
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
