@@ -18,8 +18,9 @@ public class Denuncia {
     @ServerTimestamp
     private Date fechaHora;
     private String estado;
-    private List<Map<String, Object>> comments; // NUEVO: Campo para los comentarios
+    private List<Map<String, Object>> comments; // Campo para los comentarios
 
+    // Constructor vacío requerido por Firestore para deserialización
     public Denuncia() {
         // Obligatorio para Firestore
     }
@@ -37,7 +38,8 @@ public class Denuncia {
         this.urlImagen = urlImagen;
         this.fechaHora = fechaHora;
         this.estado = estado;
-        this.comments = Collections.emptyList(); // Inicializar como lista vacía por defecto
+        // Inicializar como lista vacía para evitar NullPointerException si no hay comentarios en Firestore
+        this.comments = Collections.emptyList();
     }
 
     // --- Getters y Setters ---
@@ -72,7 +74,7 @@ public class Denuncia {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    // NUEVO: Getter y Setter para comments
+    // Getter y Setter para comments
     public List<Map<String, Object>> getComments() {
         return comments;
     }

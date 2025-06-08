@@ -1,3 +1,5 @@
+// settings.gradle.kts (ubicación: raíz del proyecto)
+
 pluginManagement {
     repositories {
         google {
@@ -11,14 +13,9 @@ pluginManagement {
         gradlePluginPortal()
     }
     plugins {
-        // Asegúrate de que esta línea esté aquí con la versión del plugin de Google Services.
-        // La versión 4.4.1 es un valor común, pero puedes actualizarla si Android Studio
-        // te sugiere una versión más reciente.
-        id("com.google.gms.google-services") version "4.4.1"
-
-        // Esta línea es para el plugin de Android Application.
-        // Asegúrate de que la versión (ej. 8.5.1) coincida con la que estás usando en tu build.gradle.kts (Module: app).
-        id("com.android.application") version "8.5.1"
+        id("com.google.gms.google-services") version "4.4.2"
+        id("com.android.application") version "8.5.1" // AJUSTA ESTA VERSIÓN SI ES DIFERENTE EN TU PROYECTO
+        id("org.jetbrains.kotlin.android") version "1.9.0" // AJUSTA ESTA VERSIÓN SI USAS OTRA
     }
 }
 dependencyResolutionManagement {
@@ -29,5 +26,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "miPrimeraAplicacion"
+rootProject.name = "MiPrimeraAplicacion" // Asegúrate que sea el nombre exacto de tu proyecto
 include(":app")

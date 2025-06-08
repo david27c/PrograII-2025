@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -13,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -33,11 +35,11 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     public static final String EXTRA_DENUNCIA_ID = "denuncia_id";
     private static final String TAG = "DenunciaDetailActivity";
 
-    private ImageView imageViewReport; // ID: imageViewReport
-    private TextView textViewTitle, textViewDescription, textViewLocation, textViewDateTime, textViewStatus; // IDs ajustados
+    private ImageView imageViewReport;
+    private TextView textViewTitle, textViewDescription, textViewLocation, textViewDateTime, textViewStatus;
     private LinearLayout layoutUserActions, layoutHistory, layoutComments;
     private EditText editTextComment;
-    private View buttonEdit, buttonDelete, buttonPostComment; // Se usan como View para los OnClickListeners
+    private View buttonEdit, buttonDelete, buttonPostComment;
 
     private String denunciaId;
     private FirebaseAuth mAuth;
@@ -46,7 +48,7 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_denuncia_detail); // Apunta al layout que me diste
+        setContentView(R.layout.activity_denuncia_detail);
 
         mAuth = FirebaseAuth.getInstance();
         dbFirebase = new DBFirebase(this);
@@ -54,16 +56,16 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Habilita el botón de regreso
-            getSupportActionBar().setTitle("Detalle del Reporte"); // Título según tu layout
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Detalle del Reporte");
         }
 
-        imageViewReport = findViewById(R.id.imageViewReport); // Ajustado a tu ID
-        textViewTitle = findViewById(R.id.textViewTitle); // Ajustado a tu ID
-        textViewDescription = findViewById(R.id.textViewDescription); // Ajustado a tu ID
-        textViewLocation = findViewById(R.id.textViewLocation); // Ajustado a tu ID
-        textViewDateTime = findViewById(R.id.textViewDateTime); // Ajustado a tu ID
-        textViewStatus = findViewById(R.id.textViewStatus); // Ajustado a tu ID
+        imageViewReport = findViewById(R.id.imageViewReport);
+        textViewTitle = findViewById(R.id.textViewTitle);
+        textViewDescription = findViewById(R.id.textViewDescription);
+        textViewLocation = findViewById(R.id.textViewLocation);
+        textViewDateTime = findViewById(R.id.textViewDateTime);
+        textViewStatus = findViewById(R.id.textViewStatus);
 
         layoutUserActions = findViewById(R.id.layoutUserActions);
         layoutHistory = findViewById(R.id.layoutHistory);
@@ -73,7 +75,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         buttonDelete = findViewById(R.id.buttonDelete);
         buttonPostComment = findViewById(R.id.buttonPostComment);
         editTextComment = findViewById(R.id.editTextComment);
-
 
         // Obtener el ID de la denuncia del Intent
         if (getIntent().hasExtra(EXTRA_DENUNCIA_ID)) {
@@ -93,7 +94,7 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         buttonPostComment.setOnClickListener(v -> postComment());
 
         // Listener para abrir la ubicación en un mapa (opcional)
-        textViewLocation.setOnClickListener(v -> { // Ajustado a tu ID
+        textViewLocation.setOnClickListener(v -> {
             if (textViewLocation.getText().toString().startsWith("Ubicación: Lat:")) {
                 String locationText = textViewLocation.getText().toString();
                 String[] parts = locationText.split("Lat: | Lon: ");
@@ -123,6 +124,16 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         return true;
     }
 
+    // Este método es para que el botón de regreso de la toolbar funcione
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed(); // Vuelve a la actividad anterior
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private void loadDenunciaDetails(String id) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
@@ -131,23 +142,9 @@ public class DenunciaDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // Si tienes ProgressBar en tu layout, asegúrate de que el ID sea correcto
-        // Por la simplicidad de tu XML proporcionado, los quitamos aquí
-        // ProgressBar progressBar = findViewById(R.id.progressBarDetail);
-        // TextView loadingMessage = findViewById(R.id.textViewLoadingMessage);
-        // if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-        // if (loadingMessage != null) {
-        //     loadingMessage.setVisibility(View.VISIBLE);
-        //     loadingMessage.setText("Cargando detalles de la denuncia...");
-        // }
-
-
         dbFirebase.obtenerDenunciaPorId(id, new DBFirebase.DenunciaCallback() {
             @Override
             public void onSuccess(Denuncia denuncia) {
-                // if (progressBar != null) progressBar.setVisibility(View.GONE);
-                // if (loadingMessage != null) loadingMessage.setVisibility(View.GONE);
-
                 if (denuncia != null) {
                     textViewTitle.setText(denuncia.getTitulo());
                     textViewDescription.setText(denuncia.getDescripcion());
@@ -155,34 +152,34 @@ public class DenunciaDetailActivity extends AppCompatActivity {
                             denuncia.getLatitud(), denuncia.getLongitud()));
 
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                    textViewDateTime.setText("Fecha y Hora: " + sdf.format(new Date(String.valueOf(denuncia.getFechaHora()))));
+                    // CORRECCIÓN: Usar directamente denuncia.getFechaHora() que ya es un Date
+                    if (denuncia.getFechaHora() != null) {
+                        textViewDateTime.setText("Fecha y Hora: " + sdf.format(denuncia.getFechaHora()));
+                    } else {
+                        textViewDateTime.setText("Fecha y Hora: N/A");
+                    }
 
                     textViewStatus.setText("Estado: " + denuncia.getEstado());
-                    // Asignar color al estado según tu preferencia
                     String status = denuncia.getEstado();
                     if ("Resuelto".equals(status)) {
                         textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_green_dark));
                     } else if ("En Proceso".equals(status)) {
                         textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_orange_dark));
                     } else { // Pendiente o cualquier otro
-                        textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_red_dark)); // Tu layout usaba FF0000 para "Pendiente"
+                        textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_red_dark));
                     }
 
                     if (denuncia.getUrlImagen() != null && !denuncia.getUrlImagen().isEmpty()) {
                         imageViewReport.setVisibility(View.VISIBLE);
                         Glide.with(DenunciaDetailActivity.this)
                                 .load(denuncia.getUrlImagen())
-                                .placeholder(R.drawable.placeholder_image) // Usando tu drawable
-                                .error(R.drawable.placeholder_image) // Usando tu drawable
+                                .placeholder(R.drawable.placeholder_image)
+                                .error(R.drawable.placeholder_image)
                                 .into(imageViewReport);
                     } else {
                         imageViewReport.setVisibility(View.GONE);
-                        // Si no hay imagen, asegúrate de que el placeholder_image no sea el src por defecto
-                        // si quieres que no aparezca nada. Tu XML tiene visibility="gone" y un background gris.
-                        // Lo dejamos como está, si no hay URL, se oculta.
                     }
 
-                    // Mostrar botones de Editar/Eliminar si es el reporte del usuario actual
                     if (mAuth.getCurrentUser() != null && mAuth.getCurrentUser().getUid().equals(denuncia.getIdUsuario())) {
                         layoutUserActions.setVisibility(View.VISIBLE);
                     } else {
@@ -200,8 +197,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
-                // if (progressBar != null) progressBar.setVisibility(View.GONE);
-                // if (loadingMessage != null) loadingMessage.setVisibility(View.GONE);
                 Toast.makeText(DenunciaDetailActivity.this, "Error al cargar la denuncia: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Error loading denuncia: " + e.getMessage(), e);
                 finish();
@@ -276,27 +271,26 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         });
     }
 
-    @SuppressLint("SetTextI19n")
+    @SuppressLint("SetTextI18n")
     private void loadHistory(Denuncia denuncia) {
         layoutHistory.removeAllViews();
 
-        // Esta sección es un placeholder. Si tienes un campo 'history' en Denuncia,
-        // puedes cargarlo aquí. Por ahora, solo muestra la fecha de creación.
         TextView historyItem = new TextView(this);
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        historyItem.setText("Reporte creado el " + sdf.format(new Date(String.valueOf(denuncia.getFechaHora()))));
+        // CORRECCIÓN: Usar directamente denuncia.getFechaHora() que ya es un Date
+        if (denuncia.getFechaHora() != null) {
+            historyItem.setText("Reporte creado el " + sdf.format(denuncia.getFechaHora()));
+        } else {
+            historyItem.setText("Reporte creado el: N/A");
+        }
         historyItem.setTextColor(ContextCompat.getColor(this, android.R.color.black));
         layoutHistory.addView(historyItem);
-
-        // Si Denuncia tuviera un campo List<Map<String, Object>> history, lo cargarías así:
-        // List<Map<String, Object>> historyList = denuncia.getHistory();
-        // if (historyList != null && !historyList.isEmpty()) { ... }
     }
 
     private void loadComments(Denuncia denuncia) {
         layoutComments.removeAllViews();
 
-        List<Map<String, Object>> commentsList = denuncia.getComments(); // Asumiendo que Denuncia tiene getComments()
+        List<Map<String, Object>> commentsList = denuncia.getComments();
 
         if (commentsList != null && !commentsList.isEmpty()) {
             commentsList.sort((c1, c2) -> {

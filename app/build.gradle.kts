@@ -1,12 +1,9 @@
-val implementation: Unit
-    get() {
-        TODO()
-    }
+// build.gradle.kts (nivel módulo: app, ubicación: app/build.gradle.kts)
 
 plugins {
-    alias(libs.plugins.android.application)
-    // AÑADIDO: Plugin de Google Services para Firebase
-    id("com.google.gms.google-services") // Esta línea es clave
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android") // Si tu proyecto es Kotlin
+    id("com.google.gms.google-services") // Sin versión aquí, ya definida en settings.gradle.kts.
 }
 
 android {
@@ -32,6 +29,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -39,25 +37,28 @@ android {
 }
 
 dependencies {
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    implementation(libs.activity)
-    implementation(libs.constraintlayout)
+    // Firebase BoM (usa la versión más reciente)
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
 
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-
+    // Firebase products
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.inappmessaging)
     implementation(libs.google.firebase.inappmessaging)
 
+    // Otras dependencias
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
     implementation(libs.room.runtime.android)
     implementation("com.squareup.picasso:picasso:2.71828")
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("com.firebaseui:firebase-ui-storage:9.0.0")
 
+    // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

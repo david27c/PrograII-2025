@@ -3,6 +3,7 @@ package com.example.miprimeraaplicacion;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log; // Asegúrate de tener esta importación
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,6 +18,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException; // Importaciones para excepciones comunes
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -32,6 +36,9 @@ public class CreateAccountActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
+
+    // Etiqueta para Logcat
+    private static final String TAG = "CreateAccountActivity"; // Agrega esta línea
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +91,7 @@ public class CreateAccountActivity extends AppCompatActivity {
         String password = editTextPassword.getText().toString().trim();
         String confirmPassword = editTextConfirmPassword.getText().toString().trim();
 
-        // Validaciones
+        // Validaciones locales
         if (TextUtils.isEmpty(fullName) || TextUtils.isEmpty(email) || TextUtils.isEmpty(username) ||
                 TextUtils.isEmpty(password) || TextUtils.isEmpty(confirmPassword)) {
             textViewError.setText("Por favor, completa todos los campos.");
@@ -121,8 +128,24 @@ public class CreateAccountActivity extends AppCompatActivity {
                         } else {
                             // Si el registro falla, muestra un mensaje al usuario.
                             String errorMessage = "Error al registrar la cuenta.";
-                            if (task.getException() != null) {
-                                errorMessage += "\nDetalles: " + task.getException().getMessage();
+                            Exception exception = task.getException();
+
+                            if (exception != null) {
+                                // Aquí intentamos ser más específicos con el mensaje de error de Firebase
+                                if (exception instanceof FirebaseAuthWeakPasswordException) {
+                                    errorMessage = "La contraseña es muy débil. Debe tener al menos 6 caracteres y ser más compleja.";
+                                } else if (exception instanceof FirebaseAuthInvalidCredentialsException) {
+                                    errorMessage = "El formato del correo electrónico es inválido.";
+                                } else if (exception instanceof FirebaseAuthUserCollisionException) {
+                                    errorMessage = "Este correo electrónico ya está registrado.";
+                                } else {
+                                    // Para otros errores no específicos, mostramos el mensaje original de Firebase
+                                    errorMessage += "\nDetalles: " + exception.getMessage();
+                                }
+                                // ¡¡¡Esta es la línea clave que necesito que busques en Logcat!!!
+                                Log.e(TAG, "Error de registro de Firebase: " + exception.getMessage(), exception);
+                            } else {
+                                Log.e(TAG, "Error de registro desconocido: la excepción es nula.");
                             }
                             textViewError.setText(errorMessage);
                             textViewError.setVisibility(View.VISIBLE);
@@ -153,6 +176,9 @@ public class CreateAccountActivity extends AppCompatActivity {
                             String errorMessage = "Error al guardar datos del usuario.";
                             if (task.getException() != null) {
                                 errorMessage += "\nDetalles: " + task.getException().getMessage();
+                                Log.e(TAG, "Error al guardar datos en Firestore: " + task.getException().getMessage(), task.getException());
+                            } else {
+                                Log.e(TAG, "Error al guardar datos en Firestore: la excepción es nula.");
                             }
                             textViewError.setText(errorMessage);
                             textViewError.setVisibility(View.VISIBLE);

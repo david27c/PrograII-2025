@@ -24,12 +24,12 @@ import java.util.List;
 public class HomeActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
-    private DBLocal dbLocal; // Mantener si es necesario para otras funcionalidades
+    private DBLocal dbLocal;
     private DBFirebase dbFirebase;
 
     private RecyclerView recyclerViewReports;
-    private DenunciaAdapter denunciaAdapter; // Usamos DenunciaAdapter
-    private List<Denuncia> denunciaList; // Usamos la clase Denuncia
+    private DenunciaAdapter denunciaAdapter;
+    private List<Denuncia> denunciaList;
 
     private ProgressBar progressBar;
     private Spinner spinnerSortBy;
@@ -39,7 +39,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home); // Usamos el layout corregido
+        setContentView(R.layout.activity_home);
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -51,7 +51,7 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        dbLocal = new DBLocal(this); // Asumiendo que DBLocal aún es relevante
+        dbLocal = new DBLocal(this);
         dbFirebase = new DBFirebase(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -68,10 +68,9 @@ public class HomeActivity extends AppCompatActivity {
 
         recyclerViewReports.setLayoutManager(new LinearLayoutManager(this));
         denunciaList = new ArrayList<>();
-        denunciaAdapter = new DenunciaAdapter(this, denunciaList); // Inicializamos el adaptador
+        denunciaAdapter = new DenunciaAdapter(this, denunciaList);
         recyclerViewReports.setAdapter(denunciaAdapter);
 
-        // Configurar el Spinner de ordenar por
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.sort_options, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -116,7 +115,8 @@ public class HomeActivity extends AppCompatActivity {
     private void loadReports() {
         progressBar.setVisibility(View.VISIBLE);
 
-        dbFirebase.obtenerTodasLasDenuncias(new DBFirebase.DenunciasCallback() {
+        // *** ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ ASÍ Y NO DIGA DenunciasCallback ***
+        dbFirebase.obtenerTodasLasDenuncias(new DBFirebase.ListDenunciasCallback() {
             @Override
             public void onSuccess(List<Denuncia> denuncias) {
                 progressBar.setVisibility(View.GONE);
