@@ -1,11 +1,13 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -16,55 +18,73 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
-import org.jetbrains.annotations.Contract;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MyReportsActivity extends AppCompatActivity {
 
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
+    private static final String TAG = "MyReportsActivity";
 
     private RecyclerView recyclerViewMyReports;
-    private ReportAdapter reportAdapter;
-    private List<Report> reportList;
-
+    private DenunciaAdapter denunciaAdapter;
+    private List<Denuncia> myDenunciaList;
     private ProgressBar progressBarMyReports;
     private TextView textViewNoReports;
-    private Spinner spinnerFilterReports;
+    private Spinner spinnerStatusFilter;
     private BottomNavigationView bottomNavigationView;
 
+    private FirebaseAuth mAuth;
+    private DBFirebase dbFirebase; // Usamos DBFirebase
+    private DBLocal dbLocal; // Podemos seguir usando DBLocal para backup
+
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_reports);
 
         mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        dbFirebase = new DBFirebase(this);
+        dbLocal = new DBLocal(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("Mis Denuncias");
 
         recyclerViewMyReports = findViewById(R.id.recyclerViewMyReports);
         progressBarMyReports = findViewById(R.id.progressBarMyReports);
         textViewNoReports = findViewById(R.id.textViewNoReports);
-        spinnerFilterReports = findViewById(R.id.spinnerFilterReports);
+        spinnerStatusFilter = findViewById(R.id.spinnerStatusFilter);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
+        myDenunciaList = new ArrayList<>();
+        denunciaAdapter = new DenunciaAdapter(this, myDenunciaList); // Asegúrate de que este adaptador sea el DenunciaAdapter
         recyclerViewMyReports.setLayoutManager(new LinearLayoutManager(this));
-        reportList = new ArrayList<>();
-        reportAdapter = new ReportAdapter(this, reportList);
-        recyclerViewMyReports.setAdapter(reportAdapter);
+        recyclerViewMyReports.setAdapter(denunciaAdapter);
+
+        // Configurar Spinner para filtrar por estado
+        ArrayAdapter<CharSequence> spinnerAdapter = ArrayAdapter.createFromResource(this,
+                R.array.report_status_filter_options, android.R.layout.simple_spinner_item);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerStatusFilter.setAdapter(spinnerAdapter);
+
+        spinnerStatusFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedStatus = parent.getItemAtPosition(position).toString();
+                loadMyReports(selectedStatus);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // No hacer nada
+            }
+        });
 
         // Configurar la navegación inferior
         bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -80,8 +100,7 @@ public class MyReportsActivity extends AppCompatActivity {
                     finish();
                     return true;
                 } else if (itemId == R.id.nav_my_reports) {
-                    // Ya estamos en MyReportsActivity
-                    return true;
+                    return true; // Ya estamos en MyReportsActivity
                 } else if (itemId == R.id.nav_chat) {
                     startActivity(new Intent(MyReportsActivity.this, CommunityChatActivity.class));
                     finish();
@@ -102,118 +121,111 @@ public class MyReportsActivity extends AppCompatActivity {
                 return false;
             }
         });
-        // Asegurarse de que el ítem "Mis Reportes" esté seleccionado al inicio
         bottomNavigationView.setSelectedItemId(R.id.nav_my_reports);
 
-
-        // Listener para el Spinner de filtros
-        spinnerFilterReports.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                loadMyReports(); // Recargar reportes cada vez que cambia el filtro
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // No hacer nada
-            }
-        });
-
-        loadMyReports(); // Cargar los reportes al iniciar la actividad
+        // Cargar las denuncias al iniciar la actividad
+        loadMyReports("Todos"); // Cargar todas las denuncias por defecto
     }
 
-    private void loadMyReports() {
+    private void loadMyReports(String statusFilter) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
-            Toast.makeText(this, "Debes iniciar sesión para ver tus reportes.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Necesitas iniciar sesión para ver tus reportes.", Toast.LENGTH_LONG).show();
             textViewNoReports.setText("Inicia sesión para ver tus reportes.");
             textViewNoReports.setVisibility(View.VISIBLE);
             recyclerViewMyReports.setVisibility(View.GONE);
             return;
         }
 
+        String userId = currentUser.getUid();
         progressBarMyReports.setVisibility(View.VISIBLE);
         textViewNoReports.setVisibility(View.GONE);
         recyclerViewMyReports.setVisibility(View.GONE);
 
-        String userId = currentUser.getUid();
-        Query query = db.collection("reports")
-                .whereEqualTo("userId", userId)
-                .orderBy("timestamp", Query.Direction.DESCENDING); // Ordenar por los más recientes
+        // Primero, intentar cargar de Firebase
+        dbFirebase.obtenerDenunciasDeUsuario(userId, statusFilter, new DBFirebase.ListDenunciasCallback() {
+            @Override
+            public void onSuccess(List<Denuncia> denuncias) {
+                myDenunciaList.clear();
+                myDenunciaList.addAll(denuncias);
+                denunciaAdapter.notifyDataSetChanged();
+                progressBarMyReports.setVisibility(View.GONE);
 
-        String selectedFilter = spinnerFilterReports.getSelectedItem().toString();
-        if (!selectedFilter.equals("Todos")) {
-            // Firestore es sensible a mayúsculas/minúsculas, asegura la coincidencia
-            query = query.whereEqualTo("status", selectedFilter);
-        }
+                if (myDenunciaList.isEmpty()) {
+                    textViewNoReports.setText("No tienes reportes en la nube para el filtro seleccionado.");
+                    textViewNoReports.setVisibility(View.VISIBLE);
+                    recyclerViewMyReports.setVisibility(View.GONE);
+                } else {
+                    textViewNoReports.setVisibility(View.GONE);
+                    recyclerViewMyReports.setVisibility(View.VISIBLE);
+                }
+                Log.d(TAG, "Denuncias cargadas desde Firebase: " + denuncias.size());
+            }
 
-        query.get()
-                .addOnCompleteListener(task -> {
-                    progressBarMyReports.setVisibility(View.GONE);
-                    if (task.isSuccessful()) {
-                        reportList.clear();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Report report = document.toObject(Report.class);
-                            report.setId(document.getId()); // Es importante guardar el ID del documento
-                            reportList.add(report);
+            @Override
+            public void onFailure(Exception e) {
+                Log.e(TAG, "Error al cargar denuncias desde Firebase: " + e.getMessage());
+                Toast.makeText(MyReportsActivity.this, "Error al cargar reportes de la nube. Intentando cargar localmente.", Toast.LENGTH_LONG).show();
+
+                // Si falla Firebase, intentar cargar desde la DB local
+                List<Denuncia> localDenuncias = dbLocal.obtenerDenunciasPorUsuario(userId);
+                myDenunciaList.clear();
+                // Filtrar localmente si se aplica un filtro de estado
+                if (statusFilter != null && !statusFilter.isEmpty() && !statusFilter.equals("Todos")) {
+                    for (Denuncia d : localDenuncias) {
+                        if (d.getEstado().equals(statusFilter)) {
+                            myDenunciaList.add(d);
                         }
-                        reportAdapter.updateReports(reportList); // Actualizar el adaptador
-                        if (reportList.isEmpty()) {
-                            textViewNoReports.setVisibility(View.VISIBLE);
-                            recyclerViewMyReports.setVisibility(View.GONE);
-                        } else {
-                            textViewNoReports.setVisibility(View.GONE);
-                            recyclerViewMyReports.setVisibility(View.VISIBLE);
-                        }
-                    } else {
-                        Toast.makeText(MyReportsActivity.this, "Error al cargar reportes: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        textViewNoReports.setText("Error al cargar reportes.");
-                        textViewNoReports.setVisibility(View.VISIBLE);
-                        recyclerViewMyReports.setVisibility(View.GONE);
                     }
-                });
+                } else {
+                    myDenunciaList.addAll(localDenuncias);
+                }
+                denunciaAdapter.notifyDataSetChanged();
+                progressBarMyReports.setVisibility(View.GONE);
+
+                if (myDenunciaList.isEmpty()) {
+                    textViewNoReports.setText("No tienes reportes (ni en la nube ni localmente) para el filtro seleccionado.");
+                    textViewNoReports.setVisibility(View.VISIBLE);
+                    recyclerViewMyReports.setVisibility(View.GONE);
+                } else {
+                    textViewNoReports.setVisibility(View.GONE);
+                    recyclerViewMyReports.setVisibility(View.VISIBLE);
+                }
+                Log.d(TAG, "Denuncias cargadas desde DBLocal: " + myDenunciaList.size());
+            }
+        });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadMyReports(); // Recargar los reportes cada vez que la actividad se hace visible
-    }
+    // Adaptador de MyReportsActivity ya no es necesario, usamos DenunciaAdapter
 
-    private class ReportAdapter extends RecyclerView.Adapter {
-        private ViewGroup parent;
-        private int viewType;
+    // Asegúrate de que el archivo `arrays.xml` tenga este array:
+    // <resources>
+    //     <string-array name="report_status_filter_options">
+    //         <item>Todos</item>
+    //         <item>Pendiente</item>
+    //         <item>En Proceso</item>
+    //         <item>Resuelto</item>
+    //     </string-array>
+    // </resources>
 
-        public ReportAdapter(MyReportsActivity myReportsActivity, List<Report> reportList) {
-            
-        }
+    // Método para manejar la actualización de una denuncia (ej. cambio de estado)
+    public void updateReportStatus(Denuncia denuncia, String newStatus) {
+        denuncia.setEstado(newStatus);
+        dbFirebase.guardarDenuncia(denuncia, null, new DBFirebase.DenunciaCallback() {
+            @Override
+            public void onSuccess(Denuncia denunciaGuardada) {
+                // Actualizar localmente también
+                dbLocal.actualizarDenuncia(denunciaGuardada);
+                Toast.makeText(MyReportsActivity.this, "Estado actualizado en la nube y localmente.", Toast.LENGTH_SHORT).show();
+                // Recargar las denuncias para reflejar el cambio
+                loadMyReports(spinnerStatusFilter.getSelectedItem().toString());
+            }
 
-        @Contract(pure = true)
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            this.parent = parent;
-            this.viewType = viewType;
-            return null;
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
-        }
-
-        @Override
-        public int getItemCount() {
-            return 0;
-        }
-
-        public void updateReports(List<Report> reportList) {
-            
-        }
-    }
-
-    private class Report {
-        public void setId(String id) {
-        }
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(MyReportsActivity.this, "Error al actualizar estado en la nube: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error al actualizar estado: " + e.getMessage());
+            }
+        });
     }
 }

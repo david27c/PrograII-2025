@@ -62,7 +62,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                 if (notification.getRelatedId() != null && !notification.getRelatedId().isEmpty()) {
-                    Intent intent = new Intent(context, ReportDetailActivity.class);
+                    Intent intent = new Intent(context, DenunciaDetailActivity.class);
                     intent.putExtra("reportId", notification.getRelatedId());
                     context.startActivity(intent);
                 } else {

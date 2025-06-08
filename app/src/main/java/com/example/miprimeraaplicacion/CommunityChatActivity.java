@@ -22,10 +22,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-// Importaciones necesarias para las clases que deberían ser externas
-// import com.example.miprimeraaplicacion.ChatTopic; // Esta línea DEBERÍA ser así
-// import com.example.miprimeraaplicacion.ChatTopicAdapter; // Esta línea DEBERÍA ser así
-
 public class CommunityChatActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;

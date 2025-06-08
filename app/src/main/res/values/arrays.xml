@@ -2,4 +2,5 @@
 <resources>
     <string-array name="report_filters" />
     <string-array name="report_types" />
+    <string-array name="report_status_filter_options" />
 </resources>

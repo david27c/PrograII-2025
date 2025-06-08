@@ -1,10 +1,10 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -12,7 +12,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,27 +19,20 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.squareup.picasso.Picasso;
 
-import de.hdodenhof.circleimageview.CircleImageView;
+import java.util.HashMap;
+import java.util.Map;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ProfileActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
 
     private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
-    private FirebaseStorage storage;
-    private StorageReference storageRef;
+    private DBFirebase dbFirebase; // Usar nuestra clase DBFirebase
 
-    // CORREGIDO: Declarado correctamente como CircleImageView (eliminando la declaración duplicada de View)
     private CircleImageView imageViewProfile;
     private TextView textViewEditProfileImage;
     private EditText editTextUsername, editTextEmail, editTextPhone, editTextAddress;
@@ -50,23 +42,22 @@ public class ProfileActivity extends AppCompatActivity {
 
     private Uri imageUri;
 
+    @SuppressLint({"WrongViewCast", "MissingInflatedId"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
         mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference("profile_images");
+        dbFirebase = new DBFirebase(this); // Inicializar DBFirebase
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Mi Perfil"); // Título según tu layout
         }
 
-        // CORREGIDO: Casting explícito a CircleImageView, es una buena práctica para View a subtipo
         imageViewProfile = findViewById(R.id.imageViewProfile);
         textViewEditProfileImage = findViewById(R.id.textViewEditProfileImage);
         editTextUsername = findViewById(R.id.editTextUsername);
@@ -78,39 +69,36 @@ public class ProfileActivity extends AppCompatActivity {
         progressBarProfile = findViewById(R.id.progressBarProfile);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    startActivity(new Intent(ProfileActivity.this, HomeActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_report) {
-                    startActivity(new Intent(ProfileActivity.this, ReportProblemActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_my_reports) {
-                    startActivity(new Intent(ProfileActivity.this, MyReportsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_chat) {
-                    startActivity(new Intent(ProfileActivity.this, CommunityChatActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_profile) {
-                    return true;
-                } else if (itemId == R.id.nav_notifications) {
-                    startActivity(new Intent(ProfileActivity.this, NotificationsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_settings) {
-                    startActivity(new Intent(ProfileActivity.this, SettingsActivity.class));
-                    finish();
-                    return true;
-                }
-                return false;
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ProfileActivity.this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_report) {
+                startActivity(new Intent(ProfileActivity.this, ReportProblemActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_my_reports) {
+                startActivity(new Intent(ProfileActivity.this, MyReportsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_chat) {
+                startActivity(new Intent(ProfileActivity.this, CommunityChatActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true; // Ya estás en Perfil
+            } else if (itemId == R.id.nav_notifications) {
+                startActivity(new Intent(ProfileActivity.this, NotificationsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_settings) {
+                startActivity(new Intent(ProfileActivity.this, SettingsActivity.class));
+                finish();
+                return true;
             }
+            return false;
         });
         bottomNavigationView.setSelectedItemId(R.id.nav_profile);
 
@@ -130,31 +118,11 @@ public class ProfileActivity extends AppCompatActivity {
         return true;
     }
 
-    @Override
-    public String toString() {
-        return "ProfileActivity{" +
-                "mAuth=" + mAuth +
-                ", db=" + db +
-                ", storage=" + storage +
-                ", storageRef=" + storageRef +
-                ", imageViewProfile=" + imageViewProfile +
-                ", textViewEditProfileImage=" + textViewEditProfileImage +
-                ", editTextUsername=" + editTextUsername +
-                ", editTextEmail=" + editTextEmail +
-                ", editTextPhone=" + editTextPhone +
-                ", editTextAddress=" + editTextAddress +
-                ", buttonSaveProfile=" + buttonSaveProfile +
-                ", buttonLogout=" + buttonLogout +
-                ", progressBarProfile=" + progressBarProfile +
-                ", bottomNavigationView=" + bottomNavigationView +
-                ", imageUri=" + imageUri +
-                '}';
-    }
-
-    // ANOTACIÓN ELIMINADA: @SuppressLint("UnsafeDynamicallyLoadedCode")
     private void loadUserProfile() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        String currentUserId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+        String currentUserEmail = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getEmail() : null;
+
+        if (currentUserId == null) {
             Toast.makeText(this, "No hay usuario logueado.", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(ProfileActivity.this, LoginActivity.class));
             finish();
@@ -162,56 +130,51 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         progressBarProfile.setVisibility(View.VISIBLE);
+        editTextEmail.setText(currentUserEmail); // Mostrar el email del usuario logueado
 
-        editTextEmail.setText(currentUser.getEmail());
+        dbFirebase.obtenerDatosDeUsuario(currentUserId, new DBFirebase.UserCallback() {
+            @Override
+            public void onSuccess(User user) {
+                progressBarProfile.setVisibility(View.GONE);
+                if (user != null) {
+                    editTextUsername.setText(user.getUsername());
+                    editTextPhone.setText(user.getPhone());
+                    editTextAddress.setText(user.getAddress());
 
-        db.collection("users").document(currentUser.getUid())
-                .get()
-                .addOnCompleteListener(task -> {
-                    progressBarProfile.setVisibility(View.GONE);
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document.exists()) {
-                            User user = document.toObject(User.class);
-                            if (user != null) {
-                                editTextUsername.setText(user.getUsername());
-                                editTextPhone.setText(user.getPhone());
-                                editTextAddress.setText(user.getAddress());
-
-                                if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
-                                    // CORREGIDO: Picasso.get().load(user.getProfileImageUrl()).into(imageViewProfile);
-                                    Picasso.get().load(user.getProfileImageUrl()).into(imageViewProfile);
-                                }
-                            }
-                        } else {
-                            Toast.makeText(ProfileActivity.this, "Datos de perfil no encontrados.", Toast.LENGTH_SHORT).show();
-                            initializeUserDocument(currentUser.getUid(), currentUser.getEmail());
-                        }
+                    if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
+                        Picasso.get().load(user.getProfileImageUrl())
+                                .placeholder(R.drawable.ic_default_profile) // Placeholder mientras carga
+                                .error(R.drawable.ic_default_profile)     // Imagen en caso de error
+                                .into(imageViewProfile);
                     } else {
-                        Toast.makeText(ProfileActivity.this, "Error al cargar el perfil: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Si no hay URL de imagen, mostrar la imagen por defecto
+                        imageViewProfile.setImageResource(R.drawable.ic_default_profile);
                     }
-                });
-    }
-    // ELIMINADAS: Las clases anidadas incorrectas de CircleImageView y Picasso
-    /*
-    private CircleImageView imageViewProfile; // Declarado correctamente como CircleImageView
-    private class CircleImageView {
-    }
+                } else {
+                    // Si el documento no existe, inicializarlo
+                    Toast.makeText(ProfileActivity.this, "Datos de perfil no encontrados, inicializando...", Toast.LENGTH_SHORT).show();
+                    dbFirebase.inicializarDocumentoUsuario(currentUserId, currentUserEmail, new DBFirebase.VoidCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Toast.makeText(ProfileActivity.this, "Documento de usuario inicializado.", Toast.LENGTH_SHORT).show();
+                            // Puedes recargar el perfil si es necesario, o simplemente ya está inicializado
+                        }
 
-    private static class Picasso {
-        public static System get() {
-            return null;
-        }
-    }
-    */
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(ProfileActivity.this, "Error al inicializar documento de usuario: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
 
-    private void initializeUserDocument(String uid, String email) {
-        User newUser = new User(uid, "", email, "", "", "");
-        db.collection("users").document(uid).set(newUser)
-                .addOnSuccessListener(aVoid -> Toast.makeText(ProfileActivity.this, "Documento de usuario inicializado.", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(ProfileActivity.this, "Error al inicializar documento de usuario: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            @Override
+            public void onFailure(Exception e) {
+                progressBarProfile.setVisibility(View.GONE);
+                Toast.makeText(ProfileActivity.this, "Error al cargar el perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
-
 
     private void openFileChooser() {
         Intent intent = new Intent();
@@ -226,14 +189,13 @@ public class ProfileActivity extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK
                 && data != null && data.getData() != null) {
             imageUri = data.getData();
-            // CORREGIDO: Se pasa directamente el Uri, no String.valueOf()
             Picasso.get().load(imageUri).into(imageViewProfile);
         }
     }
 
     private void saveUserProfile() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        String currentUserId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+        if (currentUserId == null) {
             Toast.makeText(this, "Debes iniciar sesión para guardar tu perfil.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -243,44 +205,51 @@ public class ProfileActivity extends AppCompatActivity {
         String phone = editTextPhone.getText().toString().trim();
         String address = editTextAddress.getText().toString().trim();
 
-        DocumentReference userRef = db.collection("users").document(currentUser.getUid());
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("username", username);
+        updates.put("phone", phone);
+        updates.put("address", address);
 
         if (imageUri != null) {
-            StorageReference fileReference = storageRef.child(currentUser.getUid() + ".jpg");
-            fileReference.putFile(imageUri)
-                    .addOnSuccessListener(taskSnapshot -> {
-                        fileReference.getDownloadUrl().addOnSuccessListener(uri -> {
-                            String imageUrl = uri.toString();
-                            userRef.update("username", username,
-                                            "phone", phone,
-                                            "address", address,
-                                            "profileImageUrl", imageUrl)
-                                    .addOnSuccessListener(aVoid -> {
-                                        progressBarProfile.setVisibility(View.GONE);
-                                        Toast.makeText(ProfileActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        progressBarProfile.setVisibility(View.GONE);
-                                        Toast.makeText(ProfileActivity.this, "Error al guardar perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    });
-                        });
-                    })
-                    .addOnFailureListener(e -> {
-                        progressBarProfile.setVisibility(View.GONE);
-                        Toast.makeText(ProfileActivity.this, "Error al subir imagen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            dbFirebase.subirImagenPerfil(imageUri, currentUserId, new DBFirebase.ImageUploadCallback() {
+                @Override
+                public void onSuccess(String imageUrl) {
+                    updates.put("profileImageUrl", imageUrl);
+                    dbFirebase.actualizarPerfilUsuario(currentUserId, updates, new DBFirebase.VoidCallback() {
+                        @Override
+                        public void onSuccess() {
+                            progressBarProfile.setVisibility(View.GONE);
+                            Toast.makeText(ProfileActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            progressBarProfile.setVisibility(View.GONE);
+                            Toast.makeText(ProfileActivity.this, "Error al guardar perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    progressBarProfile.setVisibility(View.GONE);
+                    Toast.makeText(ProfileActivity.this, "Error al subir imagen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
         } else {
-            userRef.update("username", username,
-                            "phone", phone,
-                            "address", address)
-                    .addOnSuccessListener(aVoid -> {
-                        progressBarProfile.setVisibility(View.GONE);
-                        Toast.makeText(ProfileActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> {
-                        progressBarProfile.setVisibility(View.GONE);
-                        Toast.makeText(ProfileActivity.this, "Error al guardar perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+            dbFirebase.actualizarPerfilUsuario(currentUserId, updates, new DBFirebase.VoidCallback() {
+                @Override
+                public void onSuccess() {
+                    progressBarProfile.setVisibility(View.GONE);
+                    Toast.makeText(ProfileActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    progressBarProfile.setVisibility(View.GONE);
+                    Toast.makeText(ProfileActivity.this, "Error al guardar perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 

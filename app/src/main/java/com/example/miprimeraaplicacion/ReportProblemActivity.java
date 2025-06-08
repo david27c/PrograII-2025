@@ -10,7 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
-import android.view.MenuItem;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -28,24 +28,19 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
+import com.google.firebase.auth.FirebaseUser;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 import java.util.UUID;
 
-public abstract class ReportProblemActivity extends AppCompatActivity implements LocationListener {
+public class ReportProblemActivity extends AppCompatActivity implements LocationListener {
 
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_PICK_IMAGE = 2;
     private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final String TAG = "ReportProblemActivity";
 
     private EditText editTextDescription;
     private Button buttonTakePhoto, buttonSelectGallery, buttonSendReport;
@@ -59,10 +54,13 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
     private Uri imageUri;
     private LocationManager locationManager;
     private String currentLocation = "Ubicación desconocida";
+    private double currentLatitude = 0.0;
+    private double currentLongitude = 0.0;
 
     private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
-    private StorageReference storageRef;
+    private DBLocal dbLocal;
+    private DBFirebase dbFirebase;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +68,17 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_report_problem);
 
         mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-        storageRef = FirebaseStorage.getInstance().getReference();
+
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            Intent intent = new Intent(ReportProblemActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
+        dbLocal = new DBLocal(this);
+        dbFirebase = new DBFirebase(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -87,53 +94,43 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
         progressBarReport = findViewById(R.id.progressBarReport);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // Configurar la navegación inferior
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_report) {
-                    // Ya estamos en ReportProblemActivity
-                    return true;
-                } else if (itemId == R.id.nav_my_reports) {
-                    startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_chat) {
-                    startActivity(new Intent(ReportProblemActivity.this, CommunityChatActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_profile) {
-                    startActivity(new Intent(ReportProblemActivity.this, ProfileActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_notifications) {
-                    startActivity(new Intent(ReportProblemActivity.this, NotificationsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_settings) {
-                    startActivity(new Intent(ReportProblemActivity.this, SettingsActivity.class));
-                    finish();
-                    return true;
-                }
-                return false;
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_report) {
+                return true;
+            } else if (itemId == R.id.nav_my_reports) {
+                startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_chat) {
+                startActivity(new Intent(ReportProblemActivity.this, CommunityChatActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(ReportProblemActivity.this, ProfileActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_notifications) {
+                startActivity(new Intent(ReportProblemActivity.this, NotificationsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_settings) {
+                startActivity(new Intent(ReportProblemActivity.this, SettingsActivity.class));
+                finish();
+                return true;
             }
+            return false;
         });
-        // Asegurarse de que el ítem "Reportar" esté seleccionado al inicio
         bottomNavigationView.setSelectedItemId(R.id.nav_report);
 
-        // Listeners para botones de imagen/video
         buttonTakePhoto.setOnClickListener(v -> checkPermissionsAndDispatchTakePictureIntent());
         buttonSelectGallery.setOnClickListener(v -> checkPermissionsAndPickImage());
-
-        // Listener para el botón Enviar Reporte
         buttonSendReport.setOnClickListener(v -> sendReport());
 
-        // Iniciar la obtención de ubicación
         requestLocationUpdates();
     }
 
@@ -191,7 +188,6 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permiso concedido, intenta nuevamente la operación
                 if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     requestLocationUpdates();
                 } else if (permissions[0].equals(Manifest.permission.CAMERA) || permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
@@ -213,19 +209,12 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_IMAGE_CAPTURE && data != null) {
-                Bundle extras = data.getExtras();
-                // Si la imagen viene como bitmap, conviértela a Uri o guárdala temporalmente
-                // Para simplificar, asumiremos que data.getData() contiene la Uri si es una foto
-                // Para fotos tomadas, a veces se necesita guardar el bitmap en un archivo y obtener la Uri.
-                // Aquí un ejemplo simplificado para mostrar la imagen:
-                // Bitmap imageBitmap = (Bitmap) extras.get("data");
-                // imageViewPreview.setImageBitmap(imageBitmap);
-                // imageViewPreview.setVisibility(View.VISIBLE);
-                // Puedes guardar este bitmap en un archivo temporal para obtener una URI y luego subirlo a Storage.
-                Toast.makeText(this, "Foto tomada (se necesita guardar y obtener URI real)", Toast.LENGTH_SHORT).show();
-                // Por ahora, para pruebas:
-                // imageUri = data.getData(); // Esto no siempre funciona para ACTION_IMAGE_CAPTURE
-                imageViewPreview.setVisibility(View.GONE); // Ocultar hasta tener una URI real
+                // Para fotos tomadas, la URI no siempre viene directamente en data.getData().
+                // Es preferible usar un FileProvider para guardar la imagen y obtener su URI.
+                // Por ahora, solo muestra un mensaje, ya que tu implementación actual no guarda la URI de la cámara fácilmente.
+                Toast.makeText(this, "Foto tomada. (Necesita lógica de guardado de URI)", Toast.LENGTH_LONG).show();
+                imageViewPreview.setVisibility(View.GONE);
+                imageUri = null; // Reiniciar, ya que no tenemos una URI válida por ahora
             } else if (requestCode == REQUEST_PICK_IMAGE && data != null && data.getData() != null) {
                 imageUri = data.getData();
                 imageViewPreview.setImageURI(imageUri);
@@ -236,10 +225,11 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
-        currentLocation = "Lat: " + location.getLatitude() + ", Lon: " + location.getLongitude();
+        currentLatitude = location.getLatitude();
+        currentLongitude = location.getLongitude();
+        currentLocation = "Lat: " + currentLatitude + ", Lon: " + currentLongitude;
         textViewLocation.setText(currentLocation);
-        // Puedes detener las actualizaciones de ubicación si solo necesitas una vez
-        // locationManager.removeUpdates(this);
+        // locationManager.removeUpdates(this); // Puedes descomentar si solo necesitas una vez
     }
 
     @Override
@@ -259,102 +249,95 @@ public abstract class ReportProblemActivity extends AppCompatActivity implements
     protected void onPause() {
         super.onPause();
         if (locationManager != null) {
-            locationManager.removeUpdates(this); // Detener actualizaciones al pausar
+            locationManager.removeUpdates(this);
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        requestLocationUpdates(); // Reanudar actualizaciones al volver
+        requestLocationUpdates();
     }
 
     private void sendReport() {
         String description = editTextDescription.getText().toString().trim();
         String reportType = spinnerReportType.getSelectedItem().toString();
-        boolean reportToAuthorities = checkBoxReportToAuthorities.isChecked();
+        boolean reportToAuthorities = checkBoxReportToAuthorities.isChecked(); // Este campo no está en la clase Denuncia
 
         if (TextUtils.isEmpty(description)) {
             Toast.makeText(this, "Por favor, describe el problema.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (mAuth.getCurrentUser() == null) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
             Toast.makeText(this, "Debes iniciar sesión para reportar un problema.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         progressBarReport.setVisibility(View.VISIBLE);
-        buttonSendReport.setEnabled(false); // Deshabilitar botón durante el envío
+        buttonSendReport.setEnabled(false);
 
-        String userId = mAuth.getCurrentUser().getUid();
-        String reportId = UUID.randomUUID().toString(); // Generar un ID único para el reporte
+        String userId = currentUser.getUid();
+        String reportId = UUID.randomUUID().toString(); // Generar un ID único para la denuncia
+        Date fechaHora = new Date(); // Usar java.util.Date() para que coincida con la clase Denuncia
 
-        if (imageUri != null) {
-            // Subir imagen a Firebase Storage
-            StorageReference fileRef = storageRef.child("reports_images/" + reportId + ".jpg");
-            fileRef.putFile(imageUri)
-                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                        @Override
-                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                            fileRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                @Override
-                                public void onSuccess(Uri uri) {
-                                    String imageUrl = uri.toString();
-                                    saveReportToFirestore(userId, reportId, description, reportType, currentLocation, imageUrl, reportToAuthorities);
-                                }
-                            });
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            progressBarReport.setVisibility(View.GONE);
-                            buttonSendReport.setEnabled(true);
-                            Toast.makeText(ReportProblemActivity.this, "Error al subir imagen: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
+        // Crear un objeto Denuncia
+        Denuncia nuevaDenuncia = new Denuncia(
+                reportId,
+                userId,
+                "Reporte de " + reportType, // Título inicial
+                description,
+                reportType,
+                currentLatitude,
+                currentLongitude,
+                null, // La URL de la imagen se actualizará después de la subida
+                fechaHora, // Usar el objeto Date
+                "Pendiente" // Estado inicial
+        );
+
+        // Guardar la denuncia usando DBLocal y DBFirebase
+        // Primero, intentar guardar localmente
+        boolean localSuccess = dbLocal.insertarDenuncia(nuevaDenuncia) != null;
+
+        if (localSuccess) {
+            Log.d(TAG, "Reporte guardado localmente: " + reportId);
+            // Luego, intentar guardar en Firebase (con la imagen si existe)
+            dbFirebase.guardarDenuncia(nuevaDenuncia, imageUri, new DBFirebase.DenunciaCallback() {
+                @Override
+                public void onSuccess(Denuncia denunciaGuardada) {
+                    // Si la imagen se subió, la URL de la imagen en 'denunciaGuardada' estará actualizada.
+                    // Actualizar la URL de la imagen en la DB local si es necesario
+                    if (imageUri != null && !denunciaGuardada.getUrlImagen().isEmpty()) {
+                        nuevaDenuncia.setUrlImagen(denunciaGuardada.getUrlImagen());
+                        dbLocal.actualizarDenuncia(nuevaDenuncia); // Actualiza la URL en SQLite
+                        Log.d(TAG, "URL de imagen actualizada en DB local: " + denunciaGuardada.getUrlImagen());
+                    }
+
+                    progressBarReport.setVisibility(View.GONE);
+                    buttonSendReport.setEnabled(true);
+                    Toast.makeText(ReportProblemActivity.this, "Reporte enviado exitosamente!", Toast.LENGTH_LONG).show();
+                    // Limpiar campos y navegar
+                    editTextDescription.setText("");
+                    imageViewPreview.setVisibility(View.GONE);
+                    imageUri = null;
+                    startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
+                    finish();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    progressBarReport.setVisibility(View.GONE);
+                    buttonSendReport.setEnabled(true);
+                    Toast.makeText(ReportProblemActivity.this, "Reporte guardado localmente, pero falló en la nube: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Error al guardar reporte en Firebase: " + e.getMessage());
+                }
+            });
         } else {
-            // Si no hay imagen, solo guardar el reporte
-            saveReportToFirestore(userId, reportId, description, reportType, currentLocation, null, reportToAuthorities);
+            progressBarReport.setVisibility(View.GONE);
+            buttonSendReport.setEnabled(true);
+            Toast.makeText(this, "Error al guardar el reporte localmente.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error al insertar denuncia en SQLite.");
         }
-    }
-
-    private void saveReportToFirestore(String userId, String reportId, String description, String reportType, String location, String imageUrl, boolean reportToAuthorities) {
-        Map<String, Object> report = new HashMap<>();
-        report.put("userId", userId);
-        report.put("description", description);
-        report.put("type", reportType);
-        report.put("location", location);
-        report.put("imageUrl", imageUrl); // Puede ser null
-        report.put("timestamp", System.currentTimeMillis()); // Marca de tiempo del reporte
-        report.put("status", "Pendiente"); // Estado inicial del reporte
-        report.put("reportToAuthorities", reportToAuthorities);
-
-        db.collection("reports").document(reportId)
-                .set(report)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        progressBarReport.setVisibility(View.GONE);
-                        buttonSendReport.setEnabled(true);
-                        Toast.makeText(ReportProblemActivity.this, "Reporte enviado exitosamente!", Toast.LENGTH_LONG).show();
-                        // Opcional: Limpiar campos o navegar a otra pantalla
-                        editTextDescription.setText("");
-                        imageViewPreview.setVisibility(View.GONE);
-                        imageUri = null;
-                        // Regresar a la HomeActivity o a Mis Reportes
-                        startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
-                        finish();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        progressBarReport.setVisibility(View.GONE);
-                        buttonSendReport.setEnabled(true);
-                        Toast.makeText(ReportProblemActivity.this, "Error al enviar reporte: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
     }
 }

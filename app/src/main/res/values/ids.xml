@@ -21,4 +21,21 @@
     <item name="spnAMasa" type="id" />
     <item name="spnAVolumen" type="id" />
     <item name="spnATransferencia" type="id" />
+    <item name="imageViewDetailImage" type="id" />
+    <item name="textViewDetailTitle" type="id" />
+    <item name="textViewDetailDescription" type="id" />
+    <item name="textViewDetailDate" type="id" />
+    <item name="textViewDetailLocation" type="id" />
+    <item name="textViewDetailStatus" type="id" />
+    <item name="progressBarDetail" type="id" />
+    <item name="textViewLoadingMessage" type="id" />
+    <item name="textViewEditProfileImage" type="id" />
+    <item name="editTextPhone" type="id" />
+    <item name="editTextAddress" type="id" />
+    <item name="buttonSaveProfile" type="id" />
+    <item name="progressBarProfile" type="id" />
+    <item name="buttonLogout" type="id" />
+    <item name="textViewDate" type="id" />
+    <item name="imageViewDenuncia" type="id" />
+    <item name="spinnerStatusFilter" type="id" />
 </resources>
