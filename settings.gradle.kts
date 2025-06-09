@@ -13,9 +13,12 @@ pluginManagement {
         gradlePluginPortal()
     }
     plugins {
-        id("com.google.gms.google-services") version "4.4.2"
-        id("com.android.application") version "8.5.1" // AJUSTA ESTA VERSIÓN SI ES DIFERENTE EN TU PROYECTO
-        id("org.jetbrains.kotlin.android") version "1.9.0" // AJUSTA ESTA VERSIÓN SI USAS OTRA
+        id("com.google.gms.google-services") version "4.4.2" apply false
+        // **************************************************************
+        // >>> CAMBIO AQUÍ: Actualizamos la versión de Android Gradle Plugin <<<
+        id("com.android.application") version "8.6.0" // Actualizado a 8.6.0
+        // **************************************************************
+        id("org.jetbrains.kotlin.android") version "1.9.0" // Mantén tu versión de Kotlin o actualiza si es necesario
     }
 }
 dependencyResolutionManagement {

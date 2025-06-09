@@ -1,9 +1,9 @@
 // build.gradle.kts (nivel módulo: app, ubicación: app/build.gradle.kts)
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android") // Si tu proyecto es Kotlin
-    id("com.google.gms.google-services") // Sin versión aquí, ya definida en settings.gradle.kts.
+    id("com.android.application") // Ya no está duplicado
+    id("org.jetbrains.kotlin.android") // Si tu proyecto usa código fuente Kotlin, esta línea es necesaria
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -33,6 +33,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    // Añadimos o modificamos este bloque para la compatibilidad de Kotlin JVM
+    kotlinOptions {
+        jvmTarget = "11" // Asegura que Kotlin compile para JVM 11, consistente con Java 11
     }
 }
 
