@@ -31,14 +31,14 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="30dp"
             android:clickable="true"
-            android:contentDescription="@string/app_name"
+            android:contentDescription="@string/profile_image_description"
             android:focusable="true"
             android:src="@drawable/ic_default_profile" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Toca para subir/tomar foto de perfil"
+            android:text="@string/toca_para_subir_tomar_foto_de_perfil"
             android:textColor="#333333"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"/>

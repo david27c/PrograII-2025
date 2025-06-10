@@ -1,80 +1,190 @@
 package com.example.miprimeraaplicacion;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings; // Para abrir los ajustes de permisos
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar; // Asumo que necesitas un ProgressBar para guardar cambios
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.squareup.picasso.Picasso;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    private BottomNavigationView bottomNavigationView;
-    private LinearLayout layoutNotificationSettings, layoutPrivacySettings;
-    private TextView textViewAppVersion;
+    private static final int PICK_IMAGE_REQUEST = 1; // Para seleccionar imagen de perfil
 
+    private FirebaseAuth mAuth;
+    private DBFirebase dbFirebase;
+    private FirebaseUser currentUser;
+
+    // Elementos de Configuración de Perfil
+    private CircleImageView imageViewProfile;
+    private TextView textViewChangeProfilePhoto;
+    private EditText editTextFullName, editTextEmail, editTextUsername, editTextPhoneNumber;
+    private EditText editTextCurrentPassword, editTextNewPassword, editTextConfirmNewPassword;
+    private Button buttonSaveProfileChanges;
+    private ProgressBar progressBarProfileChanges; // Para el progreso de guardar perfil
+
+    // Elementos de Preferencias de Visibilidad
+    private CheckBox checkBoxShowFullName, checkBoxShowProfilePhoto, checkBoxShowEmail, checkBoxShowPhoneNumber;
+    private Button buttonSaveVisibilityPreferences;
+
+    // Elementos de Configuración General
+    private Switch switchPushNotifications;
+    private LinearLayout layoutLanguageSelector; // Para el selector de idioma
+    private TextView textViewSelectedLanguage;
+    private TextView textViewAppPermissions;
+    private Button buttonDeleteAccount;
+    private TextView textViewAppVersion;
+    private TextView textViewCredits;
+    private Button buttonLogout; // El botón de cerrar sesión también está aquí
+
+    private BottomNavigationView bottomNavigationView;
+    private Uri imageUri; // Para la nueva imagen de perfil
+
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
+        mAuth = FirebaseAuth.getInstance();
+        dbFirebase = new DBFirebase(this);
+        currentUser = mAuth.getCurrentUser();
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Configuración"); // Título para la Toolbar
         }
 
-        bottomNavigationView = findViewById(R.id.bottom_navigation);
-        layoutNotificationSettings = findViewById(R.id.layout_notification_settings);
-        layoutPrivacySettings = findViewById(R.id.layout_privacy_settings);
-        textViewAppVersion = findViewById(R.id.textViewAppVersion);
+        // --- Inicialización de elementos del layout ---
 
-        // Configurar la navegación inferior
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    startActivity(new Intent(SettingsActivity.this, HomeActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_report) {
-                    startActivity(new Intent(SettingsActivity.this, ReportProblemActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_my_reports) {
-                    startActivity(new Intent(SettingsActivity.this, MyReportsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_chat) {
-                    startActivity(new Intent(SettingsActivity.this, CommunityChatActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_profile) {
-                    startActivity(new Intent(SettingsActivity.this, ProfileActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_notifications) {
-                    startActivity(new Intent(SettingsActivity.this, NotificationsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_settings) {
-                    // Ya estamos en SettingsActivity
-                    return true;
-                }
-                return false;
+        // Configuración de Perfil
+        imageViewProfile = findViewById(R.id.imageViewProfile);
+        textViewChangeProfilePhoto = findViewById(R.id.textViewChangeProfilePhoto);
+        editTextFullName = findViewById(R.id.editTextFullName);
+        editTextEmail = findViewById(R.id.editTextEmail);
+        editTextUsername = findViewById(R.id.editTextUsername);
+        editTextPhoneNumber = findViewById(R.id.editTextPhoneNumber);
+        editTextCurrentPassword = findViewById(R.id.editTextCurrentPassword);
+        editTextNewPassword = findViewById(R.id.editTextNewPassword);
+        editTextConfirmNewPassword = findViewById(R.id.editTextConfirmNewPassword);
+        buttonSaveProfileChanges = findViewById(R.id.buttonSaveProfileChanges);
+        progressBarProfileChanges = findViewById(R.id.progressBarProfileChanges); // Asegúrate de añadir este ProgressBar al XML si lo quieres
+
+        // Preferencias de Visibilidad
+        checkBoxShowFullName = findViewById(R.id.checkBoxShowFullName);
+        checkBoxShowProfilePhoto = findViewById(R.id.checkBoxShowProfilePhoto);
+        checkBoxShowEmail = findViewById(R.id.checkBoxShowEmail);
+        checkBoxShowPhoneNumber = findViewById(R.id.checkBoxShowPhoneNumber);
+        buttonSaveVisibilityPreferences = findViewById(R.id.buttonSaveVisibilityPreferences);
+
+        // Configuración General
+        switchPushNotifications = findViewById(R.id.switchPushNotifications);
+        layoutLanguageSelector = findViewById(R.id.layoutLanguageSelector);
+        textViewSelectedLanguage = findViewById(R.id.textViewSelectedLanguage);
+        textViewAppPermissions = findViewById(R.id.textViewAppPermissions);
+        buttonDeleteAccount = findViewById(R.id.buttonDeleteAccount);
+        textViewAppVersion = findViewById(R.id.textViewAppVersion);
+        textViewCredits = findViewById(R.id.textViewCredits);
+        buttonLogout = findViewById(R.id.buttonLogout); // Ya estaba aquí
+
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+        // --- Configuración de Listeners y lógica ---
+
+        // Barra de navegación inferior
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(SettingsActivity.this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_report) {
+                startActivity(new Intent(SettingsActivity.this, ReportProblemActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_my_reports) {
+                startActivity(new Intent(SettingsActivity.this, MyReportsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_chat) {
+                startActivity(new Intent(SettingsActivity.this, CommunityChatActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(SettingsActivity.this, ProfileActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_notifications) {
+                startActivity(new Intent(SettingsActivity.this, NotificationsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_settings) {
+                return true; // Ya estamos en SettingsActivity
             }
+            return false;
         });
-        // Asegurarse de que el ítem "Ajustes" esté seleccionado al inicio
         bottomNavigationView.setSelectedItemId(R.id.nav_settings);
 
-        // Mostrar la versión de la app (ejemplo)
+        // Lógica para cargar/guardar datos del perfil y preferencias
+        loadUserSettings();
+
+        // --- Listeners para la Sección de Perfil ---
+        imageViewProfile.setOnClickListener(v -> openFileChooser());
+        textViewChangeProfilePhoto.setOnClickListener(v -> openFileChooser());
+        buttonSaveProfileChanges.setOnClickListener(v -> saveProfileChanges());
+
+        // --- Listeners para la Sección de Preferencias de Visibilidad ---
+        buttonSaveVisibilityPreferences.setOnClickListener(v -> saveVisibilityPreferences());
+
+        // --- Listeners para la Sección de Configuración General ---
+        switchPushNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Guarda la preferencia de notificación PUSH en SharedPreferences
+            SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("push_notifications_enabled", isChecked);
+            editor.apply();
+            Toast.makeText(SettingsActivity.this, "Notificaciones PUSH: " + (isChecked ? "ON" : "OFF"), Toast.LENGTH_SHORT).show();
+        });
+
+        layoutLanguageSelector.setOnClickListener(v -> showLanguageSelectionDialog()); // Implementar este método
+        textViewAppPermissions.setOnClickListener(v -> openAppSettings()); // Abre la configuración de permisos de la app
+
+        buttonDeleteAccount.setOnClickListener(v -> confirmAndDeleteAccount());
+        buttonLogout.setOnClickListener(v -> signOutUser()); // Ya estaba aquí
+
+        // Mostrar la versión de la app
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             textViewAppVersion.setText("Versión de la App: " + versionName);
@@ -83,17 +193,382 @@ public class SettingsActivity extends AppCompatActivity {
             textViewAppVersion.setText("Versión de la App: N/A");
         }
 
-        // Listener para opciones de ajustes
-        layoutNotificationSettings.setOnClickListener(v -> Toast.makeText(SettingsActivity.this, "Abriendo preferencias de notificaciones...", Toast.LENGTH_SHORT).show());
-        layoutPrivacySettings.setOnClickListener(v -> Toast.makeText(SettingsActivity.this, "Abriendo ajustes de privacidad...", Toast.LENGTH_SHORT).show());
-
-        // Puedes añadir más lógicas para abrir nuevas actividades de sub-ajustes.
+        // Créditos (solo un Toast de ejemplo, podrías abrir una nueva actividad)
+        textViewCredits.setOnClickListener(v -> Toast.makeText(SettingsActivity.this, "Desarrollado por [Tu Nombre/Equipo]", Toast.LENGTH_LONG).show());
     }
 
-    // Método para manejar el botón de regreso de la Toolbar
     @Override
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+    /**
+     * Carga la configuración del usuario (perfil y preferencias) desde Firebase y SharedPreferences.
+     */
+    private void loadUserSettings() {
+        if (currentUser == null) {
+            Toast.makeText(this, "No hay usuario logueado.", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(SettingsActivity.this, LoginActivity.class));
+            finish();
+            return;
+        }
+
+        progressBarProfileChanges.setVisibility(View.VISIBLE);
+
+        // Cargar datos de perfil desde Firestore
+        dbFirebase.obtenerDatosDeUsuario(currentUser.getUid(), new DBFirebase.UserCallback() {
+            @Override
+            public void onSuccess(User user) {
+                progressBarProfileChanges.setVisibility(View.GONE);
+                if (user != null) {
+                    editTextFullName.setText(user.getFullName());
+                    editTextEmail.setText(user.getEmail()); // El email no es editable
+                    editTextUsername.setText(user.getUsername());
+                    editTextPhoneNumber.setText(user.getPhone());
+
+                    // Cargar imagen de perfil
+                    if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
+                        Picasso.get().load(user.getProfileImageUrl())
+                                .placeholder(R.drawable.ic_default_profile)
+                                .error(R.drawable.ic_default_profile)
+                                .into(imageViewProfile);
+                    } else {
+                        imageViewProfile.setImageResource(R.drawable.ic_default_profile);
+                    }
+
+                    // Cargar preferencias de visibilidad
+                    checkBoxShowFullName.setChecked(user.isShowFullNamePublic());
+                    checkBoxShowProfilePhoto.setChecked(user.isShowProfilePhotoInComments());
+                    checkBoxShowEmail.setChecked(user.isShowEmailPublic());
+                    checkBoxShowPhoneNumber.setChecked(user.isShowPhonePublic());
+
+                } else {
+                    Toast.makeText(SettingsActivity.this, "Datos de perfil no encontrados, inicializando...", Toast.LENGTH_SHORT).show();
+                    // Opcional: inicializar documento si no existe, como en ProfileActivity
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                progressBarProfileChanges.setVisibility(View.GONE);
+                Toast.makeText(SettingsActivity.this, "Error al cargar el perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Cargar preferencias generales desde SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+        boolean pushNotificationsEnabled = prefs.getBoolean("push_notifications_enabled", true); // Default: true
+        String selectedLanguage = prefs.getString("selected_language", "Español"); // Default: Español
+
+        switchPushNotifications.setChecked(pushNotificationsEnabled);
+        textViewSelectedLanguage.setText(selectedLanguage);
+    }
+
+    /**
+     * Abre el selector de archivos para elegir una nueva imagen de perfil.
+     */
+    private void openFileChooser() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK
+                && data != null && data.getData() != null) {
+            imageUri = data.getData();
+            Picasso.get().load(imageUri).into(imageViewProfile);
+            Toast.makeText(this, "Imagen seleccionada, pulsa Guardar Cambios para actualizarla.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * Guarda los cambios del perfil (nombre, usuario, teléfono, contraseña e imagen).
+     */
+    private void saveProfileChanges() {
+        if (currentUser == null) {
+            Toast.makeText(this, "Debes iniciar sesión para guardar tu perfil.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        progressBarProfileChanges.setVisibility(View.VISIBLE);
+
+        String fullName = editTextFullName.getText().toString().trim();
+        String username = editTextUsername.getText().toString().trim();
+        String phone = editTextPhoneNumber.getText().toString().trim();
+        String currentPassword = editTextCurrentPassword.getText().toString().trim();
+        String newPassword = editTextNewPassword.getText().toString().trim();
+        String confirmNewPassword = editTextConfirmNewPassword.getText().toString().trim();
+
+        Map<String, Object> profileUpdates = new HashMap<>();
+        profileUpdates.put("fullName", fullName);
+        profileUpdates.put("username", username);
+        profileUpdates.put("phone", phone);
+
+        // Lógica para actualizar la contraseña
+        if (!newPassword.isEmpty()) {
+            if (!newPassword.equals(confirmNewPassword)) {
+                Toast.makeText(this, "Las nuevas contraseñas no coinciden.", Toast.LENGTH_SHORT).show();
+                progressBarProfileChanges.setVisibility(View.GONE);
+                return;
+            }
+            if (currentPassword.isEmpty()) {
+                Toast.makeText(this, "Introduce tu contraseña actual para cambiarla.", Toast.LENGTH_SHORT).show();
+                progressBarProfileChanges.setVisibility(View.GONE);
+                return;
+            }
+            // Re-autenticar al usuario para actualizar la contraseña
+            AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), currentPassword);
+            currentUser.reauthenticate(credential)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            currentUser.updatePassword(newPassword)
+                                    .addOnCompleteListener(updateTask -> {
+                                        if (updateTask.isSuccessful()) {
+                                            Toast.makeText(SettingsActivity.this, "Contraseña actualizada.", Toast.LENGTH_SHORT).show();
+                                            editTextCurrentPassword.setText("");
+                                            editTextNewPassword.setText("");
+                                            editTextConfirmNewPassword.setText("");
+                                            // Continuar con la actualización del resto del perfil
+                                            updateFirestoreProfile(currentUser.getUid(), profileUpdates);
+                                        } else {
+                                            progressBarProfileChanges.setVisibility(View.GONE);
+                                            Toast.makeText(SettingsActivity.this, "Error al actualizar contraseña: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        } else {
+                            progressBarProfileChanges.setVisibility(View.GONE);
+                            Toast.makeText(SettingsActivity.this, "Contraseña actual incorrecta. " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            // Si no se cambia la contraseña, solo actualiza el perfil en Firestore
+            updateFirestoreProfile(currentUser.getUid(), profileUpdates);
+        }
+    }
+
+    /**
+     * Actualiza los datos del perfil en Firestore, incluyendo la imagen si se seleccionó una nueva.
+     */
+    private void updateFirestoreProfile(String userId, Map<String, Object> profileUpdates) {
+        if (imageUri != null) {
+            dbFirebase.subirImagenPerfil(imageUri, userId, new DBFirebase.ImageUploadCallback() {
+                @Override
+                public void onSuccess(String imageUrl) {
+                    profileUpdates.put("profileImageUrl", imageUrl);
+                    dbFirebase.actualizarPerfilUsuario(userId, profileUpdates, new DBFirebase.VoidCallback() {
+                        @Override
+                        public void onSuccess() {
+                            progressBarProfileChanges.setVisibility(View.GONE);
+                            Toast.makeText(SettingsActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
+                            imageUri = null; // Resetear la URI después de subir
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            progressBarProfileChanges.setVisibility(View.GONE);
+                            Toast.makeText(SettingsActivity.this, "Error al guardar perfil (Firestore): " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    progressBarProfileChanges.setVisibility(View.GONE);
+                    Toast.makeText(SettingsActivity.this, "Error al subir imagen de perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            dbFirebase.actualizarPerfilUsuario(userId, profileUpdates, new DBFirebase.VoidCallback() {
+                @Override
+                public void onSuccess() {
+                    progressBarProfileChanges.setVisibility(View.GONE);
+                    Toast.makeText(SettingsActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    progressBarProfileChanges.setVisibility(View.GONE);
+                    Toast.makeText(SettingsActivity.this, "Error al guardar perfil (Firestore): " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    /**
+     * Guarda las preferencias de visibilidad del usuario en Firestore.
+     */
+    private void saveVisibilityPreferences() {
+        if (currentUser == null) {
+            Toast.makeText(this, "Debes iniciar sesión para guardar tus preferencias.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> visibilityUpdates = new HashMap<>();
+        visibilityUpdates.put("showFullNamePublic", checkBoxShowFullName.isChecked());
+        visibilityUpdates.put("showProfilePhotoInComments", checkBoxShowProfilePhoto.isChecked());
+        visibilityUpdates.put("showEmailPublic", checkBoxShowEmail.isChecked());
+        visibilityUpdates.put("showPhonePublic", checkBoxShowPhoneNumber.isChecked());
+
+        dbFirebase.actualizarPreferenciasVisibilidad(currentUser.getUid(), visibilityUpdates, new DBFirebase.VoidCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(SettingsActivity.this, "Preferencias de visibilidad guardadas.", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(SettingsActivity.this, "Error al guardar preferencias: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Muestra un diálogo para que el usuario seleccione un idioma.
+     * La implementación real del cambio de idioma requiere más complejidad (recursos, ContextWrapper).
+     */
+    private void showLanguageSelectionDialog() {
+        final String[] languages = {"Español", "English"}; // Define los idiomas disponibles
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Seleccionar Idioma");
+        builder.setItems(languages, (dialog, which) -> {
+            String selectedLang = languages[which];
+            textViewSelectedLanguage.setText(selectedLang);
+            // Guarda la preferencia de idioma en SharedPreferences
+            SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString("selected_language", selectedLang);
+            editor.apply();
+
+            Toast.makeText(SettingsActivity.this, "Idioma cambiado a " + selectedLang, Toast.LENGTH_SHORT).show();
+            // Aquí iría la lógica para cambiar el idioma real de la app
+            // Esto es más complejo y a menudo requiere recrear la actividad o incluso un reinicio suave.
+            // Para una implementación completa, investiga "Android App Localization"
+        });
+        builder.show();
+    }
+
+    /**
+     * Abre la configuración de la aplicación en los ajustes del sistema, para gestionar permisos.
+     */
+    private void openAppSettings() {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", getPackageName(), null);
+        intent.setData(uri);
+        startActivity(intent);
+    }
+
+    /**
+     * Confirma y elimina la cuenta del usuario de Firebase Authentication y sus datos de Firestore.
+     * Esta es una operación destructiva y debe manejarse con extrema precaución.
+     */
+    private void confirmAndDeleteAccount() {
+        if (currentUser == null) {
+            Toast.makeText(this, "No hay usuario logueado para eliminar.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Eliminar Cuenta")
+                .setMessage("¿Estás seguro de que quieres eliminar tu cuenta permanentemente? Esta acción es irreversible.")
+                .setPositiveButton("Sí, eliminar", (dialog, which) -> {
+                    // Primero, pedir la contraseña actual para re-autenticar si es necesario
+                    // Firebase exige re-autenticación para operaciones sensibles como eliminar cuenta.
+                    showReauthenticateDialogForDeletion();
+                })
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    /**
+     * Muestra un diálogo para que el usuario re-autentique antes de eliminar la cuenta.
+     */
+    private void showReauthenticateDialogForDeletion() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Confirmar Eliminación");
+        builder.setMessage("Por seguridad, introduce tu contraseña para confirmar la eliminación de la cuenta.");
+
+        final EditText passwordInput = new EditText(this);
+        passwordInput.setHint("Contraseña");
+        passwordInput.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD | android.text.InputType.TYPE_CLASS_TEXT);
+        builder.setView(passwordInput);
+
+        builder.setPositiveButton("Confirmar", (dialog, which) -> {
+            String password = passwordInput.getText().toString().trim();
+            if (password.isEmpty()) {
+                Toast.makeText(SettingsActivity.this, "La contraseña no puede estar vacía.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), password);
+            currentUser.reauthenticate(credential)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            // Contraseña correcta, proceder a eliminar
+                            performAccountDeletion(currentUser.getUid());
+                        } else {
+                            Toast.makeText(SettingsActivity.this, "Contraseña incorrecta o error de re-autenticación: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+        });
+        builder.setNegativeButton("Cancelar", null);
+        builder.show();
+    }
+
+    /**
+     * Procede con la eliminación de la cuenta de Firebase Authentication y los datos de Firestore.
+     */
+    private void performAccountDeletion(String userId) {
+        progressBarProfileChanges.setVisibility(View.VISIBLE); // Muestra progreso
+
+        // 1. Eliminar datos del usuario de Firestore
+        dbFirebase.eliminarDatosDeUsuario(userId, new DBFirebase.VoidCallback() {
+            @Override
+            public void onSuccess() {
+                // 2. Eliminar cuenta de Firebase Authentication
+                currentUser.delete()
+                        .addOnCompleteListener(task -> {
+                            progressBarProfileChanges.setVisibility(View.GONE);
+                            if (task.isSuccessful()) {
+                                Toast.makeText(SettingsActivity.this, "Cuenta eliminada exitosamente.", Toast.LENGTH_SHORT).show();
+                                // Redirigir al usuario a la pantalla de inicio de sesión o bienvenida
+                                Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                Toast.makeText(SettingsActivity.this, "Error al eliminar la cuenta: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                progressBarProfileChanges.setVisibility(View.GONE);
+                Toast.makeText(SettingsActivity.this, "Error al eliminar datos de usuario: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    /**
+     * Cierra la sesión del usuario.
+     */
+    private void signOutUser() {
+        new AlertDialog.Builder(this)
+                .setTitle("Cerrar Sesión")
+                .setMessage("¿Estás seguro de que quieres cerrar tu sesión?")
+                .setPositiveButton("Sí", (dialog, which) -> {
+                    mAuth.signOut();
+                    Toast.makeText(SettingsActivity.this, "Sesión cerrada.", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButton("No", null)
+                .show();
     }
 }

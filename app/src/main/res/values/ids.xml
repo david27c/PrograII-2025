@@ -38,4 +38,5 @@
     <item name="textViewDate" type="id" />
     <item name="imageViewDenuncia" type="id" />
     <item name="spinnerStatusFilter" type="id" />
+    <item name="progressBarProfileChanges" type="id" />
 </resources>

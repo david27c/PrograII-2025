@@ -1,6 +1,11 @@
-// build.gradle.kts (nivel proyecto - Project: MiPrimeraAplicacion, ubicación: raíz del proyecto)
-fun plugins() {
-    // Este bloque 'plugins' puede estar vacío.
-    // La declaración de 'com.google.gms.google-services' con 'version' y 'apply false'
-    // YA DEBE ESTAR EN settings.gradle.kts.
+plugins {
+    id("com.android.application") version "8.10.1" apply false
+    id("com.google.gms.google-services") version "4.4.2" apply false
+}
+
+allprojects {
+}
+
+tasks.register("clean", Delete::class) {
+    delete(rootProject.buildDir)
 }

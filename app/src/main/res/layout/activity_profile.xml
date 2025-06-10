@@ -1,31 +1,144 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:id="@+id/nav_home"
-        android:icon="@drawable/ic_home"
-        android:title="Inicio" />
-    <item
-        android:id="@+id/nav_report"
-        android:icon="@drawable/ic_report"
-        android:title="Reportar" />
-    <item
-        android:id="@+id/nav_my_reports"
-        android:icon="@drawable/ic_list"
-        android:title="Mis Reportes" />
-    <item
-        android:id="@+id/nav_chat"
-        android:icon="@drawable/ic_chat"
-        android:title="Chat" />
-    <item
-        android:id="@+id/nav_profile"
-        android:icon="@drawable/ic_person"
-        android:title="Perfil" />
-    <item
-        android:id="@+id/nav_notifications"
-        android:icon="@drawable/ic_notifications"
-        android:title="Notificaciones" />
-    <item
-        android:id="@+id/nav_settings"
-        android:icon="@drawable/ic_settings"
-        android:title="Ajustes" />
-</menu>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/light_green" tools:context=".ProfileActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/light_blue" android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="@color/white" /> <ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_below="@id/toolbar"
+    android:layout_above="@+id/bottom_navigation"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal" android:layout_marginBottom="20dp">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imageViewProfile"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/ic_default_profile"
+                app:civ_border_width="2dp"
+                app:civ_border_color="@color/black"
+                android:layout_marginTop="20dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:contentDescription="Foto de perfil del usuario" />
+
+            <TextView
+                android:id="@+id/textViewUsername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Nombre de Usuario"
+                android:textColor="@color/black"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center_horizontal"/> </LinearLayout>
+
+        <TextView
+            android:id="@+id/textViewEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Correo: correo.electronico@example.com"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:paddingStart="8dp" android:paddingEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/textViewPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Teléfono: +1234567890"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/textViewAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Dirección: Calle Falsa 123"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/textViewReportCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Reportes enviados: 0"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:textStyle="italic"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <Button
+            android:id="@+id/buttonEditProfile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Editar Perfil"
+            android:layout_marginTop="30dp"
+            android:backgroundTint="@color/light_blue"
+            android:padding="12dp"
+            android:textColor="@color/purple_700"
+            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
+
+        <Button
+            android:id="@+id/buttonLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cerrar Sesión"
+            android:layout_marginTop="16dp"
+            android:padding="12dp"
+            android:backgroundTint="@color/purple_500"
+            android:textColor="@color/white"
+            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
+
+        <ProgressBar
+            android:id="@+id/progressBarProfile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal" android:layout_marginTop="20dp"
+            android:visibility="gone"
+            android:progressTint="@color/light_blue" />
+
+    </LinearLayout>
+</ScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        app:itemIconTint="@color/bottom_nav_icon_color_selector"
+        app:itemTextColor="@color/bottom_nav_text_color_selector"
+        app:menu="@menu/bottom_navigation_menu" />
+
+</RelativeLayout>

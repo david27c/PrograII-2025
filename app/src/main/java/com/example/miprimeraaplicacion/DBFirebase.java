@@ -9,7 +9,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.SetOptions; // Importar SetOptions para inicializar documento
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -42,7 +42,7 @@ public class DBFirebase {
         void onFailure(Exception e);
     }
 
-    public interface ListDenunciasCallback { // Usada para listas de denuncias
+    public interface ListDenunciasCallback {
         void onSuccess(List<Denuncia> denuncias);
         void onFailure(Exception e);
     }
@@ -52,7 +52,6 @@ public class DBFirebase {
         void onFailure(Exception e);
     }
 
-    // NUEVA INTERFAZ: Para la subida de imágenes a Storage
     public interface ImageUploadCallback {
         void onSuccess(String imageUrl);
         void onFailure(Exception e);
@@ -65,19 +64,12 @@ public class DBFirebase {
     }
 
     private CollectionReference getUsersCollection() {
-        return db.collection("users"); // Colección para los datos de perfil de usuario
+        return db.collection("users");
     }
 
-    // --- Métodos de Denuncias ---
+    // --- Métodos de Denuncias (Se mantienen como los proporcionaste) ---
 
-    /**
-     * Guarda una denuncia en Firestore, incluyendo la subida de imagen si existe.
-     * @param denuncia El objeto Denuncia a guardar.
-     * @param imageUri URI local de la imagen a subir (puede ser null).
-     * @param callback Callback para manejar el éxito o fracaso de la operación.
-     */
     public void guardarDenuncia(Denuncia denuncia, Uri imageUri, final DenunciaCallback callback) {
-        // Genera un ID único para la denuncia si no tiene uno
         if (denuncia.getIdDenuncia() == null || denuncia.getIdDenuncia().isEmpty()) {
             denuncia.setIdDenuncia(getDenunciasCollection().document().getId());
         }
@@ -108,6 +100,8 @@ public class DBFirebase {
                 .set(denuncia)
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Denuncia guardada en Firestore: " + denuncia.getIdDenuncia());
+                    // Incrementa el contador de reportes del usuario
+                    incrementUserReportCount(denuncia.getIdUsuario());
                     callback.onSuccess(denuncia);
                 })
                 .addOnFailureListener(e -> {
@@ -116,6 +110,15 @@ public class DBFirebase {
                     callback.onFailure(e);
                 });
     }
+
+    // Método para incrementar el contador de reportes del usuario
+    private void incrementUserReportCount(String userId) {
+        getUsersCollection().document(userId)
+                .update("reportCount", FieldValue.increment(1))
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Contador de reportes incrementado para usuario: " + userId))
+                .addOnFailureListener(e -> Log.e(TAG, "Error al incrementar contador de reportes: " + e.getMessage()));
+    }
+
 
     public void obtenerDenunciaPorId(String denunciaId, final DenunciaCallback callback) {
         getDenunciasCollection().document(denunciaId).get()
@@ -195,16 +198,31 @@ public class DBFirebase {
                 });
     }
 
-    // --- Métodos de Perfil de Usuario (Completados) ---
+    // --- Métodos de Perfil de Usuario (Completados y nuevos) ---
 
     /**
      * Inicializa un documento de usuario en Firestore si no existe.
+     * Añade los campos nuevos con valores por defecto.
      * @param uid ID del usuario.
      * @param email Correo electrónico del usuario.
      * @param callback Callback para el éxito o fracaso.
      */
     public void inicializarDocumentoUsuario(String uid, String email, final VoidCallback callback) {
-        User newUser = new User(uid, "", email, "", "", ""); // Crea un User básico
+        // Inicializa todos los campos, incluyendo los nuevos, con valores por defecto
+        User newUser = new User(
+                uid,
+                "", // username
+                email,
+                "", // phone
+                "", // address
+                "", // profileImageUrl (vacío por defecto)
+                "", // fullName (vacío por defecto)
+                0,  // reportCount (0 por defecto)
+                true, // showFullNamePublic (true por defecto)
+                true, // showProfilePhotoInComments (true por defecto)
+                false, // showEmailPublic (false por defecto)
+                false  // showPhonePublic (false por defecto)
+        );
         getUsersCollection().document(uid).set(newUser, SetOptions.merge()) // Usa merge para no sobrescribir si ya existe
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Documento de usuario inicializado: " + uid);
@@ -277,11 +295,56 @@ public class DBFirebase {
                             callback.onFailure(new Exception("Datos de usuario encontrados pero no pudieron ser convertidos."));
                         }
                     } else {
-                        callback.onSuccess(null); // Usuario no encontrado, devuelve null User
+                        // Si el documento no existe, se devuelve un User con el UID y Email
+                        // Esto permite que el inicializador de documento cree el perfil si es necesario
+                        // y se evita un NPE en la actividad
+                        User defaultUser = new User();
+                        defaultUser.setUid(userId);
+                        // No podemos obtener el email de aquí, se obtendría de FirebaseAuth en la actividad
+                        callback.onSuccess(defaultUser);
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error al obtener datos de usuario: " + e.getMessage());
+                    callback.onFailure(e);
+                });
+    }
+
+    /**
+     * Actualiza las preferencias de visibilidad del usuario en Firestore.
+     * Este método se llama desde SettingsActivity.
+     * @param uid ID del usuario.
+     * @param visibilityUpdates Un mapa con las preferencias de visibilidad a actualizar.
+     * @param callback Callback para el éxito o fracaso.
+     */
+    public void actualizarPreferenciasVisibilidad(String uid, Map<String, Object> visibilityUpdates, final VoidCallback callback) {
+        getUsersCollection().document(uid)
+                .update(visibilityUpdates)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Preferencias de visibilidad actualizadas para usuario: " + uid);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error al actualizar preferencias de visibilidad: " + e.getMessage());
+                    callback.onFailure(e);
+                });
+    }
+
+    /**
+     * Elimina el documento de datos de un usuario de Firestore.
+     * Este método se llama antes de eliminar la cuenta de Firebase Authentication.
+     * @param userId ID del usuario a eliminar.
+     * @param callback Callback para el éxito o fracaso.
+     */
+    public void eliminarDatosDeUsuario(String userId, final VoidCallback callback) {
+        getUsersCollection().document(userId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Datos de usuario eliminados de Firestore: " + userId);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error al eliminar datos de usuario de Firestore: " + e.getMessage());
                     callback.onFailure(e);
                 });
     }

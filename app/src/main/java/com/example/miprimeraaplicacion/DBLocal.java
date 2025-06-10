@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Date; // Importar java.util.Date
 import java.util.List;
@@ -26,7 +28,7 @@ public class DBLocal extends SQLiteOpenHelper {
     private static final String COL_LATITUD = "latitud";
     private static final String COL_LONGITUD = "longitud";
     private static final String COL_URL_IMAGEN = "url_imagen";
-    private static final String COL_FECHA_HORA = "fecha_hora"; // Este campo causaba el error
+    private static final String COL_FECHA_HORA = "fecha_hora";
     private static final String COL_ESTADO = "estado";
 
     // Sentencia SQL para crear la tabla
@@ -59,6 +61,7 @@ public class DBLocal extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // Implementa aquí la lógica de migración si tu esquema de base de datos cambia en el futuro.
         // Por ahora, simplemente eliminamos y recreamos la tabla (lo cual borrará los datos existentes).
+        // En una aplicación de producción, querrías ALTER TABLE para añadir o modificar columnas sin perder datos.
         Log.w("DBLocal", "Actualizando la base de datos de la versión " + oldVersion + " a " + newVersion + ", lo que destruirá todos los datos antiguos.");
         db.execSQL(SQL_DELETE_ENTRIES);
         onCreate(db);
@@ -67,10 +70,37 @@ public class DBLocal extends SQLiteOpenHelper {
     /**
      * Inserta una nueva denuncia en la base de datos local.
      * @param denuncia El objeto Denuncia a insertar.
-     * @return El ID de la fila recién insertada, o -1 si ocurrió un error.
+     * @return El ID de la denuncia insertada si fue exitosa, o null si ocurrió un error.
      */
     public String insertarDenuncia(Denuncia denuncia) {
         SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = getContentValues(denuncia);
+
+        long newRowId = -1;
+        try {
+            newRowId = db.insert(TABLE_DENUNCIAS, null, values);
+            if (newRowId != -1) {
+                Log.d("DBLocal", "Denuncia insertada correctamente: " + denuncia.getIdDenuncia());
+                return denuncia.getIdDenuncia(); // Devolvemos el ID de la denuncia
+            } else {
+                Log.e("DBLocal", "Error al insertar denuncia.");
+                return null;
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al insertar denuncia: " + e.getMessage());
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
+    /**
+     * Obtiene un ContentValues para insertar una denuncia.
+     * @param denuncia El objeto Denuncia.
+     * @return ContentValues con los datos de la denuncia.
+     */
+    @NonNull
+    private ContentValues getContentValues(Denuncia denuncia) {
         ContentValues values = new ContentValues();
 
         values.put(COL_ID_DENUNCIA, denuncia.getIdDenuncia());
@@ -84,19 +114,7 @@ public class DBLocal extends SQLiteOpenHelper {
         // Convertir Date a long (milisegundos) antes de guardar
         values.put(COL_FECHA_HORA, denuncia.getFechaHora() != null ? denuncia.getFechaHora().getTime() : null);
         values.put(COL_ESTADO, denuncia.getEstado());
-
-        try {
-            long newRowId = db.insert(TABLE_DENUNCIAS, null, values);
-            if (newRowId != -1) {
-                Log.d("DBLocal", "Denuncia insertada correctamente: " + denuncia.getIdDenuncia());
-                return denuncia.getIdDenuncia();
-            } else {
-                Log.e("DBLocal", "Error al insertar denuncia.");
-                return null;
-            }
-        } finally {
-            db.close();
-        }
+        return values;
     }
 
     /**
@@ -300,18 +318,7 @@ public class DBLocal extends SQLiteOpenHelper {
      */
     public int actualizarDenuncia(Denuncia denuncia) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-
-        values.put(COL_ID_USUARIO, denuncia.getIdUsuario());
-        values.put(COL_TITULO, denuncia.getTitulo());
-        values.put(COL_DESCRIPCION, denuncia.getDescripcion());
-        values.put(COL_TIPO_DENUNCIA, denuncia.getTipoDenuncia());
-        values.put(COL_LATITUD, denuncia.getLatitud());
-        values.put(COL_LONGITUD, denuncia.getLongitud());
-        values.put(COL_URL_IMAGEN, denuncia.getUrlImagen());
-        // Convertir Date a long (milisegundos) antes de guardar
-        values.put(COL_FECHA_HORA, denuncia.getFechaHora() != null ? denuncia.getFechaHora().getTime() : null);
-        values.put(COL_ESTADO, denuncia.getEstado());
+        ContentValues values = getValues(denuncia);
 
         String selection = COL_ID_DENUNCIA + " = ?";
         String[] selectionArgs = { denuncia.getIdDenuncia() };
@@ -328,10 +335,36 @@ public class DBLocal extends SQLiteOpenHelper {
             } else {
                 Log.e("DBLocal", "Error al actualizar denuncia o denuncia no encontrada.");
             }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al actualizar denuncia: " + e.getMessage());
+            return -1;
         } finally {
             db.close();
         }
         return count;
+    }
+
+    /**
+     * Obtiene un ContentValues para actualizar una denuncia.
+     * No incluye el ID de la denuncia, ya que se usa en la cláusula WHERE.
+     * @param denuncia El objeto Denuncia.
+     * @return ContentValues con los datos de la denuncia.
+     */
+    @NonNull
+    private ContentValues getValues(Denuncia denuncia) {
+        ContentValues values = new ContentValues();
+
+        values.put(COL_ID_USUARIO, denuncia.getIdUsuario());
+        values.put(COL_TITULO, denuncia.getTitulo());
+        values.put(COL_DESCRIPCION, denuncia.getDescripcion());
+        values.put(COL_TIPO_DENUNCIA, denuncia.getTipoDenuncia());
+        values.put(COL_LATITUD, denuncia.getLatitud());
+        values.put(COL_LONGITUD, denuncia.getLongitud());
+        values.put(COL_URL_IMAGEN, denuncia.getUrlImagen());
+        // Convertir Date a long (milisegundos) antes de guardar
+        values.put(COL_FECHA_HORA, denuncia.getFechaHora() != null ? denuncia.getFechaHora().getTime() : null);
+        values.put(COL_ESTADO, denuncia.getEstado());
+        return values;
     }
 
     /**
@@ -354,6 +387,9 @@ public class DBLocal extends SQLiteOpenHelper {
             } else {
                 Log.e("DBLocal", "Error al eliminar denuncia o denuncia no encontrada.");
             }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al eliminar denuncia: " + e.getMessage());
+            return -1;
         } finally {
             db.close();
         }
