@@ -43,6 +43,15 @@ dependencies {
     // Firebase BoM (usando la versión 33.15.0)
     implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
 
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
+    implementation(libs.firebase.database)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+
     // Firebase products (sin especificar versiones individuales gracias al BoM)
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")

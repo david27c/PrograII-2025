@@ -1,0 +1,15 @@
+Index: .idea/.name
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>miPrimeraAplicacion
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/.name b/.idea/.name
+--- a/.idea/.name	(revision cd9e6503570622991597a89ff9eea80eb2bf30f4)
++++ b/.idea/.name	(date 1749525901272)
+@@ -1,1 +1,1 @@
+-miPrimeraAplicacion
+\ No newline at end of file
++MiPrimeraAplicacion
+\ No newline at end of file
