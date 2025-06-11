@@ -15,387 +15,401 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:titleTextColor="@color/white"
-        app:title="Configuración" /> <ScrollView
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_below="@id/toolbar"
-    android:layout_above="@+id/bottom_navigation"
-    android:padding="16dp">
+        app:title="Configuración" />
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Perfil de Usuario"
-            android:textColor="@color/black"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/imageViewProfile"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/ic_default_profile"
-            app:civ_border_width="2dp"
-            app:civ_border_color="@color/black"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="Toca para cambiar foto de perfil" />
-
-        <TextView
-            android:id="@+id/textViewChangeProfilePhoto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cambiar foto de perfil"
-            android:textColor="@color/light_blue"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:padding="4dp"/>
-
-        <EditText
-            android:id="@+id/editTextFullName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Nombre completo"
-            android:inputType="textPersonName"
-            android:padding="12dp"
-            android:background="@color/white"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"/>
-
-        <EditText
-            android:id="@+id/editTextEmail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Correo electrónico"
-            android:inputType="textEmailAddress"
-            android:padding="12dp"
-            android:background="@color/white"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"
-            android:enabled="false"
-            android:focusable="false"/> <EditText
-        android:id="@+id/editTextUsername"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Nombre de usuario"
-        android:inputType="textPersonName"
-        android:padding="12dp"
-        android:background="@color/white"
-        android:layout_marginTop="10dp"
-        android:textColor="@color/black"
-        android:textColorHint="@color/black"/>
-
-        <EditText
-            android:id="@+id/editTextPhoneNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Número de teléfono"
-            android:inputType="phone"
-            android:padding="12dp"
-            android:background="@color/white"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"/>
-
-        <EditText
-            android:id="@+id/editTextCurrentPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Contraseña actual"
-            android:inputType="textPassword"
-            android:padding="12dp"
-            android:background="@color/white"
-            android:layout_marginTop="20dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"/>
-
-        <EditText
-            android:id="@+id/editTextNewPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Nueva contraseña"
-            android:inputType="textPassword"
-            android:padding="12dp"
-            android:background="@color/white"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"/>
-
-        <EditText
-            android:id="@+id/editTextConfirmNewPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Confirmar nueva contraseña"
-            android:inputType="textPassword"
-            android:padding="12dp"
-            android:background="@color/white"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"/>
-
-        <Button
-            android:id="@+id/buttonSaveProfileChanges"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Guardar Cambios"
-            android:layout_marginTop="30dp"
-            android:backgroundTint="@color/light_blue"
-            android:textColor="@color/purple_700"
-            android:padding="12dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/black"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="24dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Preferencias de Visibilidad"
-            android:textColor="@color/black"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:layout_above="@+id/bottom_navigation"
+        android:padding="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="10dp">
-            <CheckBox
-                android:id="@+id/checkBoxShowFullName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Mostrar mi nombre completo en los reportes públicos"
-                android:textColor="@color/black"
-                android:buttonTint="@color/light_blue" />
+            android:orientation="vertical">
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Desactiva esta opción si deseas que tu nombre no aparezca junto a tus reportes visibles al público."
+                android:text="Perfil de Usuario"
                 android:textColor="@color/black"
-                android:textSize="12sp"
-                android:layout_marginStart="32dp"/>
-        </LinearLayout>
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="10dp">
-            <CheckBox
-                android:id="@+id/checkBoxShowProfilePhoto"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Mostrar mi foto de perfil en comentarios o chats"
-                android:textColor="@color/black"
-                android:buttonTint="@color/light_blue"/>
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imageViewProfile"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/ic_default_profile"
+                app:civ_border_width="2dp"
+                app:civ_border_color="@color/black"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Toca para cambiar foto de perfil" />
+
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Controla si tu foto de perfil es visible en las interacciones dentro de la aplicación."
-                android:textColor="@color/black"
-                android:textSize="12sp"
-                android:layout_marginStart="32dp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="10dp">
-            <CheckBox
-                android:id="@+id/checkBoxShowEmail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Mostrar mi correo electrónico"
-                android:textColor="@color/black"
-                android:buttonTint="@color/light_blue"/>
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Activa esta opción para que tu correo electrónico sea visible para otros usuarios."
-                android:textColor="@color/black"
-                android:textSize="12sp"
-                android:layout_marginStart="32dp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="20dp">
-            <CheckBox
-                android:id="@+id/checkBoxShowPhoneNumber"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Mostrar mi número de teléfono"
-                android:textColor="@color/black"
-                android:buttonTint="@color/light_blue"/>
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Activa esta opción para que tu número de teléfono sea visible para otros usuarios."
-                android:textColor="@color/black"
-                android:textSize="12sp"
-                android:layout_marginStart="32dp"/>
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/buttonSaveVisibilityPreferences"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Guardar Preferencias de Visibilidad"
-            android:layout_marginTop="10dp"
-            android:backgroundTint="@color/light_blue"
-            android:textColor="@color/purple_700"
-            android:padding="12dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/black"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="24dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Configuración General"
-            android:textColor="@color/black"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="10dp">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Notificaciones PUSH"
-                android:textColor="@color/black"
-                android:textSize="16sp"/>
-            <Switch
-                android:id="@+id/switchPushNotifications"
+                android:id="@+id/textViewChangeProfilePhoto"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:thumbTint="@color/light_blue"
-                android:trackTint="@color/light_green"
-                tools:ignore="UseSwitchCompatForMaterialContent" />
-        </LinearLayout>
+                android:text="Cambiar foto de perfil"
+                android:textColor="@color/light_blue"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="4dp"/>
 
-        <LinearLayout
-            android:id="@+id/layoutLanguageSelector"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
-            <TextView
-                android:layout_width="0dp"
+            <EditText
+                android:id="@+id/editTextFullName"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Idioma"
+                android:hint="Nombre completo"
+                android:inputType="textPersonName"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="10dp"
                 android:textColor="@color/black"
-                android:textSize="16sp"/>
-            <TextView
-                android:id="@+id/textViewSelectedLanguage"
+                android:textColorHint="@color/black"/>
+
+            <EditText
+                android:id="@+id/editTextEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Correo electrónico"
+                android:inputType="textEmailAddress"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"
+                android:enabled="false"
+                android:focusable="false"/>
+            <EditText
+                android:id="@+id/editTextUsername"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nombre de usuario"
+                android:inputType="textPersonName"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"/>
+
+            <EditText
+                android:id="@+id/editTextPhoneNumber"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Número de teléfono"
+                android:inputType="phone"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"/>
+
+            <EditText
+                android:id="@+id/editTextCurrentPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Contraseña actual"
+                android:inputType="textPassword"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="20dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"/>
+
+            <EditText
+                android:id="@+id/editTextNewPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nueva contraseña"
+                android:inputType="textPassword"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"/>
+
+            <EditText
+                android:id="@+id/editTextConfirmNewPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Confirmar nueva contraseña"
+                android:inputType="textPassword"
+                android:padding="12dp"
+                android:background="@color/white"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"/>
+
+            <Button
+                android:id="@+id/buttonSaveProfileChanges"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Guardar Cambios"
+                android:layout_marginTop="30dp"
+                android:backgroundTint="@color/light_blue"
+                android:textColor="@color/purple_700"
+                android:padding="12dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
+
+            <ProgressBar
+                android:id="@+id/progressBarProfileChanges"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Español"
-                android:textColor="@color/black"
-                android:textSize="16sp"/>
-            <ImageView
-                android:layout_width="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:visibility="gone"
+                android:indeterminateTint="@color/light_blue" />
+
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/black"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_arrow_right"
-                android:contentDescription="Abrir selector de idioma"/>
+                android:text="Preferencias de Visibilidad"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="10dp">
+                <CheckBox
+                    android:id="@+id/checkBoxShowFullName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mostrar mi nombre completo en los reportes públicos"
+                    android:textColor="@color/black"
+                    android:buttonTint="@color/light_blue" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Desactiva esta opción si deseas que tu nombre no aparezca junto a tus reportes visibles al público."
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:layout_marginStart="32dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="10dp">
+                <CheckBox
+                    android:id="@+id/checkBoxShowProfilePhoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mostrar mi foto de perfil en comentarios o chats"
+                    android:textColor="@color/black"
+                    android:buttonTint="@color/light_blue"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Controla si tu foto de perfil es visible en las interacciones dentro de la aplicación."
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:layout_marginStart="32dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="10dp">
+                <CheckBox
+                    android:id="@+id/checkBoxShowEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mostrar mi correo electrónico"
+                    android:textColor="@color/black"
+                    android:buttonTint="@color/light_blue"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Activa esta opción para que tu correo electrónico sea visible para otros usuarios."
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:layout_marginStart="32dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="20dp">
+                <CheckBox
+                    android:id="@+id/checkBoxShowPhoneNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mostrar mi número de teléfono"
+                    android:textColor="@color/black"
+                    android:buttonTint="@color/light_blue"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Activa esta opción para que tu número de teléfono sea visible para otros usuarios."
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:layout_marginStart="32dp"/>
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/buttonSaveVisibilityPreferences"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Guardar Preferencias de Visibilidad"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="@color/light_blue"
+                android:textColor="@color/purple_700"
+                android:padding="12dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/black"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Configuración General"
+                android:textColor="@color/black"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Notificaciones PUSH"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"/>
+                <Switch
+                    android:id="@+id/switchPushNotifications"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:thumbTint="@color/light_blue"
+                    android:trackTint="@color/light_green"
+                    tools:ignore="UseSwitchCompatForMaterialContent" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutLanguageSelector"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Idioma"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"/>
+                <TextView
+                    android:id="@+id/textViewSelectedLanguage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Español"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"/>
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_arrow_right"
+                    android:contentDescription="Abrir selector de idioma"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textViewAppPermissions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Permisos de la aplicación"
+                android:textColor="@color/light_blue"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingVertical="8dp"/>
+
+            <Button
+                android:id="@+id/buttonDeleteAccount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Eliminar cuenta"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/delete_red"
+                android:textColor="@color/white"
+                android:padding="12dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
+
+            <TextView
+                android:id="@+id/textViewAppVersion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Versión de la App: 1.0.0"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:layout_marginTop="20dp"
+                android:gravity="center_horizontal"/>
+
+            <TextView
+                android:id="@+id/textViewCredits"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Créditos"
+                android:textColor="@color/light_blue"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:gravity="center_horizontal"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <Button
+                android:id="@+id/buttonLogout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cerrar Sesión"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/purple_500"
+                android:textColor="@color/white"
+                android:padding="12dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
+
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/textViewAppPermissions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Permisos de la aplicación"
-            android:textColor="@color/light_blue"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginTop="10dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:paddingVertical="8dp"/>
-
-        <Button
-            android:id="@+id/buttonDeleteAccount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Eliminar cuenta"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="@color/delete_red" android:textColor="@color/white"
-            android:padding="12dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
-
-        <TextView
-            android:id="@+id/textViewAppVersion"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Versión de la App: 1.0.0"
-            android:textColor="@color/black"
-            android:textSize="14sp"
-            android:layout_marginTop="20dp"
-            android:gravity="center_horizontal"/>
-
-        <TextView
-            android:id="@+id/textViewCredits"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Créditos"
-            android:textColor="@color/light_blue"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp"
-            android:gravity="center_horizontal"
-            android:clickable="true"
-            android:focusable="true"/>
-
-        <Button
-            android:id="@+id/buttonLogout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Cerrar Sesión"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="@color/purple_500"
-            android:textColor="@color/white"
-            android:padding="12dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
-
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"

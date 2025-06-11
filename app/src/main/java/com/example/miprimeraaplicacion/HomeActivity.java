@@ -2,12 +2,15 @@ package com.example.miprimeraaplicacion;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu; // Importar para el menú de la Toolbar
+import android.view.MenuItem; // Importar para el menú de la Toolbar
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull; // Importar para @NonNull
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -76,9 +79,11 @@ public class HomeActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSortBy.setAdapter(adapter);
 
+        // Listener para BottomNavigationView (ahora solo con 5 ítems)
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
+                // Ya estamos en Home, no hacer nada o recargar si es necesario
                 return true;
             } else if (itemId == R.id.nav_report) {
                 startActivity(new Intent(HomeActivity.this, ReportProblemActivity.class));
@@ -91,12 +96,6 @@ public class HomeActivity extends AppCompatActivity {
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_notifications) {
-                startActivity(new Intent(HomeActivity.this, NotificationsActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_settings) {
-                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
                 return true;
             }
             return false;
@@ -112,10 +111,32 @@ public class HomeActivity extends AppCompatActivity {
         loadReports();
     }
 
+    // *** NUEVOS MÉTODOS PARA EL MENÚ DE LA TOOLBAR ***
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Infla el menú de la Toolbar
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_notifications) {
+            startActivity(new Intent(HomeActivity.this, NotificationsActivity.class));
+            return true;
+        } else if (id == R.id.action_settings) {
+            startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    // *** FIN DE NUEVOS MÉTODOS ***
+
+
     private void loadReports() {
         progressBar.setVisibility(View.VISIBLE);
 
-        // *** ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ ASÍ Y NO DIGA DenunciasCallback ***
         dbFirebase.obtenerTodasLasDenuncias(new DBFirebase.ListDenunciasCallback() {
             @Override
             public void onSuccess(List<Denuncia> denuncias) {

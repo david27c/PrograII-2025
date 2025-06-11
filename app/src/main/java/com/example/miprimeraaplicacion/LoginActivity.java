@@ -1,6 +1,8 @@
 package com.example.miprimeraaplicacion;
 
+import android.content.Context; // Necesario para SharedPreferences
 import android.content.Intent;
+import android.content.SharedPreferences; // Para guardar el userId
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -12,35 +14,39 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+// Importaciones de Firebase (las mantenemos pero su uso será temporalmente desactivado)
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException; // Import specific Firebase exceptions
-import com.google.firebase.auth.FirebaseAuthInvalidUserException;     // Import specific Firebase exceptions
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseUser; // Para onStart()
 
 public class LoginActivity extends AppCompatActivity {
 
     EditText editTextEmail, editTextPassword;
     Button buttonLogin;
     TextView textViewForgotPassword, textViewCreateAccount, textViewError;
-    FirebaseAuth mAuth; // Instancia de Firebase Authentication
+
+    // Instancia de Firebase Authentication (mantendremos la declaración, pero no la usaremos para el login por ahora)
+    FirebaseAuth mAuth;
+
+    // *** NUEVA INSTANCIA PARA LA BASE DE DATOS LOCAL ***
+    private DBLocal dbLocal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // No es necesario un try-catch grande aquí, los findViewById suelen ser seguros
-        // a menos que el R.id no exista, lo cual sería un error de compilación o un crash inmediato.
-        // Las operaciones de inicialización son raramente la fuente de excepciones.
+        // mAuth = FirebaseAuth.getInstance(); // Comentamos o quitamos la inicialización de Firebase Auth
 
-        // Inicializar Firebase Auth
-        mAuth = FirebaseAuth.getInstance();
+        dbLocal = new DBLocal(this); // *** Inicializamos la base de datos local ***
 
         // Enlazar elementos del diseño con las variables Java
-        editTextEmail = findViewById(R.id.editTextEmail);
-        editTextPassword = findViewById(R.id.editTextPassword);
+        editTextEmail = findViewById(R.id.editTextEmail); // Asegúrate de que el ID sea correcto en tu layout
+        editTextPassword = findViewById(R.id.editTextPassword); // Asegúrate de que el ID sea correcto en tu layout
         buttonLogin = findViewById(R.id.buttonLogin);
         textViewForgotPassword = findViewById(R.id.textViewForgotPassword);
         textViewCreateAccount = findViewById(R.id.textViewCreateAccount);
@@ -50,7 +56,7 @@ public class LoginActivity extends AppCompatActivity {
         buttonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                loginUser();
+                loginUserLocal(); // *** CAMBIO: Llamamos al método de inicio de sesión local ***
             }
         });
 
@@ -58,16 +64,7 @@ public class LoginActivity extends AppCompatActivity {
         textViewForgotPassword.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Aquí podrías abrir una nueva Activity para restablecer contraseña
                 Toast.makeText(LoginActivity.this, "Funcionalidad de restablecer contraseña (por implementar)", Toast.LENGTH_SHORT).show();
-                // Opcional: Podrías abrir una AlertDialog para pedir el email para restablecer
-                // new AlertDialog.Builder(LoginActivity.this)
-                //     .setTitle("Restablecer Contraseña")
-                //     .setMessage("Ingresa tu correo electrónico para restablecer la contraseña.")
-                //     .setView(new EditText(LoginActivity.this)) // Example of adding an input
-                //     .setPositiveButton("Enviar", (dialog, which) -> { /* Logic to send reset email */ })
-                //     .setNegativeButton("Cancelar", null)
-                //     .show();
             }
         });
 
@@ -86,12 +83,12 @@ public class LoginActivity extends AppCompatActivity {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    // Método para iniciar sesión
-    private void loginUser() {
+    // Método para iniciar sesión con Firebase (comentado para no usarlo por ahora)
+    /*
+    private void loginUserFirebase() {
         String email = editTextEmail.getText().toString().trim();
         String password = editTextPassword.getText().toString().trim();
 
-        // Validaciones básicas (no necesitan try-catch a menos que TextUtils falle, lo cual es muy raro)
         if (TextUtils.isEmpty(email)) {
             textViewError.setText("Por favor, ingresa tu correo electrónico.");
             textViewError.setVisibility(View.VISIBLE);
@@ -103,27 +100,20 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Ocultar mensaje de error si todo está bien hasta ahora
         textViewError.setVisibility(View.GONE);
 
-        // Iniciar sesión con Firebase Authentication
-        // Las excepciones de Firebase se manejan en el onComplete a través de task.getException()
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            // Inicio de sesión exitoso
                             Toast.makeText(LoginActivity.this, "¡Inicio de sesión exitoso!", Toast.LENGTH_SHORT).show();
-                            // Navegar a la pantalla principal (Inicio)
                             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
                             startActivity(intent);
-                            finish(); // Finaliza esta actividad
+                            finish();
                         } else {
-                            // Si el inicio de sesión falla, muestra un mensaje al usuario.
                             String errorMessage = "Error al iniciar sesión. Verifica tus credenciales.";
                             if (task.getException() != null) {
-                                // Specific error messages for better user feedback
                                 if (task.getException() instanceof FirebaseAuthInvalidUserException) {
                                     errorMessage = "Este correo electrónico no está registrado.";
                                 } else if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
@@ -138,16 +128,74 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+    */
+
+    // *******************************************************
+    // *** NUEVO MÉTODO PARA INICIAR SESIÓN CON DB LOCAL ***
+    // *******************************************************
+    private void loginUserLocal() {
+        String email = editTextEmail.getText().toString().trim();
+        String password = editTextPassword.getText().toString().trim();
+
+        if (TextUtils.isEmpty(email)) {
+            textViewError.setText("Por favor, ingresa tu correo electrónico.");
+            textViewError.setVisibility(View.VISIBLE);
+            return;
+        }
+        if (TextUtils.isEmpty(password)) {
+            textViewError.setText("Por favor, ingresa tu contraseña.");
+            textViewError.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        textViewError.setVisibility(View.GONE);
+
+        String userId = dbLocal.loginUser(email, password); // Llamada al método de login en DBLocal
+
+        if (userId != null) {
+            // Inicio de sesión exitoso localmente
+            Toast.makeText(LoginActivity.this, "¡Inicio de sesión exitoso (localmente)!", Toast.LENGTH_SHORT).show();
+
+            // *** IMPORTANTE: Guarda el userId localmente para futuras operaciones ***
+            SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("current_user_id", userId);
+            editor.apply(); // Usa apply() para guardar de forma asíncrona
+
+            // Navegar a la pantalla principal (HomeActivity)
+            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish(); // Finaliza esta actividad de login
+        } else {
+            // Fallo de inicio de sesión local
+            textViewError.setText("Credenciales incorrectas o usuario no registrado localmente.");
+            textViewError.setVisibility(View.VISIBLE);
+        }
+    }
 
     @Override
     protected void onStart() {
         super.onStart();
-        // Verificar si el usuario ya ha iniciado sesión (persistencia de sesión)
-        if (mAuth.getCurrentUser() != null) {
-            // Si el usuario ya está logueado, lo enviamos directamente a la pantalla principal
+        // Opcional: Si quieres que la persistencia de la sesión local funcione de inmediato
+        // Esto solo comprobaría si hay un userId guardado localmente, no si existe en Firebase.
+        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        String currentUserId = sharedPref.getString("current_user_id", null);
+
+        if (currentUserId != null) {
+            // Si hay un usuario logueado localmente, lo enviamos directamente a la pantalla principal
+            // Comenta la siguiente línea si quieres que siempre pase por la pantalla de login temporalmente.
             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(intent);
             finish(); // Finaliza esta actividad
         }
+
+        // Comentamos o quitamos la verificación de Firebase Auth, ya que no la usaremos por ahora.
+        /*
+        if (mAuth.getCurrentUser() != null) {
+            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish();
+        }
+        */
     }
 }

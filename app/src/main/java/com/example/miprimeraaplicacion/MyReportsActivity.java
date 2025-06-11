@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu; // Importar para el menú de la Toolbar
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -35,12 +36,12 @@ public class MyReportsActivity extends AppCompatActivity {
     private List<Denuncia> myDenunciaList;
     private ProgressBar progressBarMyReports;
     private TextView textViewNoReports;
-    private Spinner spinnerStatusFilter;
+    private Spinner spinnerStatusFilter; // Se usa este nombre en el Java
     private BottomNavigationView bottomNavigationView;
 
     private FirebaseAuth mAuth;
-    private DBFirebase dbFirebase; // Usamos DBFirebase
-    private DBLocal dbLocal; // Podemos seguir usando DBLocal para backup
+    private DBFirebase dbFirebase;
+    private DBLocal dbLocal;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -54,22 +55,24 @@ public class MyReportsActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("Mis Denuncias");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Mis Denuncias");
+        }
 
         recyclerViewMyReports = findViewById(R.id.recyclerViewMyReports);
         progressBarMyReports = findViewById(R.id.progressBarMyReports);
         textViewNoReports = findViewById(R.id.textViewNoReports);
-        spinnerStatusFilter = findViewById(R.id.spinnerStatusFilter);
+        spinnerStatusFilter = findViewById(R.id.spinnerStatusFilter); // ID corregido en el XML
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         myDenunciaList = new ArrayList<>();
-        denunciaAdapter = new DenunciaAdapter(this, myDenunciaList); // Asegúrate de que este adaptador sea el DenunciaAdapter
+        denunciaAdapter = new DenunciaAdapter(this, myDenunciaList);
         recyclerViewMyReports.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewMyReports.setAdapter(denunciaAdapter);
 
         // Configurar Spinner para filtrar por estado
         ArrayAdapter<CharSequence> spinnerAdapter = ArrayAdapter.createFromResource(this,
-                R.array.report_status_filter_options, android.R.layout.simple_spinner_item);
+                R.array.report_status_filter_options, android.R.layout.simple_spinner_item); // Asegúrate de que este array existe
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerStatusFilter.setAdapter(spinnerAdapter);
 
@@ -86,40 +89,31 @@ public class MyReportsActivity extends AppCompatActivity {
             }
         });
 
-        // Configurar la navegación inferior
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    startActivity(new Intent(MyReportsActivity.this, HomeActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_report) {
-                    startActivity(new Intent(MyReportsActivity.this, ReportProblemActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_my_reports) {
-                    return true; // Ya estamos en MyReportsActivity
-                } else if (itemId == R.id.nav_chat) {
-                    startActivity(new Intent(MyReportsActivity.this, CommunityChatActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_profile) {
-                    startActivity(new Intent(MyReportsActivity.this, ProfileActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_notifications) {
-                    startActivity(new Intent(MyReportsActivity.this, NotificationsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_settings) {
-                    startActivity(new Intent(MyReportsActivity.this, SettingsActivity.class));
-                    finish();
-                    return true;
-                }
-                return false;
+        // Configurar la navegación inferior (SOLO LOS 5 ITEMS PRINCIPALES)
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> { // Usando lambda
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(MyReportsActivity.this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_report) {
+                startActivity(new Intent(MyReportsActivity.this, ReportProblemActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_my_reports) {
+                // Ya estamos en MyReportsActivity
+                return true;
+            } else if (itemId == R.id.nav_chat) {
+                startActivity(new Intent(MyReportsActivity.this, CommunityChatActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(MyReportsActivity.this, ProfileActivity.class));
+                finish();
+                return true;
             }
+            // Los ítems nav_notifications y nav_settings han sido movidos a la Toolbar
+            return false;
         });
         bottomNavigationView.setSelectedItemId(R.id.nav_my_reports);
 
@@ -127,8 +121,34 @@ public class MyReportsActivity extends AppCompatActivity {
         loadMyReports("Todos"); // Cargar todas las denuncias por defecto
     }
 
+    // *** NUEVOS MÉTODOS PARA EL MENÚ DE LA TOOLBAR (igual que en HomeActivity) ***
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Infla el menú de la Toolbar
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu); // Asegúrate de tener res/menu/toolbar_menu.xml
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_notifications) { // Usamos action_notifications de toolbar_menu.xml
+            startActivity(new Intent(MyReportsActivity.this, NotificationsActivity.class));
+            return true;
+        } else if (id == R.id.action_settings) { // Usamos action_settings de toolbar_menu.xml
+            startActivity(new Intent(MyReportsActivity.this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    // *** FIN DE NUEVOS MÉTODOS ***
+
+
     private void loadMyReports(String statusFilter) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
+        // Si estás desactivando Firebase Auth, esta verificación siempre será null.
+        // Si no tienes un sistema de autenticación local, esta sección te impedirá cargar reportes.
+        // Por ahora, lo dejaré asumiendo que Firebase Auth está o estará activo.
         if (currentUser == null) {
             Toast.makeText(this, "Necesitas iniciar sesión para ver tus reportes.", Toast.LENGTH_LONG).show();
             textViewNoReports.setText("Inicia sesión para ver tus reportes.");
@@ -142,7 +162,9 @@ public class MyReportsActivity extends AppCompatActivity {
         textViewNoReports.setVisibility(View.GONE);
         recyclerViewMyReports.setVisibility(View.GONE);
 
-        // Primero, intentar cargar de Firebase
+        // Si se está priorizando DBLocal y desactivando Firebase, esta lógica de carga
+        // debe ser ajustada para cargar solo de DBLocal.
+        // Por ahora, sigue intentando Firebase primero.
         dbFirebase.obtenerDenunciasDeUsuario(userId, statusFilter, new DBFirebase.ListDenunciasCallback() {
             @Override
             public void onSuccess(List<Denuncia> denuncias) {
@@ -196,21 +218,11 @@ public class MyReportsActivity extends AppCompatActivity {
         });
     }
 
-    // Adaptador de MyReportsActivity ya no es necesario, usamos DenunciaAdapter
-
-    // Asegúrate de que el archivo `arrays.xml` tenga este array:
-    // <resources>
-    //     <string-array name="report_status_filter_options">
-    //         <item>Todos</item>
-    //         <item>Pendiente</item>
-    //         <item>En Proceso</item>
-    //         <item>Resuelto</item>
-    //     </string-array>
-    // </resources>
-
     // Método para manejar la actualización de una denuncia (ej. cambio de estado)
     public void updateReportStatus(Denuncia denuncia, String newStatus) {
         denuncia.setEstado(newStatus);
+        // Si se está priorizando DBLocal y desactivando Firebase, esta lógica de actualización
+        // debe ser ajustada para guardar solo en DBLocal.
         dbFirebase.guardarDenuncia(denuncia, null, new DBFirebase.DenunciaCallback() {
             @Override
             public void onSuccess(Denuncia denunciaGuardada) {

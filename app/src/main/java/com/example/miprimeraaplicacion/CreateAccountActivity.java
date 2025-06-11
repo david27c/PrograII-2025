@@ -1,6 +1,7 @@
 package com.example.miprimeraaplicacion;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -25,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+// Importaciones de Firebase (las mantenemos pero su uso será temporalmente desactivado)
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -50,8 +52,12 @@ public class CreateAccountActivity extends AppCompatActivity {
     private Button buttonRegister;
     private TextView textViewLogin, textViewError;
 
+    // Instancias de Firebase (mantendremos la declaración, pero no las usaremos para el registro por ahora)
     private FirebaseAuth mAuth;
     private DBFirebase dbFirebase;
+
+    // *** NUEVA INSTANCIA PARA LA BASE DE DATOS LOCAL ***
+    private DBLocal dbLocal;
 
     private Uri profileImageUri; // Para almacenar la URI local de la imagen seleccionada o tomada
     private String currentPhotoPath; // Para guardar la ruta del archivo de la foto tomada con la cámara
@@ -91,13 +97,16 @@ public class CreateAccountActivity extends AppCompatActivity {
     );
 
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_account);
 
-        mAuth = FirebaseAuth.getInstance();
-        dbFirebase = new DBFirebase(this);
+        // mAuth = FirebaseAuth.getInstance(); // Comentamos o quitamos la inicialización de Firebase Auth
+        // dbFirebase = new DBFirebase(this); // Comentamos o quitamos la inicialización de DBFirebase
+
+        dbLocal = new DBLocal(this); // *** Inicializamos la base de datos local ***
 
         editTextFullName = findViewById(R.id.editTextFullName);
         editTextEmail = findViewById(R.id.editTextEmail);
@@ -106,6 +115,7 @@ public class CreateAccountActivity extends AppCompatActivity {
         editTextConfirmPassword = findViewById(R.id.editTextConfirmPassword);
         imageViewProfile = findViewById(R.id.imageViewProfile);
         buttonRegister = findViewById(R.id.buttonRegister);
+        // *** LÍNEA CORREGIDA AQUÍ: El ID correcto en el XML es 'textViewLogin' ***
         textViewLogin = findViewById(R.id.textViewLogin);
         textViewError = findViewById(R.id.textViewError);
 
@@ -119,13 +129,16 @@ public class CreateAccountActivity extends AppCompatActivity {
         buttonRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                registerUser();
+                registerUserLocal(); // *** CAMBIO: Llamamos al método de registro local ***
             }
         });
 
         textViewLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //finish(); // Puedes usar finish() para volver a la actividad anterior (LoginActivity)
+                Intent intent = new Intent(CreateAccountActivity.this, LoginActivity.class);
+                startActivity(intent);
                 finish();
             }
         });
@@ -256,9 +269,11 @@ public class CreateAccountActivity extends AppCompatActivity {
         }
     }
 
-    // --- Métodos de registro y Firestore (ligeramente modificados para `profileImageUri`) ---
+    // --- Métodos de registro y Firestore (estos se mantendrán, pero no se llamarán directamente por ahora) ---
 
-    private void registerUser() {
+    // Este método está comentado para que no se use mientras usamos SQLite
+    /*
+    private void registerUserFirebase() {
         String fullName = editTextFullName.getText().toString().trim();
         String email = editTextEmail.getText().toString().trim();
         String username = editTextUsername.getText().toString().trim();
@@ -400,5 +415,65 @@ public class CreateAccountActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+    */
+
+    // *******************************************************
+    // *** NUEVO MÉTODO PARA REGISTRO CON BASE DE DATOS LOCAL ***
+    // *******************************************************
+    private void registerUserLocal() {
+        String fullName = editTextFullName.getText().toString().trim();
+        String email = editTextEmail.getText().toString().trim();
+        String username = editTextUsername.getText().toString().trim();
+        String password = editTextPassword.getText().toString().trim();
+        String confirmPassword = editTextConfirmPassword.getText().toString().trim();
+
+        if (TextUtils.isEmpty(fullName) || TextUtils.isEmpty(email) || TextUtils.isEmpty(username) ||
+                TextUtils.isEmpty(password) || TextUtils.isEmpty(confirmPassword)) {
+            textViewError.setText("Por favor, completa todos los campos.");
+            textViewError.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            textViewError.setText("Las contraseñas no coinciden.");
+            textViewError.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        if (password.length() < 6) {
+            textViewError.setText("La contraseña debe tener al menos 6 caracteres.");
+            textViewError.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        textViewError.setVisibility(View.GONE);
+
+        // Primero, verifica si el email ya existe en la DB local
+        if (dbLocal.checkUserExists(email)) {
+            textViewError.setText("Este email ya está registrado localmente. Intenta iniciar sesión o usa otro email.");
+            textViewError.setVisibility(View.VISIBLE);
+            Log.d(TAG, "Intento de registro con email ya existente: " + email);
+            return;
+        }
+
+        // Si el email no existe, procede con el registro local
+        if (dbLocal.registerUser(email, password)) {
+            // Registro exitoso localmente
+            Toast.makeText(CreateAccountActivity.this, "Cuenta creada exitosamente (localmente).", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Usuario registrado localmente: " + email);
+
+
+            // Navegar a la actividad de login
+            Intent intent = new Intent(CreateAccountActivity.this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        } else {
+            // Error en el registro local
+            textViewError.setText("Error al registrar la cuenta localmente. Intenta de nuevo.");
+            textViewError.setVisibility(View.VISIBLE);
+            Log.e(TAG, "Error desconocido al registrar usuario localmente: " + email);
+        }
     }
 }

@@ -96,4 +96,8 @@ public class User {
     public void setShowPhonePublic(boolean showPhonePublic) {
         this.showPhonePublic = showPhonePublic;
     }
+
+    public String getReportsCount() {
+        return "";
+    }
 }

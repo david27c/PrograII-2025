@@ -8,13 +8,14 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings; // Para abrir los ajustes de permisos
-import android.view.MenuItem;
+import android.view.Menu; // Importar para el menú de la toolbar
+import android.view.MenuItem; // Importar para los ítems del menú de la toolbar
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar; // Asumo que necesitas un ProgressBar para guardar cambios
+import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -65,12 +66,12 @@ public class SettingsActivity extends AppCompatActivity {
     private Button buttonDeleteAccount;
     private TextView textViewAppVersion;
     private TextView textViewCredits;
-    private Button buttonLogout; // El botón de cerrar sesión también está aquí
+    private Button buttonLogout;
 
     private BottomNavigationView bottomNavigationView;
     private Uri imageUri; // Para la nueva imagen de perfil
 
-    @SuppressLint("MissingInflatedId")
+    @SuppressLint("MissingInflatedId") // Se puede quitar si todos los IDs se encuentran en el XML
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,7 +118,7 @@ public class SettingsActivity extends AppCompatActivity {
         buttonDeleteAccount = findViewById(R.id.buttonDeleteAccount);
         textViewAppVersion = findViewById(R.id.textViewAppVersion);
         textViewCredits = findViewById(R.id.textViewCredits);
-        buttonLogout = findViewById(R.id.buttonLogout); // Ya estaba aquí
+        buttonLogout = findViewById(R.id.buttonLogout);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
@@ -146,16 +147,14 @@ public class SettingsActivity extends AppCompatActivity {
                 startActivity(new Intent(SettingsActivity.this, ProfileActivity.class));
                 finish();
                 return true;
-            } else if (itemId == R.id.nav_notifications) {
-                startActivity(new Intent(SettingsActivity.this, NotificationsActivity.class));
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_settings) {
-                return true; // Ya estamos en SettingsActivity
             }
+            // Los ítems nav_notifications y nav_settings se manejan en la Toolbar, no en BottomNavigationView.
             return false;
         });
-        bottomNavigationView.setSelectedItemId(R.id.nav_settings);
+        // IMPORTANTE: NO intentes seleccionar un ítem 'nav_settings' aquí
+        // porque ya no existe en tu bottom_navigation_menu.xml.
+        // Si esta actividad se accede desde la Toolbar, no hay un ítem correspondiente en la BottomNav.
+        // bottomNavigationView.setSelectedItemId(R.id.nav_settings);
 
         // Lógica para cargar/guardar datos del perfil y preferencias
         loadUserSettings();
@@ -182,7 +181,7 @@ public class SettingsActivity extends AppCompatActivity {
         textViewAppPermissions.setOnClickListener(v -> openAppSettings()); // Abre la configuración de permisos de la app
 
         buttonDeleteAccount.setOnClickListener(v -> confirmAndDeleteAccount());
-        buttonLogout.setOnClickListener(v -> signOutUser()); // Ya estaba aquí
+        buttonLogout.setOnClickListener(v -> signOutUser());
 
         // Mostrar la versión de la app
         try {
@@ -196,6 +195,28 @@ public class SettingsActivity extends AppCompatActivity {
         // Créditos (solo un Toast de ejemplo, podrías abrir una nueva actividad)
         textViewCredits.setOnClickListener(v -> Toast.makeText(SettingsActivity.this, "Desarrollado por [Tu Nombre/Equipo]", Toast.LENGTH_LONG).show());
     }
+
+    // *** MÉTODOS PARA EL MENÚ DE LA TOOLBAR (Notificaciones y Configuración) ***
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_notifications) {
+            startActivity(new Intent(SettingsActivity.this, NotificationsActivity.class));
+            return true;
+        } else if (id == R.id.action_settings) {
+            // Ya estamos en SettingsActivity, no necesitamos hacer nada o podemos mostrar un mensaje
+            Toast.makeText(this, "Ya estás en la pantalla de Configuración.", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    // *** FIN DE MÉTODOS DE TOOLBAR ***
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -222,10 +243,10 @@ public class SettingsActivity extends AppCompatActivity {
             public void onSuccess(User user) {
                 progressBarProfileChanges.setVisibility(View.GONE);
                 if (user != null) {
-                    editTextFullName.setText(user.getFullName());
-                    editTextEmail.setText(user.getEmail()); // El email no es editable
-                    editTextUsername.setText(user.getUsername());
-                    editTextPhoneNumber.setText(user.getPhone());
+                    editTextFullName.setText(user.getFullName() != null ? user.getFullName() : "");
+                    editTextEmail.setText(user.getEmail() != null ? user.getEmail() : ""); // El email no es editable
+                    editTextUsername.setText(user.getUsername() != null ? user.getUsername() : "");
+                    editTextPhoneNumber.setText(user.getPhone() != null ? user.getPhone() : "");
 
                     // Cargar imagen de perfil
                     if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
@@ -246,6 +267,18 @@ public class SettingsActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(SettingsActivity.this, "Datos de perfil no encontrados, inicializando...", Toast.LENGTH_SHORT).show();
                     // Opcional: inicializar documento si no existe, como en ProfileActivity
+                    dbFirebase.inicializarDocumentoUsuario(currentUser.getUid(), currentUser.getEmail(), new DBFirebase.VoidCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Toast.makeText(SettingsActivity.this, "Documento de usuario inicializado.", Toast.LENGTH_SHORT).show();
+                            loadUserSettings(); // Recargar el perfil después de la inicialización
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(SettingsActivity.this, "Error al inicializar documento de usuario: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
 
@@ -342,7 +375,7 @@ public class SettingsActivity extends AppCompatActivity {
                                     });
                         } else {
                             progressBarProfileChanges.setVisibility(View.GONE);
-                            Toast.makeText(SettingsActivity.this, "Contraseña actual incorrecta. " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SettingsActivity.this, "Contraseña actual incorrecta. " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }
                     });
         } else {

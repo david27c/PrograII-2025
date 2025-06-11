@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="report_filters" />
-    <string-array name="report_types" />
-    <string-array name="report_status_filter_options" />
+    <string-array name="report_filters">
+        <item>Todos</item>
+        <item>Pendiente</item>
+        <item>En Proceso</item>
+        <item>Resuelto</item>
+    </string-array>
+
+    <string-array name="report_types">
+        <item>Bache</item>
+        <item>Fuga de Agua</item>
+        <item>Basura</item>
+        <item>Alumbrado Público</item>
+        <item>Seguridad</item>
+    </string-array>
+
+    <string-array name="report_status_filter_options">
+        <item>Todos</item>
+        <item>Pendiente</item>
+        <item>En Proceso</item>
+        <item>Resuelto</item>
+    </string-array>
 </resources>

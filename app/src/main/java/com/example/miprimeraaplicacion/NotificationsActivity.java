@@ -2,6 +2,7 @@ package com.example.miprimeraaplicacion;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu; // Importar para el menú de la Toolbar
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,7 +44,7 @@ public class NotificationsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_notifications);
+        setContentView(R.layout.activity_notifications); // Asumiendo que el XML se llama activity_notifications.xml
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -51,7 +52,8 @@ public class NotificationsActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Habilita el botón de regreso
+            getSupportActionBar().setTitle("Notificaciones"); // Título para la Toolbar
         }
 
         recyclerViewNotifications = findViewById(R.id.recyclerViewNotifications);
@@ -64,53 +66,73 @@ public class NotificationsActivity extends AppCompatActivity {
         notificationAdapter = new NotificationAdapter(this, notificationList);
         recyclerViewNotifications.setAdapter(notificationAdapter);
 
-        // Configurar la navegación inferior
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    startActivity(new Intent(NotificationsActivity.this, HomeActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_report) {
-                    startActivity(new Intent(NotificationsActivity.this, ReportProblemActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_my_reports) {
-                    startActivity(new Intent(NotificationsActivity.this, MyReportsActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_chat) {
-                    startActivity(new Intent(NotificationsActivity.this, CommunityChatActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_profile) {
-                    startActivity(new Intent(NotificationsActivity.this, ProfileActivity.class));
-                    finish();
-                    return true;
-                } else if (itemId == R.id.nav_notifications) {
-                    // Ya estamos en NotificationsActivity
-                    return true;
-                } else if (itemId == R.id.nav_settings) {
-                    startActivity(new Intent(NotificationsActivity.this, SettingsActivity.class));
-                    finish();
-                    return true;
-                }
-                return false;
+        // Configurar la navegación inferior (SOLO LOS 5 ITEMS PRINCIPALES)
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> { // Usando lambda
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(NotificationsActivity.this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_report) {
+                startActivity(new Intent(NotificationsActivity.this, ReportProblemActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_my_reports) {
+                startActivity(new Intent(NotificationsActivity.this, MyReportsActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_chat) {
+                startActivity(new Intent(NotificationsActivity.this, CommunityChatActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(NotificationsActivity.this, ProfileActivity.class));
+                finish();
+                return true;
             }
+            // Los ítems nav_notifications y nav_settings han sido movidos a la Toolbar
+            // Esta actividad es la de Notificaciones, por lo que no se selecciona a sí misma en la BottomNavigationView
+            return false;
         });
-        // Asegurarse de que el ítem "Notificaciones" esté seleccionado al inicio
-        bottomNavigationView.setSelectedItemId(R.id.nav_notifications);
+        // Como esta es la actividad de Notificaciones, no se seleccionará a sí misma en la BottomNavigationView
+        // Si llegas a NotificationsActivity desde un BottomNavigationView en otra pantalla,
+        // la BottomNavigationView en esta pantalla no necesita tener ningún elemento seleccionado por defecto,
+        // o podrías elegir uno de los 5 principales si lo consideras apropiado (ej. nav_home).
+        // Por simplicidad, y dado que es la actividad de destino de un icono de Toolbar, no se establecerá un item seleccionado aquí.
+        // bottomNavigationView.setSelectedItemId(R.id.nav_notifications); // Esta línea se debe quitar o cambiar
 
         // Iniciar la escucha de notificaciones en tiempo real
         startListeningForNotifications();
     }
 
+    // *** NUEVOS MÉTODOS PARA EL MENÚ DE LA TOOLBAR (solo para Configuración en esta actividad) ***
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Infla el menú de la Toolbar. Solo queremos "Configuración" aquí.
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu); // Asegúrate de tener res/menu/toolbar_menu.xml
+        // Puedes ocultar el ítem de notificaciones si quieres, ya que ya estás en la actividad de notificaciones.
+        MenuItem notificationsItem = menu.findItem(R.id.action_notifications);
+        if (notificationsItem != null) {
+            notificationsItem.setVisible(false);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) { // Usamos action_settings de toolbar_menu.xml
+            startActivity(new Intent(NotificationsActivity.this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    // *** FIN DE NUEVOS MÉTODOS ***
+
     // Método para manejar el botón de regreso de la Toolbar
     @Override
     public boolean onSupportNavigateUp() {
-        finish();
+        finish(); // Cierra esta actividad y regresa a la anterior en la pila
         return true;
     }
 
@@ -129,7 +151,6 @@ public class NotificationsActivity extends AppCompatActivity {
         recyclerViewNotifications.setVisibility(View.GONE);
 
         // Escuchar notificaciones en tiempo real para el usuario actual
-        // Suponiendo que tienes una colección "notifications" y cada documento tiene un "userId"
         notificationsListener = db.collection("users").document(currentUser.getUid())
                 .collection("notifications") // Subcolección de notificaciones para cada usuario
                 .orderBy("timestamp", Query.Direction.DESCENDING) // Ordenar por las más recientes
@@ -143,11 +164,13 @@ public class NotificationsActivity extends AppCompatActivity {
                     }
 
                     List<Notification> newNotifications = new ArrayList<>();
-                    for (com.google.firebase.firestore.DocumentSnapshot doc : snapshots.getDocuments()) {
-                        Notification notification = doc.toObject(Notification.class);
-                        if (notification != null) {
-                            notification.setId(doc.getId()); // Es importante guardar el ID del documento
-                            newNotifications.add(notification);
+                    if (snapshots != null) { // Verificar si snapshots no es null
+                        for (com.google.firebase.firestore.DocumentSnapshot doc : snapshots.getDocuments()) {
+                            Notification notification = doc.toObject(Notification.class);
+                            if (notification != null) {
+                                notification.setId(doc.getId()); // Es importante guardar el ID del documento
+                                newNotifications.add(notification);
+                            }
                         }
                     }
                     notificationAdapter.updateNotifications(newNotifications);
@@ -170,33 +193,75 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
+    // ///////////////////////////////////////////////////////////////////////////////
+    // AVISO IMPORTANTE: ESTAS CLASES DEBEN ESTAR EN SUS PROPIOS ARCHIVOS SEPARADOS.
+    // ESTAR AQUÍ DENTRO CAUSARÁ ERRORES DE COMPILACIÓN O COMPORTAMIENTOS INESPERADOS.
+    // LAS MANTENGO AQUÍ SOLO POR LA RESTRICCIÓN DE "NO TOCAR LO DEMÁS".
+    // ///////////////////////////////////////////////////////////////////////////////
     private class NotificationAdapter extends RecyclerView.Adapter {
+        // Asegúrate de que los campos y el constructor estén correctos.
+        // Ejemplo de constructor completo y campos:
+        // private Context context;
+        // private List<Notification> notificationList;
         public NotificationAdapter(NotificationsActivity notificationsActivity, List<Notification> notificationList) {
+            // this.context = notificationsActivity; // Si usas Context
+            // this.notificationList = notificationList;
         }
 
         @NonNull
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            // Esto es incorrecto, debería inflar una vista y devolver un ViewHolder válido
+            // Ejemplo: View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification, parent, false);
+            // return new MyViewHolder(view); // Donde MyViewHolder extiende RecyclerView.ViewHolder
             return null;
         }
 
         @Override
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-
+            // Esto es incorrecto, aquí iría la lógica para vincular los datos
         }
 
         @Override
         public int getItemCount() {
+            // Esto es incorrecto, debería devolver notificationList.size()
             return 0;
         }
 
         public void updateNotifications(List<Notification> newNotifications) {
+            // Este método debe actualizar la lista interna y notificar cambios
         }
     }
 
     private class Notification {
+        // Asegúrate de que los campos y el constructor estén correctos y completos.
+        // Ejemplo:
+        // private String id;
+        // private String title;
+        // private String message;
+        // private long timestamp;
+        // private boolean read;
+
+        // Constructor vacío requerido por Firestore
+        public Notification() {}
+
+        // Ejemplo de constructor si se envía data
+        // public Notification(String title, String message, long timestamp, boolean read) {
+        //     this.title = title;
+        //     this.message = message;
+        //     this.timestamp = timestamp;
+        //     this.read = read;
+        // }
+
         public void setId(String id) {
-            
+            // this.id = id;
         }
+
+        // También necesitas los getters para Firestore
+        // public String getId() { return id; }
+        // public String getTitle() { return title; }
+        // public String getMessage() { return message; }
+        // public long getTimestamp() { return timestamp; }
+        // public boolean isRead() { return read; }
     }
 }

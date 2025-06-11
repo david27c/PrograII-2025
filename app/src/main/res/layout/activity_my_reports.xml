@@ -39,11 +39,9 @@
                 android:textColor="#333333" />
 
             <Spinner
-                android:id="@+id/spinnerFilterReports"
-                android:layout_width="wrap_content"
+                android:id="@+id/spinnerStatusFilter"  android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:entries="@array/report_filters" />
-        </LinearLayout>
+                android:entries="@array/report_status_filter_options" /> </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewMyReports"

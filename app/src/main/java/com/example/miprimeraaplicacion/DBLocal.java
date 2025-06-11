@@ -16,9 +16,10 @@ import java.util.List;
 public class DBLocal extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "denuncias_app.db";
-    private static final int DATABASE_VERSION = 2; // Incrementar la versión de la DB
+    // *** IMPORTANTE: Incrementa la versión de la DB porque estamos añadiendo una nueva tabla ***
+    private static final int DATABASE_VERSION = 3;
 
-    // Nombres de la tabla y columnas
+    // Nombres de la tabla y columnas para DENUNCIAS
     private static final String TABLE_DENUNCIAS = "denuncias";
     private static final String COL_ID_DENUNCIA = "id_denuncia";
     private static final String COL_ID_USUARIO = "id_usuario";
@@ -31,8 +32,14 @@ public class DBLocal extends SQLiteOpenHelper {
     private static final String COL_FECHA_HORA = "fecha_hora";
     private static final String COL_ESTADO = "estado";
 
-    // Sentencia SQL para crear la tabla
-    private static final String SQL_CREATE_ENTRIES =
+    // Nombres de la tabla y columnas para USUARIOS
+    private static final String TABLE_USERS = "users";
+    private static final String COL_USER_ID = "user_id"; // Puedes usar un UUID o el email como ID
+    private static final String COL_USER_EMAIL = "email";
+    private static final String COL_USER_PASSWORD = "password";
+
+    // Sentencia SQL para crear la tabla de DENUNCIAS
+    private static final String SQL_CREATE_DENUNCIAS_TABLE =
             "CREATE TABLE " + TABLE_DENUNCIAS + " (" +
                     COL_ID_DENUNCIA + " TEXT PRIMARY KEY," +
                     COL_ID_USUARIO + " TEXT," +
@@ -42,11 +49,22 @@ public class DBLocal extends SQLiteOpenHelper {
                     COL_LATITUD + " REAL," +
                     COL_LONGITUD + " REAL," +
                     COL_URL_IMAGEN + " TEXT," +
-                    COL_FECHA_HORA + " INTEGER," + // Guardar fecha_hora como INTEGER (timestamp)
+                    COL_FECHA_HORA + " INTEGER," +
                     COL_ESTADO + " TEXT)";
 
-    private static final String SQL_DELETE_ENTRIES =
+    // Sentencia SQL para crear la tabla de USUARIOS
+    private static final String SQL_CREATE_USERS_TABLE =
+            "CREATE TABLE " + TABLE_USERS + " (" +
+                    COL_USER_ID + " TEXT PRIMARY KEY," + // O INTEGER PRIMARY KEY AUTOINCREMENT
+                    COL_USER_EMAIL + " TEXT UNIQUE," +   // El email debe ser único
+                    COL_USER_PASSWORD + " TEXT)";
+
+    private static final String SQL_DELETE_DENUNCIAS_TABLE =
             "DROP TABLE IF EXISTS " + TABLE_DENUNCIAS;
+
+    private static final String SQL_DELETE_USERS_TABLE =
+            "DROP TABLE IF EXISTS " + TABLE_USERS;
+
 
     public DBLocal(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -54,18 +72,21 @@ public class DBLocal extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(SQL_CREATE_ENTRIES);
+        db.execSQL(SQL_CREATE_DENUNCIAS_TABLE);
+        db.execSQL(SQL_CREATE_USERS_TABLE); // Crea también la tabla de usuarios
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Implementa aquí la lógica de migración si tu esquema de base de datos cambia en el futuro.
-        // Por ahora, simplemente eliminamos y recreamos la tabla (lo cual borrará los datos existentes).
-        // En una aplicación de producción, querrías ALTER TABLE para añadir o modificar columnas sin perder datos.
         Log.w("DBLocal", "Actualizando la base de datos de la versión " + oldVersion + " a " + newVersion + ", lo que destruirá todos los datos antiguos.");
-        db.execSQL(SQL_DELETE_ENTRIES);
+        db.execSQL(SQL_DELETE_DENUNCIAS_TABLE);
+        db.execSQL(SQL_DELETE_USERS_TABLE); // Elimina también la tabla de usuarios
         onCreate(db);
     }
+
+    // ******************************************************
+    // *** MÉTODOS EXISTENTES PARA LA GESTIÓN DE DENUNCIAS ***
+    // ******************************************************
 
     /**
      * Inserta una nueva denuncia en la base de datos local.
@@ -395,4 +416,125 @@ public class DBLocal extends SQLiteOpenHelper {
         }
         return count;
     }
+
+    // ***********************************************
+    // *** NUEVOS MÉTODOS PARA LA GESTIÓN DE USUARIOS ***
+    // ***********************************************
+
+    /**
+     * Registra un nuevo usuario en la base de datos local.
+     * @param email El email del usuario.
+     * @param password La contraseña del usuario.
+     * @return true si el usuario se registró exitosamente, false si ya existe o hay un error.
+     */
+    public boolean registerUser(String email, String password) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        // Para user_id, puedes generar un UUID o usar el email directamente si es siempre único.
+        // Para simplicidad en esta fase, podemos usar un UUID generado.
+        // En una app real, si el email es la clave principal, podrías usarlo.
+        String userId = java.util.UUID.randomUUID().toString();
+
+        values.put(COL_USER_ID, userId);
+        values.put(COL_USER_EMAIL, email);
+        values.put(COL_USER_PASSWORD, password); // NOTA: En una app real, hashea las contraseñas.
+
+        long newRowId = -1;
+        try {
+            newRowId = db.insert(TABLE_USERS, null, values);
+            if (newRowId != -1) {
+                Log.d("DBLocal", "Usuario registrado correctamente: " + email);
+                return true;
+            } else {
+                Log.e("DBLocal", "Error al registrar usuario. Email puede ya existir.");
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al registrar usuario: " + e.getMessage());
+            return false;
+        } finally {
+            db.close();
+        }
+    }
+
+    /**
+     * Intenta iniciar sesión con un email y contraseña.
+     * @param email El email del usuario.
+     * @param password La contraseña del usuario.
+     * @return El ID del usuario si las credenciales son válidas, o null en caso contrario.
+     */
+    public String loginUser(String email, String password) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] projection = {
+                COL_USER_ID
+        };
+
+        String selection = COL_USER_EMAIL + " = ? AND " +
+                COL_USER_PASSWORD + " = ?"; // NOTA: Comparación de texto plano.
+        String[] selectionArgs = { email, password };
+
+        Cursor cursor = null;
+        String userId = null;
+        try {
+            cursor = db.query(
+                    TABLE_USERS,   // The table to query
+                    projection,                          // The columns to return
+                    selection,                           // The columns for the WHERE clause
+                    selectionArgs,                       // The values for the WHERE clause
+                    null,                                // don't group the rows
+                    null,                                // don't filter by row groups
+                    null                                 // The sort order
+            );
+
+            if (cursor.moveToFirst()) {
+                userId = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_ID));
+                Log.d("DBLocal", "Inicio de sesión exitoso para: " + email);
+            } else {
+                Log.d("DBLocal", "Fallo de inicio de sesión para: " + email + ". Credenciales incorrectas.");
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al iniciar sesión: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
+        }
+        return userId;
+    }
+
+    /**
+     * Verifica si un usuario con el email dado ya existe.
+     * @param email El email a verificar.
+     * @return true si el usuario existe, false en caso contrario.
+     */
+    public boolean checkUserExists(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] projection = { COL_USER_ID };
+        String selection = COL_USER_EMAIL + " = ?";
+        String[] selectionArgs = { email };
+
+        Cursor cursor = null;
+        boolean exists = false;
+        try {
+            cursor = db.query(
+                    TABLE_USERS,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null, null, null
+            );
+            exists = cursor.getCount() > 0;
+        } catch (Exception e) {
+            Log.e("DBLocal", "Error al verificar si el usuario existe: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
+        }
+        return exists;
+    }
+
 }
