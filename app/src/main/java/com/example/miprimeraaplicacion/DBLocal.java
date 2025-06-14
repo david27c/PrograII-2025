@@ -10,14 +10,15 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
-import java.util.Date; // Importar java.util.Date
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 public class DBLocal extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "denuncias_app.db";
-    // *** IMPORTANTE: Incrementa la versión de la DB porque estamos añadiendo una nueva tabla ***
-    private static final int DATABASE_VERSION = 3;
+    // Incrementa la versión de la base de datos para que onUpgrade se ejecute y recree las tablas
+    private static final int DATABASE_VERSION = 6; // CAMBIO: Aumentar la versión de la base de datos
 
     // Nombres de la tabla y columnas para DENUNCIAS
     private static final String TABLE_DENUNCIAS = "denuncias";
@@ -34,9 +35,20 @@ public class DBLocal extends SQLiteOpenHelper {
 
     // Nombres de la tabla y columnas para USUARIOS
     private static final String TABLE_USERS = "users";
-    private static final String COL_USER_ID = "user_id"; // Puedes usar un UUID o el email como ID
+    private static final String COL_USER_ID = "user_id";
     private static final String COL_USER_EMAIL = "email";
     private static final String COL_USER_PASSWORD = "password";
+    private static final String COL_USER_USERNAME = "username";
+    private static final String COL_USER_FULL_NAME = "full_name"; // NUEVA COLUMNA
+    private static final String COL_USER_PHONE = "phone";
+    private static final String COL_USER_ADDRESS = "address";
+    private static final String COL_USER_PROFILE_IMAGE_URL = "profile_image_url";
+    private static final String COL_USER_REPORTS_COUNT = "reports_count";
+    private static final String COL_USER_SHOW_FULL_NAME_PUBLIC = "show_full_name_public";
+    private static final String COL_USER_SHOW_PROFILE_PHOTO_IN_COMMENTS = "show_profile_photo_in_comments"; // NUEVA COLUMNA
+    private static final String COL_USER_SHOW_EMAIL_PUBLIC = "show_email_public"; // NUEVA COLUMNA
+    private static final String COL_USER_SHOW_PHONE_PUBLIC = "show_phone_public"; // NUEVA COLUMNA
+
 
     // Sentencia SQL para crear la tabla de DENUNCIAS
     private static final String SQL_CREATE_DENUNCIAS_TABLE =
@@ -52,12 +64,23 @@ public class DBLocal extends SQLiteOpenHelper {
                     COL_FECHA_HORA + " INTEGER," +
                     COL_ESTADO + " TEXT)";
 
-    // Sentencia SQL para crear la tabla de USUARIOS
+    // Sentencia SQL para crear la tabla de USUARIOS (ACTUALIZADA CON NUEVAS COLUMNAS)
     private static final String SQL_CREATE_USERS_TABLE =
             "CREATE TABLE " + TABLE_USERS + " (" +
-                    COL_USER_ID + " TEXT PRIMARY KEY," + // O INTEGER PRIMARY KEY AUTOINCREMENT
-                    COL_USER_EMAIL + " TEXT UNIQUE," +   // El email debe ser único
-                    COL_USER_PASSWORD + " TEXT)";
+                    COL_USER_ID + " TEXT PRIMARY KEY," +
+                    COL_USER_EMAIL + " TEXT UNIQUE," +
+                    COL_USER_PASSWORD + " TEXT," +
+                    COL_USER_USERNAME + " TEXT DEFAULT ''," +
+                    COL_USER_FULL_NAME + " TEXT DEFAULT ''," + // NUEVA COLUMNA
+                    COL_USER_PHONE + " TEXT DEFAULT ''," +
+                    COL_USER_ADDRESS + " TEXT DEFAULT ''," +
+                    COL_USER_PROFILE_IMAGE_URL + " TEXT DEFAULT ''," +
+                    COL_USER_REPORTS_COUNT + " INTEGER DEFAULT 0," +
+                    COL_USER_SHOW_FULL_NAME_PUBLIC + " INTEGER DEFAULT 0," +
+                    COL_USER_SHOW_PROFILE_PHOTO_IN_COMMENTS + " INTEGER DEFAULT 0," + // NUEVA COLUMNA
+                    COL_USER_SHOW_EMAIL_PUBLIC + " INTEGER DEFAULT 0," +             // NUEVA COLUMNA
+                    COL_USER_SHOW_PHONE_PUBLIC + " INTEGER DEFAULT 0)";              // NUEVA COLUMNA
+
 
     private static final String SQL_DELETE_DENUNCIAS_TABLE =
             "DROP TABLE IF EXISTS " + TABLE_DENUNCIAS;
@@ -73,14 +96,17 @@ public class DBLocal extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(SQL_CREATE_DENUNCIAS_TABLE);
-        db.execSQL(SQL_CREATE_USERS_TABLE); // Crea también la tabla de usuarios
+        db.execSQL(SQL_CREATE_USERS_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.w("DBLocal", "Actualizando la base de datos de la versión " + oldVersion + " a " + newVersion + ", lo que destruirá todos los datos antiguos.");
+        // Para evitar problemas de versiones y para que los nuevos campos se añadan,
+        // la solución más sencilla durante el desarrollo es borrar y recrear.
+        // En una app en producción, se harían migraciones con ALTER TABLE ADD COLUMN.
         db.execSQL(SQL_DELETE_DENUNCIAS_TABLE);
-        db.execSQL(SQL_DELETE_USERS_TABLE); // Elimina también la tabla de usuarios
+        db.execSQL(SQL_DELETE_USERS_TABLE);
         onCreate(db);
     }
 
@@ -102,7 +128,7 @@ public class DBLocal extends SQLiteOpenHelper {
             newRowId = db.insert(TABLE_DENUNCIAS, null, values);
             if (newRowId != -1) {
                 Log.d("DBLocal", "Denuncia insertada correctamente: " + denuncia.getIdDenuncia());
-                return denuncia.getIdDenuncia(); // Devolvemos el ID de la denuncia
+                return denuncia.getIdDenuncia();
             } else {
                 Log.e("DBLocal", "Error al insertar denuncia.");
                 return null;
@@ -132,7 +158,6 @@ public class DBLocal extends SQLiteOpenHelper {
         values.put(COL_LATITUD, denuncia.getLatitud());
         values.put(COL_LONGITUD, denuncia.getLongitud());
         values.put(COL_URL_IMAGEN, denuncia.getUrlImagen());
-        // Convertir Date a long (milisegundos) antes de guardar
         values.put(COL_FECHA_HORA, denuncia.getFechaHora() != null ? denuncia.getFechaHora().getTime() : null);
         values.put(COL_ESTADO, denuncia.getEstado());
         return values;
@@ -165,7 +190,7 @@ public class DBLocal extends SQLiteOpenHelper {
                     TABLE_DENUNCIAS,
                     projection,
                     null, null, null, null,
-                    COL_FECHA_HORA + " DESC" // Ordenar por fecha_hora descendente
+                    COL_FECHA_HORA + " DESC"
             );
 
             while (cursor.moveToNext()) {
@@ -180,10 +205,9 @@ public class DBLocal extends SQLiteOpenHelper {
                 long fechaHoraMillis = cursor.getLong(cursor.getColumnIndexOrThrow(COL_FECHA_HORA));
                 String estado = cursor.getString(cursor.getColumnIndexOrThrow(COL_ESTADO));
 
-                // Convertir long (milisegundos) a Date al leer
                 Date fechaHora = new Date(fechaHoraMillis);
 
-                Denuncia denuncia = new Denuncia(
+                Denuncia denuncia = new Denuncia( // Esta declaración está bien aquí
                         idDenuncia, idUsuario, titulo, descripcion, tipoDenuncia,
                         latitud, longitud, urlImagen, fechaHora, estado
                 );
@@ -233,7 +257,7 @@ public class DBLocal extends SQLiteOpenHelper {
                     selection,
                     selectionArgs,
                     null, null,
-                    COL_FECHA_HORA + " DESC" // Ordenar por fecha_hora descendente
+                    COL_FECHA_HORA + " DESC"
             );
 
             while (cursor.moveToNext()) {
@@ -250,7 +274,7 @@ public class DBLocal extends SQLiteOpenHelper {
 
                 Date fechaHora = new Date(fechaHoraMillis);
 
-                Denuncia denuncia = new Denuncia(
+                Denuncia denuncia = new Denuncia( // Esta declaración está bien aquí
                         idDenuncia, idUsuario, titulo, descripcion, tipoDenuncia,
                         latitud, longitud, urlImagen, fechaHora, estado
                 );
@@ -274,7 +298,7 @@ public class DBLocal extends SQLiteOpenHelper {
      */
     public Denuncia obtenerDenunciaPorId(String idDenuncia) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Denuncia denuncia = null;
+        Denuncia denuncia = null; // Declaración inicial
 
         String[] projection = {
                 COL_ID_DENUNCIA,
@@ -316,6 +340,7 @@ public class DBLocal extends SQLiteOpenHelper {
 
                 Date fechaHora = new Date(fechaHoraMillis);
 
+                // Asignación a la variable existente, no una nueva declaración
                 denuncia = new Denuncia(
                         retrievedIdDenuncia, idUsuario, titulo, descripcion, tipoDenuncia,
                         latitud, longitud, urlImagen, fechaHora, estado
@@ -382,7 +407,6 @@ public class DBLocal extends SQLiteOpenHelper {
         values.put(COL_LATITUD, denuncia.getLatitud());
         values.put(COL_LONGITUD, denuncia.getLongitud());
         values.put(COL_URL_IMAGEN, denuncia.getUrlImagen());
-        // Convertir Date a long (milisegundos) antes de guardar
         values.put(COL_FECHA_HORA, denuncia.getFechaHora() != null ? denuncia.getFechaHora().getTime() : null);
         values.put(COL_ESTADO, denuncia.getEstado());
         return values;
@@ -423,21 +447,46 @@ public class DBLocal extends SQLiteOpenHelper {
 
     /**
      * Registra un nuevo usuario en la base de datos local.
+     * Inicializa todos los campos del perfil de usuario con valores por defecto.
      * @param email El email del usuario.
      * @param password La contraseña del usuario.
      * @return true si el usuario se registró exitosamente, false si ya existe o hay un error.
      */
     public boolean registerUser(String email, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        // Para user_id, puedes generar un UUID o usar el email directamente si es siempre único.
-        // Para simplicidad en esta fase, podemos usar un UUID generado.
-        // En una app real, si el email es la clave principal, podrías usarlo.
-        String userId = java.util.UUID.randomUUID().toString();
+        String userId = UUID.randomUUID().toString();
 
-        values.put(COL_USER_ID, userId);
-        values.put(COL_USER_EMAIL, email);
-        values.put(COL_USER_PASSWORD, password); // NOTA: En una app real, hashea las contraseñas.
+        // Crear un objeto User con los valores iniciales, usando el constructor completo
+        User newUser = new User(
+                userId,
+                email,
+                password,
+                "", // username
+                "", // fullName
+                "", // phone
+                "", // address
+                "", // profileImageUrl
+                0,  // reportsCount
+                false, // showFullNamePublic
+                false, // showProfilePhotoInComments
+                false, // showEmailPublic
+                false  // showPhonePublic
+        );
+
+        ContentValues values = new ContentValues();
+        values.put(COL_USER_ID, newUser.getUserId());
+        values.put(COL_USER_EMAIL, newUser.getEmail());
+        values.put(COL_USER_PASSWORD, newUser.getPassword());
+        values.put(COL_USER_USERNAME, newUser.getUsername());
+        values.put(COL_USER_FULL_NAME, newUser.getFullName()); // Nuevo campo
+        values.put(COL_USER_PHONE, newUser.getPhone());
+        values.put(COL_USER_ADDRESS, newUser.getAddress());
+        values.put(COL_USER_PROFILE_IMAGE_URL, newUser.getProfileImageUrl());
+        values.put(COL_USER_REPORTS_COUNT, newUser.getReportsCount());
+        values.put(COL_USER_SHOW_FULL_NAME_PUBLIC, newUser.isShowFullNamePublic() ? 1 : 0);
+        values.put(COL_USER_SHOW_PROFILE_PHOTO_IN_COMMENTS, newUser.isShowProfilePhotoInComments() ? 1 : 0); // Nuevo campo
+        values.put(COL_USER_SHOW_EMAIL_PUBLIC, newUser.isShowEmailPublic() ? 1 : 0);                     // Nuevo campo
+        values.put(COL_USER_SHOW_PHONE_PUBLIC, newUser.isShowPhonePublic() ? 1 : 0);                     // Nuevo campo
 
         long newRowId = -1;
         try {
@@ -471,20 +520,20 @@ public class DBLocal extends SQLiteOpenHelper {
         };
 
         String selection = COL_USER_EMAIL + " = ? AND " +
-                COL_USER_PASSWORD + " = ?"; // NOTA: Comparación de texto plano.
+                COL_USER_PASSWORD + " = ?";
         String[] selectionArgs = { email, password };
 
         Cursor cursor = null;
         String userId = null;
         try {
             cursor = db.query(
-                    TABLE_USERS,   // The table to query
-                    projection,                          // The columns to return
-                    selection,                           // The columns for the WHERE clause
-                    selectionArgs,                       // The values for the WHERE clause
-                    null,                                // don't group the rows
-                    null,                                // don't filter by row groups
-                    null                                 // The sort order
+                    TABLE_USERS,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null,
+                    null,
+                    null
             );
 
             if (cursor.moveToFirst()) {
@@ -537,4 +586,183 @@ public class DBLocal extends SQLiteOpenHelper {
         return exists;
     }
 
+    /**
+     * Obtiene el perfil completo de un usuario por su ID.
+     * @param userId El ID del usuario.
+     * @return Un objeto User con los datos del perfil, o null si no se encuentra.
+     */
+    public User getUserProfile(String userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        User user = null;
+
+        String[] projection = {
+                COL_USER_ID,
+                COL_USER_EMAIL,
+                COL_USER_PASSWORD,
+                COL_USER_USERNAME,
+                COL_USER_FULL_NAME, // NUEVO
+                COL_USER_PHONE,
+                COL_USER_ADDRESS,
+                COL_USER_PROFILE_IMAGE_URL,
+                COL_USER_REPORTS_COUNT,
+                COL_USER_SHOW_FULL_NAME_PUBLIC,
+                COL_USER_SHOW_PROFILE_PHOTO_IN_COMMENTS, // NUEVO
+                COL_USER_SHOW_EMAIL_PUBLIC,             // NUEVO
+                COL_USER_SHOW_PHONE_PUBLIC              // NUEVO
+        };
+
+        String selection = COL_USER_ID + " = ?";
+        String[] selectionArgs = { userId };
+
+        Cursor cursor = null;
+        try {
+            cursor = db.query(
+                    TABLE_USERS,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null, null, null
+            );
+
+            if (cursor.moveToFirst()) {
+                String retrievedUserId = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_ID));
+                String email = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_EMAIL));
+                String password = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_PASSWORD));
+                String username = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_USERNAME));
+                String fullName = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_FULL_NAME)); // Obtener nuevo campo
+                String phone = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_PHONE));
+                String address = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_ADDRESS));
+                String profileImageUrl = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_PROFILE_IMAGE_URL));
+                int reportsCount = cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_REPORTS_COUNT));
+                boolean showFullNamePublic = cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_SHOW_FULL_NAME_PUBLIC)) == 1;
+                boolean showProfilePhotoInComments = cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_SHOW_PROFILE_PHOTO_IN_COMMENTS)) == 1; // Obtener nuevo campo
+                boolean showEmailPublic = cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_SHOW_EMAIL_PUBLIC)) == 1;                   // Obtener nuevo campo
+                boolean showPhonePublic = cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_SHOW_PHONE_PUBLIC)) == 1;                   // Obtener nuevo campo
+
+
+                user = new User(
+                        retrievedUserId, email, password, username, fullName, // Orden y campos correctos
+                        phone, address, profileImageUrl, reportsCount,
+                        showFullNamePublic, showProfilePhotoInComments, showEmailPublic, showPhonePublic // Campos booleanos
+                );
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Error al obtener perfil de usuario: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
+        }
+        return user;
+    }
+
+    /**
+     * Actualiza los campos del perfil de usuario en la base de datos local.
+     *
+     * @param user El objeto User con los datos a actualizar.
+     * @return true si la actualización fue exitosa, false en caso contrario.
+     */
+    public boolean updateProfile(User user) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        // No actualizar password ni userId ni email aquí, ya que generalmente se manejan por separado
+        values.put(COL_USER_USERNAME, user.getUsername());
+        values.put(COL_USER_FULL_NAME, user.getFullName());
+        values.put(COL_USER_PHONE, user.getPhone());
+        values.put(COL_USER_ADDRESS, user.getAddress());
+        values.put(COL_USER_PROFILE_IMAGE_URL, user.getProfileImageUrl());
+        values.put(COL_USER_REPORTS_COUNT, user.getReportsCount());
+        values.put(COL_USER_SHOW_FULL_NAME_PUBLIC, user.isShowFullNamePublic() ? 1 : 0);
+        values.put(COL_USER_SHOW_PROFILE_PHOTO_IN_COMMENTS, user.isShowProfilePhotoInComments() ? 1 : 0);
+        values.put(COL_USER_SHOW_EMAIL_PUBLIC, user.isShowEmailPublic() ? 1 : 0);
+        values.put(COL_USER_SHOW_PHONE_PUBLIC, user.isShowPhonePublic() ? 1 : 0);
+
+        String selection = COL_USER_ID + " = ?";
+        String[] selectionArgs = {user.getUserId()};
+
+        int rowsAffected = -1;
+        try {
+            rowsAffected = db.update(TABLE_USERS, values, selection, selectionArgs);
+            if (rowsAffected > 0) {
+                Log.d("DBLocal", "Perfil de usuario actualizado correctamente: " + user.getUserId());
+                return true;
+            } else {
+                Log.e("DBLocal", "Error al actualizar perfil de usuario o usuario no encontrado.");
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al actualizar perfil de usuario: " + e.getMessage());
+            return false;
+        } finally {
+            db.close();
+        }
+    }
+
+
+    /**
+     * Obtiene el email de un usuario por su ID.
+     * @param userId El ID del usuario.
+     * @return El email del usuario, o null si no se encuentra.
+     */
+    public String getUserEmail(String userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String email = null;
+
+        String[] projection = { COL_USER_EMAIL };
+        String selection = COL_USER_ID + " = ?";
+        String[] selectionArgs = { userId };
+
+        Cursor cursor = null;
+        try {
+            cursor = db.query(
+                    TABLE_USERS,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null, null, null
+            );
+
+            if (cursor.moveToFirst()) {
+                email = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_EMAIL));
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Error al obtener email de usuario por ID: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
+        }
+        return email;
+    }
+
+    /**
+     * Elimina el documento de datos de un usuario de la base de datos local.
+     * Este método se llama antes de eliminar la cuenta.
+     * @param userId ID del usuario a eliminar.
+     * @return true si la eliminación fue exitosa, false en caso contrario.
+     */
+    public boolean deleteUser(String userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String selection = COL_USER_ID + " = ?";
+        String[] selectionArgs = {userId};
+        int rowsAffected = -1;
+        try {
+            rowsAffected = db.delete(TABLE_USERS, selection, selectionArgs);
+            if (rowsAffected > 0) {
+                Log.d("DBLocal", "Datos de usuario eliminados de DBLocal: " + userId);
+                return true;
+            } else {
+                Log.e("DBLocal", "Error al eliminar datos de usuario de DBLocal o usuario no encontrado.");
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Excepción al eliminar datos de usuario de DBLocal: " + e.getMessage());
+            return false;
+        } finally {
+            db.close();
+        }
+    }
 }

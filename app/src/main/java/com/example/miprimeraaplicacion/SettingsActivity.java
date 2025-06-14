@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings; // Para abrir los ajustes de permisos
+import android.util.Log; // Importar la clase Log
 import android.view.Menu; // Importar para el menú de la toolbar
 import android.view.MenuItem; // Importar para los ítems del menú de la toolbar
 import android.view.View;
@@ -40,6 +41,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private static final String TAG = "SettingsActivity"; // Etiqueta para los mensajes de Log
     private static final int PICK_IMAGE_REQUEST = 1; // Para seleccionar imagen de perfil
 
     private FirebaseAuth mAuth;
@@ -79,7 +81,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         dbFirebase = new DBFirebase(this);
+
+        // Obtén el usuario actual aquí para ver su estado al inicio de la actividad
         currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            Log.d(TAG, "onCreate: Usuario logueado: " + currentUser.getEmail());
+        } else {
+            Log.d(TAG, "onCreate: No hay usuario logueado al iniciar la actividad.");
+        }
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -101,7 +110,8 @@ public class SettingsActivity extends AppCompatActivity {
         editTextNewPassword = findViewById(R.id.editTextNewPassword);
         editTextConfirmNewPassword = findViewById(R.id.editTextConfirmNewPassword);
         buttonSaveProfileChanges = findViewById(R.id.buttonSaveProfileChanges);
-        progressBarProfileChanges = findViewById(R.id.progressBarProfileChanges); // Asegúrate de añadir este ProgressBar al XML si lo quieres
+        // Asegúrate de que este ProgressBar esté en tu XML si lo quieres usar
+        progressBarProfileChanges = findViewById(R.id.progressBarProfileChanges);
 
         // Preferencias de Visibilidad
         checkBoxShowFullName = findViewById(R.id.checkBoxShowFullName);
@@ -196,6 +206,22 @@ public class SettingsActivity extends AppCompatActivity {
         textViewCredits.setOnClickListener(v -> Toast.makeText(SettingsActivity.this, "Desarrollado por [Tu Nombre/Equipo]", Toast.LENGTH_LONG).show());
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Vuelve a verificar el usuario cuando la actividad se vuelve visible
+        currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            Log.d(TAG, "onStart: Usuario logueado: " + currentUser.getEmail());
+        } else {
+            Log.d(TAG, "onStart: No hay usuario logueado al reanudar la actividad.");
+            // Si quieres que la actividad redirija cada vez que vuelve y el usuario no está logueado,
+            // podrías descomentar las siguientes líneas.
+            // startActivity(new Intent(SettingsActivity.this, LoginActivity.class));
+            // finish();
+        }
+    }
+
     // *** MÉTODOS PARA EL MENÚ DE LA TOOLBAR (Notificaciones y Configuración) ***
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -229,6 +255,7 @@ public class SettingsActivity extends AppCompatActivity {
      */
     private void loadUserSettings() {
         if (currentUser == null) {
+            Log.e(TAG, "loadUserSettings: currentUser es NULL. Redirigiendo a LoginActivity.");
             Toast.makeText(this, "No hay usuario logueado.", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(SettingsActivity.this, LoginActivity.class));
             finish();
@@ -236,6 +263,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         progressBarProfileChanges.setVisibility(View.VISIBLE);
+        Log.d(TAG, "loadUserSettings: Cargando datos para el usuario ID: " + currentUser.getUid());
+
 
         // Cargar datos de perfil desde Firestore
         dbFirebase.obtenerDatosDeUsuario(currentUser.getUid(), new DBFirebase.UserCallback() {
@@ -286,6 +315,7 @@ public class SettingsActivity extends AppCompatActivity {
             public void onFailure(Exception e) {
                 progressBarProfileChanges.setVisibility(View.GONE);
                 Toast.makeText(SettingsActivity.this, "Error al cargar el perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Error al cargar el perfil: ", e);
             }
         });
 
@@ -325,6 +355,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void saveProfileChanges() {
         if (currentUser == null) {
             Toast.makeText(this, "Debes iniciar sesión para guardar tu perfil.", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "saveProfileChanges: No hay usuario logueado para guardar cambios.");
             return;
         }
 
@@ -347,11 +378,13 @@ public class SettingsActivity extends AppCompatActivity {
             if (!newPassword.equals(confirmNewPassword)) {
                 Toast.makeText(this, "Las nuevas contraseñas no coinciden.", Toast.LENGTH_SHORT).show();
                 progressBarProfileChanges.setVisibility(View.GONE);
+                Log.w(TAG, "saveProfileChanges: Las nuevas contraseñas no coinciden.");
                 return;
             }
             if (currentPassword.isEmpty()) {
                 Toast.makeText(this, "Introduce tu contraseña actual para cambiarla.", Toast.LENGTH_SHORT).show();
                 progressBarProfileChanges.setVisibility(View.GONE);
+                Log.w(TAG, "saveProfileChanges: Contraseña actual vacía al intentar cambiarla.");
                 return;
             }
             // Re-autenticar al usuario para actualizar la contraseña
@@ -359,6 +392,7 @@ public class SettingsActivity extends AppCompatActivity {
             currentUser.reauthenticate(credential)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
+                            Log.d(TAG, "saveProfileChanges: Re-autenticación exitosa. Actualizando contraseña...");
                             currentUser.updatePassword(newPassword)
                                     .addOnCompleteListener(updateTask -> {
                                         if (updateTask.isSuccessful()) {
@@ -366,20 +400,24 @@ public class SettingsActivity extends AppCompatActivity {
                                             editTextCurrentPassword.setText("");
                                             editTextNewPassword.setText("");
                                             editTextConfirmNewPassword.setText("");
+                                            Log.d(TAG, "saveProfileChanges: Contraseña actualizada con éxito.");
                                             // Continuar con la actualización del resto del perfil
                                             updateFirestoreProfile(currentUser.getUid(), profileUpdates);
                                         } else {
                                             progressBarProfileChanges.setVisibility(View.GONE);
                                             Toast.makeText(SettingsActivity.this, "Error al actualizar contraseña: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                            Log.e(TAG, "Error al actualizar contraseña: ", updateTask.getException());
                                         }
                                     });
                         } else {
                             progressBarProfileChanges.setVisibility(View.GONE);
                             Toast.makeText(SettingsActivity.this, "Contraseña actual incorrecta. " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            Log.e(TAG, "saveProfileChanges: Error de re-autenticación: ", task.getException());
                         }
                     });
         } else {
             // Si no se cambia la contraseña, solo actualiza el perfil en Firestore
+            Log.d(TAG, "saveProfileChanges: No se cambia la contraseña. Actualizando perfil en Firestore.");
             updateFirestoreProfile(currentUser.getUid(), profileUpdates);
         }
     }
@@ -389,22 +427,26 @@ public class SettingsActivity extends AppCompatActivity {
      */
     private void updateFirestoreProfile(String userId, Map<String, Object> profileUpdates) {
         if (imageUri != null) {
+            Log.d(TAG, "updateFirestoreProfile: Subiendo nueva imagen de perfil...");
             dbFirebase.subirImagenPerfil(imageUri, userId, new DBFirebase.ImageUploadCallback() {
                 @Override
                 public void onSuccess(String imageUrl) {
                     profileUpdates.put("profileImageUrl", imageUrl);
+                    Log.d(TAG, "updateFirestoreProfile: Imagen subida. URL: " + imageUrl + ". Actualizando perfil en Firestore.");
                     dbFirebase.actualizarPerfilUsuario(userId, profileUpdates, new DBFirebase.VoidCallback() {
                         @Override
                         public void onSuccess() {
                             progressBarProfileChanges.setVisibility(View.GONE);
                             Toast.makeText(SettingsActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
                             imageUri = null; // Resetear la URI después de subir
+                            Log.d(TAG, "updateFirestoreProfile: Perfil (incluyendo imagen) actualizado exitosamente.");
                         }
 
                         @Override
                         public void onFailure(Exception e) {
                             progressBarProfileChanges.setVisibility(View.GONE);
                             Toast.makeText(SettingsActivity.this, "Error al guardar perfil (Firestore): " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "Error al guardar perfil (Firestore) después de subir imagen: ", e);
                         }
                     });
                 }
@@ -413,20 +455,24 @@ public class SettingsActivity extends AppCompatActivity {
                 public void onFailure(Exception e) {
                     progressBarProfileChanges.setVisibility(View.GONE);
                     Toast.makeText(SettingsActivity.this, "Error al subir imagen de perfil: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Error al subir imagen de perfil: ", e);
                 }
             });
         } else {
+            Log.d(TAG, "updateFirestoreProfile: No hay nueva imagen. Actualizando perfil en Firestore.");
             dbFirebase.actualizarPerfilUsuario(userId, profileUpdates, new DBFirebase.VoidCallback() {
                 @Override
                 public void onSuccess() {
                     progressBarProfileChanges.setVisibility(View.GONE);
                     Toast.makeText(SettingsActivity.this, "Perfil actualizado exitosamente.", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "updateFirestoreProfile: Perfil actualizado exitosamente (sin cambio de imagen).");
                 }
 
                 @Override
                 public void onFailure(Exception e) {
                     progressBarProfileChanges.setVisibility(View.GONE);
                     Toast.makeText(SettingsActivity.this, "Error al guardar perfil (Firestore): " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Error al guardar perfil (Firestore) sin cambio de imagen: ", e);
                 }
             });
         }
@@ -438,6 +484,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void saveVisibilityPreferences() {
         if (currentUser == null) {
             Toast.makeText(this, "Debes iniciar sesión para guardar tus preferencias.", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "saveVisibilityPreferences: No hay usuario logueado.");
             return;
         }
 
@@ -447,15 +494,18 @@ public class SettingsActivity extends AppCompatActivity {
         visibilityUpdates.put("showEmailPublic", checkBoxShowEmail.isChecked());
         visibilityUpdates.put("showPhonePublic", checkBoxShowPhoneNumber.isChecked());
 
+        Log.d(TAG, "saveVisibilityPreferences: Guardando preferencias de visibilidad...");
         dbFirebase.actualizarPreferenciasVisibilidad(currentUser.getUid(), visibilityUpdates, new DBFirebase.VoidCallback() {
             @Override
             public void onSuccess() {
                 Toast.makeText(SettingsActivity.this, "Preferencias de visibilidad guardadas.", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "saveVisibilityPreferences: Preferencias guardadas con éxito.");
             }
 
             @Override
             public void onFailure(Exception e) {
                 Toast.makeText(SettingsActivity.this, "Error al guardar preferencias: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Error al guardar preferencias de visibilidad: ", e);
             }
         });
     }
@@ -478,6 +528,7 @@ public class SettingsActivity extends AppCompatActivity {
             editor.apply();
 
             Toast.makeText(SettingsActivity.this, "Idioma cambiado a " + selectedLang, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "showLanguageSelectionDialog: Idioma seleccionado: " + selectedLang);
             // Aquí iría la lógica para cambiar el idioma real de la app
             // Esto es más complejo y a menudo requiere recrear la actividad o incluso un reinicio suave.
             // Para una implementación completa, investiga "Android App Localization"
@@ -493,6 +544,7 @@ public class SettingsActivity extends AppCompatActivity {
         Uri uri = Uri.fromParts("package", getPackageName(), null);
         intent.setData(uri);
         startActivity(intent);
+        Log.d(TAG, "openAppSettings: Abriendo ajustes de la aplicación.");
     }
 
     /**
@@ -502,6 +554,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void confirmAndDeleteAccount() {
         if (currentUser == null) {
             Toast.makeText(this, "No hay usuario logueado para eliminar.", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "confirmAndDeleteAccount: No hay usuario logueado para eliminar cuenta.");
             return;
         }
 
@@ -509,11 +562,12 @@ public class SettingsActivity extends AppCompatActivity {
                 .setTitle("Eliminar Cuenta")
                 .setMessage("¿Estás seguro de que quieres eliminar tu cuenta permanentemente? Esta acción es irreversible.")
                 .setPositiveButton("Sí, eliminar", (dialog, which) -> {
-                    // Primero, pedir la contraseña actual para re-autenticar si es necesario
-                    // Firebase exige re-autenticación para operaciones sensibles como eliminar cuenta.
+                    Log.d(TAG, "confirmAndDeleteAccount: Usuario confirmó eliminación. Solicitando re-autenticación.");
                     showReauthenticateDialogForDeletion();
                 })
-                .setNegativeButton("No", null)
+                .setNegativeButton("No", (dialog, which) -> {
+                    Log.d(TAG, "confirmAndDeleteAccount: Usuario canceló eliminación.");
+                })
                 .show();
     }
 
@@ -534,20 +588,26 @@ public class SettingsActivity extends AppCompatActivity {
             String password = passwordInput.getText().toString().trim();
             if (password.isEmpty()) {
                 Toast.makeText(SettingsActivity.this, "La contraseña no puede estar vacía.", Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "showReauthenticateDialogForDeletion: Contraseña vacía para re-autenticar.");
                 return;
             }
+            Log.d(TAG, "showReauthenticateDialogForDeletion: Intentando re-autenticar al usuario...");
             AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), password);
             currentUser.reauthenticate(credential)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
+                            Log.d(TAG, "showReauthenticateDialogForDeletion: Re-autenticación para eliminación exitosa.");
                             // Contraseña correcta, proceder a eliminar
                             performAccountDeletion(currentUser.getUid());
                         } else {
                             Toast.makeText(SettingsActivity.this, "Contraseña incorrecta o error de re-autenticación: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            Log.e(TAG, "showReauthenticateDialogForDeletion: Fallo en re-autenticación para eliminación: ", task.getException());
                         }
                     });
         });
-        builder.setNegativeButton("Cancelar", null);
+        builder.setNegativeButton("Cancelar", (dialog, which) -> {
+            Log.d(TAG, "showReauthenticateDialogForDeletion: Re-autenticación cancelada.");
+        });
         builder.show();
     }
 
@@ -556,17 +616,21 @@ public class SettingsActivity extends AppCompatActivity {
      */
     private void performAccountDeletion(String userId) {
         progressBarProfileChanges.setVisibility(View.VISIBLE); // Muestra progreso
+        Log.d(TAG, "performAccountDeletion: Iniciando eliminación de cuenta para UID: " + userId);
 
         // 1. Eliminar datos del usuario de Firestore
+        Log.d(TAG, "performAccountDeletion: Eliminando datos de usuario de Firestore...");
         dbFirebase.eliminarDatosDeUsuario(userId, new DBFirebase.VoidCallback() {
             @Override
             public void onSuccess() {
+                Log.d(TAG, "performAccountDeletion: Datos de usuario eliminados de Firestore. Procediendo a eliminar cuenta de Auth.");
                 // 2. Eliminar cuenta de Firebase Authentication
                 currentUser.delete()
                         .addOnCompleteListener(task -> {
                             progressBarProfileChanges.setVisibility(View.GONE);
                             if (task.isSuccessful()) {
                                 Toast.makeText(SettingsActivity.this, "Cuenta eliminada exitosamente.", Toast.LENGTH_SHORT).show();
+                                Log.d(TAG, "performAccountDeletion: Cuenta de Firebase Auth eliminada exitosamente.");
                                 // Redirigir al usuario a la pantalla de inicio de sesión o bienvenida
                                 Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -574,6 +638,7 @@ public class SettingsActivity extends AppCompatActivity {
                                 finish();
                             } else {
                                 Toast.makeText(SettingsActivity.this, "Error al eliminar la cuenta: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                                Log.e(TAG, "Error al eliminar la cuenta de Firebase Auth: ", task.getException());
                             }
                         });
             }
@@ -582,6 +647,7 @@ public class SettingsActivity extends AppCompatActivity {
             public void onFailure(Exception e) {
                 progressBarProfileChanges.setVisibility(View.GONE);
                 Toast.makeText(SettingsActivity.this, "Error al eliminar datos de usuario: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error al eliminar datos de usuario de Firestore: ", e);
             }
         });
     }
@@ -596,12 +662,15 @@ public class SettingsActivity extends AppCompatActivity {
                 .setPositiveButton("Sí", (dialog, which) -> {
                     mAuth.signOut();
                     Toast.makeText(SettingsActivity.this, "Sesión cerrada.", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "signOutUser: Sesión de usuario cerrada.");
                     Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     finish();
                 })
-                .setNegativeButton("No", null)
+                .setNegativeButton("No", (dialog, which) -> {
+                    Log.d(TAG, "signOutUser: Cierre de sesión cancelado.");
+                })
                 .show();
     }
 }

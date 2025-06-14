@@ -2,10 +2,11 @@ package com.example.miprimeraaplicacion;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu; // Importar para el menú de la Toolbar
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup; // Necesario para onCreateViewHolder
+// import android.view.ViewGroup; // Ya no es necesario si ChatTopicAdapter es externo
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query; // Asegúrate de que esta importación esté presente
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
@@ -45,7 +47,6 @@ public class CommunityChatActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        // Opcional: Establecer un título personalizado para la Toolbar
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Chat Comunitario");
         }
@@ -58,11 +59,12 @@ public class CommunityChatActivity extends AppCompatActivity {
         recyclerViewChatTopics.setLayoutManager(new LinearLayoutManager(this));
         chatTopicList = new ArrayList<>();
         // Asegúrate de que ChatTopicAdapter reciba el Contexto correcto
-        chatTopicAdapter = new ChatTopicAdapter(this, chatTopicList); // Asegúrate que este constructor esté bien definido en ChatTopicAdapter
+        // Ahora se usa el ChatTopicAdapter externo
+        chatTopicAdapter = new ChatTopicAdapter(this, chatTopicList);
         recyclerViewChatTopics.setAdapter(chatTopicAdapter);
 
         // Configurar la navegación inferior (SOLO LOS 5 ITEMS PRINCIPALES)
-        bottomNavigationView.setOnNavigationItemSelectedListener(item -> { // Usando lambda para mayor legibilidad
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(CommunityChatActivity.this, HomeActivity.class));
@@ -125,7 +127,7 @@ public class CommunityChatActivity extends AppCompatActivity {
         // deberías comentar o reemplazar esta lógica con una carga de datos local (DBLocal).
         // Por ahora, asumo que Firestore está configurado o lo será.
         db.collection("chatTopics")
-                .orderBy("lastMessageTimestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING) // Usar Query.Direction
                 .get()
                 .addOnCompleteListener(task -> {
                     progressBarChat.setVisibility(View.GONE);
@@ -136,17 +138,19 @@ public class CommunityChatActivity extends AppCompatActivity {
                             addDefaultChatTopics();
                         } else {
                             for (QueryDocumentSnapshot document : task.getResult()) {
-                                // AÑADIDO: Bloque try-catch para la conversión de objeto
                                 try {
+                                    // Firebase deserializará directamente si ChatTopic es un POJO válido
                                     ChatTopic topic = document.toObject(ChatTopic.class);
-                                    topic.setId(document.getId());
+                                    // Si el ID no se mapea automáticamente en el constructor, asignarlo manualmente
+                                    if (topic.getId() == null || topic.getId().isEmpty()) {
+                                        topic.setId(document.getId());
+                                    }
                                     chatTopicList.add(topic);
                                 } catch (Exception e) {
-                                    // Manejar el error de conversión (por ejemplo, loguear o mostrar un toast)
                                     Toast.makeText(CommunityChatActivity.this,
                                             "Error al procesar tema de chat: " + e.getMessage() + " (ID: " + document.getId() + ")",
                                             Toast.LENGTH_LONG).show();
-                                    // Opcional: System.err.println("Error converting document to ChatTopic: " + e.getMessage());
+                                    e.printStackTrace(); // Imprime la traza completa para depuración
                                 }
                             }
                         }
@@ -165,6 +169,7 @@ public class CommunityChatActivity extends AppCompatActivity {
                         textViewNoChats.setText("Error al cargar temas de chat.");
                         textViewNoChats.setVisibility(View.VISIBLE);
                         recyclerViewChatTopics.setVisibility(View.GONE);
+                        task.getException().printStackTrace(); // Imprime la traza completa para depuración
                     }
                 });
     }
@@ -172,19 +177,18 @@ public class CommunityChatActivity extends AppCompatActivity {
     // Método para añadir temas de chat por defecto si la colección está vacía
     private void addDefaultChatTopics() {
         List<ChatTopic> defaultTopics = new ArrayList<>();
-        defaultTopics.add(new ChatTopic("baches_id", "Baches y Calzadas", "Reporta baches en tu zona.", System.currentTimeMillis(), 0));
-        defaultTopics.add(new ChatTopic("basura_id", "Gestión de Basura", "Comenta sobre la recolección de basura.", System.currentTimeMillis(), 0));
-        defaultTopics.add(new ChatTopic("agua_id", "Servicios de Agua", "Problemas con el suministro de agua.", System.currentTimeMillis(), 0));
-        defaultTopics.add(new ChatTopic("seguridad_id", "Seguridad Ciudadana", "Discute temas de seguridad y delincuencia.", System.currentTimeMillis(), 0));
+        // Aquí se usa el constructor de ChatTopic con 'lastMessage' como tercer parámetro
+        defaultTopics.add(new ChatTopic(db.collection("chatTopics").document().getId(), "Baches y Calzadas", "Reporta baches en tu zona.", System.currentTimeMillis(), 0));
+        defaultTopics.add(new ChatTopic(db.collection("chatTopics").document().getId(), "Gestión de Basura", "Comenta sobre la recolección de basura.", System.currentTimeMillis(), 0));
+        defaultTopics.add(new ChatTopic(db.collection("chatTopics").document().getId(), "Servicios de Agua", "Problemas con el suministro de agua.", System.currentTimeMillis(), 0));
+        defaultTopics.add(new ChatTopic(db.collection("chatTopics").document().getId(), "Seguridad Ciudadana", "Discute temas de seguridad y delincuencia.", System.currentTimeMillis(), 0));
 
         // Guarda estos temas en Firestore para que estén disponibles
-        // Las operaciones addOnSuccessListener y addOnFailureListener son el try-catch de las operaciones asíncronas de Firebase
         for (ChatTopic topic : defaultTopics) {
             db.collection("chatTopics").document(topic.getId()).set(topic)
-                    .addOnSuccessListener(aVoid -> System.out.println("Added default chat topic: " + topic.getName()))
-                    .addOnFailureListener(e -> System.err.println("Error adding default topic: " + e.getMessage()));
+                    .addOnSuccessListener(aVoid -> Log.d("CommunityChatActivity", "Added default chat topic: " + topic.getName()))
+                    .addOnFailureListener(e -> Log.e("CommunityChatActivity", "Error adding default topic: " + e.getMessage(), e));
         }
-        chatTopicList.addAll(defaultTopics); // Agregarlos a la lista actual también
     }
 
     @Override
@@ -193,76 +197,9 @@ public class CommunityChatActivity extends AppCompatActivity {
         loadChatTopics(); // Recargar los temas de chat cada vez que la actividad se hace visible
     }
 
-    // ///////////////////////////////////////////////////////////////////////////////
-    // AVISO IMPORTANTE: ESTAS CLASES DEBEN ESTAR EN SUS PROPIOS ARCHIVOS SEPARADOS.
-    // ESTAR AQUÍ DENTRO CAUSARÁ ERRORES DE COMPILACIÓN O COMPORTAMIENTOS INESPERADOS.
-    // LAS MANTENGO AQUÍ SOLO POR LA RESTRICCIÓN DE "NO TOCAR LO DEMÁS".
-    // ///////////////////////////////////////////////////////////////////////////////
-
-    private class ChatTopicAdapter extends RecyclerView.Adapter {
-        // Asegúrate de que los campos y el constructor estén correctos.
-        // Ejemplo de constructor completo y campos:
-        // private Context context;
-        // private List<ChatTopic> chatTopicList;
-        public ChatTopicAdapter(CommunityChatActivity communityChatActivity, List<ChatTopic> chatTopicList) {
-            // this.context = communityChatActivity; // Si usas Context
-            // this.chatTopicList = chatTopicList;
-        }
-
-        @NonNull
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            // Esto es incorrecto, debería inflar una vista y devolver un ViewHolder válido
-            // Ejemplo: View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat_topic, parent, false);
-            // return new MyViewHolder(view); // Donde MyViewHolder extiende RecyclerView.ViewHolder
-            return null;
-        }
-        @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-            // Esto es incorrecto, aquí iría la lógica para vincular los datos
-        }
-
-        @Override
-        public int getItemCount() {
-            // Esto es incorrecto, debería devolver chatTopicList.size()
-            return 0;
-        }
-
-        public void updateChatTopics(List<ChatTopic> chatTopicList) {
-            // Este método debe actualizar la lista interna y notificar cambios
-        }
-    }
-
-    private class ChatTopic {
-        // Asegúrate de que los campos y el constructor estén correctos y completos.
-        // Ejemplo:
-        // private String id;
-        // private String name;
-        // private String description;
-        // private long lastMessageTimestamp;
-        // private int unreadMessages;
-
-        public ChatTopic(String id, String name, String description, long lastMessageTimestamp, int unreadMessages) {
-            // this.id = id;
-            // this.name = name;
-            // this.description = description;
-            // this.lastMessageTimestamp = lastMessageTimestamp;
-            // this.unreadMessages = unreadMessages;
-        }
-
-        // Constructor vacío requerido por Firestore
-        public ChatTopic() {}
-
-        public void setId(String id) {
-            // this.id = id;
-        }
-
-        public String getId() {
-            return null; // return id;
-        }
-
-        public String getName() {
-            return null; // return name;
-        }
-    }
+    // ==========================================================================================
+    // AVISO IMPORTANTE: LAS CLASES 'ChatTopicAdapter' y 'ChatTopic' QUE ESTABAN AQUÍ HAN SIDO
+    // ELIMINADAS. DEBEN EXISTIR COMO ARCHIVOS SEPARADOS EN EL MISMO PAQUETE.
+    // LA PRESENCIA DE DEFINICIONES ANIDADAS E INCOMPLETAS AQUÍ CAUSA ERRORES.
+    // ==========================================================================================
 }

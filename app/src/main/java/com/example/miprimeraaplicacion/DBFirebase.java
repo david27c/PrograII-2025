@@ -211,13 +211,14 @@ public class DBFirebase {
         // Inicializa todos los campos, incluyendo los nuevos, con valores por defecto
         User newUser = new User(
                 uid,
-                "", // username
-                email,
-                "", // phone
-                "", // address
-                "", // profileImageUrl (vacío por defecto)
+                email, // email
+                "", // password (vacío para Firestore, no se guarda aquí)
+                "", // username (vacío por defecto)
                 "", // fullName (vacío por defecto)
-                0,  // reportCount (0 por defecto)
+                "", // phone (vacío por defecto)
+                "", // address (vacío por defecto)
+                "", // profileImageUrl (vacío por defecto)
+                0,  // reportsCount (0 por defecto)
                 true, // showFullNamePublic (true por defecto)
                 true, // showProfilePhotoInComments (true por defecto)
                 false, // showEmailPublic (false por defecto)
@@ -299,7 +300,7 @@ public class DBFirebase {
                         // Esto permite que el inicializador de documento cree el perfil si es necesario
                         // y se evita un NPE en la actividad
                         User defaultUser = new User();
-                        defaultUser.setUid(userId);
+                        defaultUser.setUserId(userId); // CORREGIDO: Usar setUserId
                         // No podemos obtener el email de aquí, se obtendría de FirebaseAuth en la actividad
                         callback.onSuccess(defaultUser);
                     }

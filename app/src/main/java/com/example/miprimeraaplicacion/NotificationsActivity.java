@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.Menu; // Importar para el menú de la Toolbar
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
+// import android.view.ViewGroup; // Ya no es necesario si NotificationAdapter es externo
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -63,6 +63,7 @@ public class NotificationsActivity extends AppCompatActivity {
 
         recyclerViewNotifications.setLayoutManager(new LinearLayoutManager(this));
         notificationList = new ArrayList<>();
+        // Ahora se usa el NotificationAdapter externo
         notificationAdapter = new NotificationAdapter(this, notificationList);
         recyclerViewNotifications.setAdapter(notificationAdapter);
 
@@ -90,8 +91,6 @@ public class NotificationsActivity extends AppCompatActivity {
                 finish();
                 return true;
             }
-            // Los ítems nav_notifications y nav_settings han sido movidos a la Toolbar
-            // Esta actividad es la de Notificaciones, por lo que no se selecciona a sí misma en la BottomNavigationView
             return false;
         });
         // Como esta es la actividad de Notificaciones, no se seleccionará a sí misma en la BottomNavigationView
@@ -193,75 +192,9 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
-    // ///////////////////////////////////////////////////////////////////////////////
-    // AVISO IMPORTANTE: ESTAS CLASES DEBEN ESTAR EN SUS PROPIOS ARCHIVOS SEPARADOS.
-    // ESTAR AQUÍ DENTRO CAUSARÁ ERRORES DE COMPILACIÓN O COMPORTAMIENTOS INESPERADOS.
-    // LAS MANTENGO AQUÍ SOLO POR LA RESTRICCIÓN DE "NO TOCAR LO DEMÁS".
-    // ///////////////////////////////////////////////////////////////////////////////
-    private class NotificationAdapter extends RecyclerView.Adapter {
-        // Asegúrate de que los campos y el constructor estén correctos.
-        // Ejemplo de constructor completo y campos:
-        // private Context context;
-        // private List<Notification> notificationList;
-        public NotificationAdapter(NotificationsActivity notificationsActivity, List<Notification> notificationList) {
-            // this.context = notificationsActivity; // Si usas Context
-            // this.notificationList = notificationList;
-        }
-
-        @NonNull
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            // Esto es incorrecto, debería inflar una vista y devolver un ViewHolder válido
-            // Ejemplo: View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification, parent, false);
-            // return new MyViewHolder(view); // Donde MyViewHolder extiende RecyclerView.ViewHolder
-            return null;
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-            // Esto es incorrecto, aquí iría la lógica para vincular los datos
-        }
-
-        @Override
-        public int getItemCount() {
-            // Esto es incorrecto, debería devolver notificationList.size()
-            return 0;
-        }
-
-        public void updateNotifications(List<Notification> newNotifications) {
-            // Este método debe actualizar la lista interna y notificar cambios
-        }
-    }
-
-    private class Notification {
-        // Asegúrate de que los campos y el constructor estén correctos y completos.
-        // Ejemplo:
-        // private String id;
-        // private String title;
-        // private String message;
-        // private long timestamp;
-        // private boolean read;
-
-        // Constructor vacío requerido por Firestore
-        public Notification() {}
-
-        // Ejemplo de constructor si se envía data
-        // public Notification(String title, String message, long timestamp, boolean read) {
-        //     this.title = title;
-        //     this.message = message;
-        //     this.timestamp = timestamp;
-        //     this.read = read;
-        // }
-
-        public void setId(String id) {
-            // this.id = id;
-        }
-
-        // También necesitas los getters para Firestore
-        // public String getId() { return id; }
-        // public String getTitle() { return title; }
-        // public String getMessage() { return message; }
-        // public long getTimestamp() { return timestamp; }
-        // public boolean isRead() { return read; }
-    }
+    // ==========================================================================================
+    // AVISO IMPORTANTE: LAS CLASES 'NotificationAdapter' y 'Notification' QUE ESTABAN AQUÍ HAN SIDO
+    // ELIMINADAS. DEBEN EXISTIR COMO ARCHIVOS SEPARADOS EN EL MISMO PAQUETE.
+    // LA PRESENCIA DE DEFINICIONES ANIDADAS E INCOMPLETAS AQUÍ CAUSA ERRORES.
+    // ==========================================================================================
 }

@@ -47,6 +47,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         holder.textViewNotificationTimestamp.setText(sdf.format(new Date(notification.getTimestamp())));
 
         if (!notification.isRead()) {
+            // Asegúrate de que R.color.unread_notification_background esté definido en res/values/colors.xml
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.unread_notification_background));
             holder.textViewNotificationTitle.setTypeface(null, Typeface.BOLD);
             holder.textViewNotificationMessage.setTypeface(null, Typeface.BOLD);
@@ -58,9 +59,21 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         holder.itemView.setOnClickListener(v -> {
             notification.setRead(true);
+            // Actualizar la vista de este ítem para reflejar el cambio visual
             notifyItemChanged(position);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            // Asegurarse de que el SDK sea el correcto para VANILLA_ICE_CREAM (API 34+)
+            // Si tu targetSdk es menor, usa Build.VERSION_CODES.R o similar, o quita esta verificación
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Usamos R (API 30) como ejemplo de un API más común
+                if (notification.getRelatedId() != null && !notification.getRelatedId().isEmpty()) {
+                    Intent intent = new Intent(context, DenunciaDetailActivity.class);
+                    intent.putExtra("reportId", notification.getRelatedId());
+                    context.startActivity(intent);
+                } else {
+                    Toast.makeText(context, "Notificación: " + notification.getTitle(), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                // Lógica para versiones antiguas de Android
                 if (notification.getRelatedId() != null && !notification.getRelatedId().isEmpty()) {
                     Intent intent = new Intent(context, DenunciaDetailActivity.class);
                     intent.putExtra("reportId", notification.getRelatedId());
@@ -94,28 +107,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         notifyDataSetChanged();
     }
 
-    private class Notification {
-        public int getTitle() {
-            return 0;
-        }
-
-        public int getMessage() {
-            return 0;
-        }
-
-        public long getTimestamp() {
-            return 0;
-        }
-
-        public boolean isRead() {
-            return false;
-        }
-
-        public void setRead(boolean b) {
-        }
-
-        public CharSequence getRelatedId() {
-            return null;
-        }
-    }
+    // =======================================================================
+    // LA CLASE ANIDADA 'Notification' QUE CAUSABA EL ERROR HA SIDO ELIMINADA.
+    // AHORA SE UTILIZA LA CLASE Notification.java EXTERNA.
+    // =======================================================================
 }

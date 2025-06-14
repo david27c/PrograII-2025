@@ -1,16 +1,18 @@
 package com.example.miprimeraaplicacion;
 
+import android.content.Context; // Necesario para SharedPreferences
 import android.content.Intent;
+import android.content.SharedPreferences; // Necesario para SharedPreferences
 import android.os.Bundle;
-import android.view.Menu; // Importar para el menú de la Toolbar
-import android.view.MenuItem; // Importar para el menú de la Toolbar
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull; // Importar para @NonNull
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -46,13 +48,22 @@ public class HomeActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
+        // --- INICIO DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN ---
+        // Primero, intentamos obtener el usuario actual de Firebase
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        // Luego, verificamos si hay un usuario localmente logueado en SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        String currentUserIdLocal = sharedPref.getString("current_user_id", null);
+
+        // Si NO hay usuario de Firebase Y NO hay usuario local, entonces redirigir a Login
+        if (currentUser == null && currentUserIdLocal == null) {
             Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
             startActivity(intent);
             finish();
-            return;
+            return; // Terminar onCreate aquí para evitar más ejecución
         }
+        // --- FIN DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN ---
+
 
         dbLocal = new DBLocal(this);
         dbFirebase = new DBFirebase(this);
@@ -79,11 +90,9 @@ public class HomeActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSortBy.setAdapter(adapter);
 
-        // Listener para BottomNavigationView (ahora solo con 5 ítems)
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                // Ya estamos en Home, no hacer nada o recargar si es necesario
                 return true;
             } else if (itemId == R.id.nav_report) {
                 startActivity(new Intent(HomeActivity.this, ReportProblemActivity.class));
@@ -108,13 +117,14 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // NOTA: loadReports() seguirá intentando cargar desde Firebase.
+        // Si tu problema de conexión persiste, verás un Toast de error,
+        // pero la interfaz de HomeActivity sí debería cargarse.
         loadReports();
     }
 
-    // *** NUEVOS MÉTODOS PARA EL MENÚ DE LA TOOLBAR ***
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Infla el menú de la Toolbar
         getMenuInflater().inflate(R.menu.toolbar_menu, menu);
         return true;
     }
@@ -131,8 +141,6 @@ public class HomeActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-    // *** FIN DE NUEVOS MÉTODOS ***
-
 
     private void loadReports() {
         progressBar.setVisibility(View.VISIBLE);

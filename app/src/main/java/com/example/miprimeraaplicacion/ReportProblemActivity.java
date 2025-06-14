@@ -8,11 +8,12 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment; // Nueva importación
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Menu; // Importar para el menú de la Toolbar
-import android.view.MenuItem; // Importar para los ítems del menú de la Toolbar
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -29,12 +30,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider; // Nueva importación
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.io.File; // Nueva importación
+import java.io.IOException; // Nueva importación
+import java.text.SimpleDateFormat; // Nueva importación
 import java.util.Date;
+import java.util.Locale; // Nueva importación
 import java.util.UUID;
 
 public class ReportProblemActivity extends AppCompatActivity implements LocationListener {
@@ -53,7 +59,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     private ProgressBar progressBarReport;
     private BottomNavigationView bottomNavigationView;
 
-    private Uri imageUri;
+    private Uri imageUri; // Esta URI ahora se usará para la cámara también
     private LocationManager locationManager;
     private String currentLocation = "Ubicación desconocida";
     private double currentLatitude = 0.0;
@@ -62,7 +68,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     private FirebaseAuth mAuth;
     private DBLocal dbLocal;
     private DBFirebase dbFirebase;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,9 +91,8 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Reportar un Problema"); // Título para la Toolbar
+            getSupportActionBar().setTitle("Reportar un Problema");
         }
-
 
         editTextDescription = findViewById(R.id.editTextDescription);
         buttonTakePhoto = findViewById(R.id.buttonTakePhoto);
@@ -101,7 +105,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         progressBarReport = findViewById(R.id.progressBarReport);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // Listener de la BottomNavigationView (SOLO LOS 5 ITEMS PRINCIPALES)
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
@@ -109,7 +112,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
                 finish();
                 return true;
             } else if (itemId == R.id.nav_report) {
-                return true; // Ya estás en Reportar
+                return true;
             } else if (itemId == R.id.nav_my_reports) {
                 startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
                 finish();
@@ -123,11 +126,9 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
                 finish();
                 return true;
             }
-            // Las referencias a nav_notifications y nav_settings se ELIMINAN de aquí
-            // porque ahora están en el menú de la Toolbar.
             return false;
         });
-        bottomNavigationView.setSelectedItemId(R.id.nav_report); // Seleccionar "Reportar"
+        bottomNavigationView.setSelectedItemId(R.id.nav_report);
 
         buttonTakePhoto.setOnClickListener(v -> checkPermissionsAndDispatchTakePictureIntent());
         buttonSelectGallery.setOnClickListener(v -> checkPermissionsAndPickImage());
@@ -136,7 +137,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         requestLocationUpdates();
     }
 
-    // *** MÉTODOS PARA EL MENÚ DE LA TOOLBAR (Notificaciones y Configuración) ***
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar_menu, menu);
@@ -155,7 +155,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         }
         return super.onOptionsItemSelected(item);
     }
-    // *** FIN DE MÉTODOS DE TOOLBAR ***
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -174,11 +173,44 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         }
     }
 
+    // *** MODIFICADO: Lógica para guardar la foto capturada ***
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // Asegurarse de que haya una aplicación de cámara para manejar el intent
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            // Crear el archivo donde la foto debería ir
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                // Error al crear el archivo
+                Log.e(TAG, "Error al crear archivo de imagen: " + ex.getMessage());
+                Toast.makeText(this, "Error al crear archivo para la foto.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Continuar solo si el archivo fue creado exitosamente
+            if (photoFile != null) {
+                imageUri = FileProvider.getUriForFile(this,
+                        "com.example.miprimeraaplicacion.fileprovider", // Debe coincidir con el 'authorities' en AndroidManifest.xml
+                        photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            }
         }
+    }
+
+    // *** NUEVO MÉTODO: Crear un archivo de imagen temporal ***
+    private File createImageFile() throws IOException {
+        // Crear un nombre de archivo de imagen con marca de tiempo
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefijo */
+                ".jpg",         /* sufijo */
+                storageDir      /* directorio */
+        );
+        return image;
     }
 
     private void checkPermissionsAndPickImage() {
@@ -220,9 +252,9 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
                 if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     requestLocationUpdates();
                 } else if (permissions[0].equals(Manifest.permission.CAMERA) || permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                    dispatchTakePictureIntent(); // Volver a intentar la acción que requería el permiso
+                    dispatchTakePictureIntent();
                 } else if (permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                    pickImageFromGallery(); // Volver a intentar la acción que requería el permiso
+                    pickImageFromGallery();
                 }
             } else {
                 Toast.makeText(this, "Permisos denegados. Algunas funcionalidades no estarán disponibles.", Toast.LENGTH_SHORT).show();
@@ -233,23 +265,31 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         }
     }
 
+    // *** MODIFICADO: Lógica para manejar resultados de la cámara y galería ***
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            if (requestCode == REQUEST_IMAGE_CAPTURE && data != null) {
-                // Para fotos tomadas, la URI no siempre viene directamente en data.getData().
-                // Es preferible usar un FileProvider para guardar la imagen y obtener su URI.
-                // Por ahora, solo muestra un mensaje, ya que tu implementación actual no guarda la URI de la cámara fácilmente.
-                Toast.makeText(this, "Foto tomada. (Necesita lógica de guardado de URI)", Toast.LENGTH_LONG).show();
-                // Si la foto no es accesible por URI aquí, no la mostramos para evitar errores.
-                imageViewPreview.setVisibility(View.GONE);
-                imageUri = null; // Reiniciar, ya que no tenemos una URI válida por ahora
+            if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                // La URI ya está en 'imageUri' porque se la pasamos a la Intent de la cámara
+                if (imageUri != null) {
+                    imageViewPreview.setImageURI(imageUri);
+                    imageViewPreview.setVisibility(View.VISIBLE);
+                } else {
+                    Toast.makeText(this, "Error al obtener la imagen capturada.", Toast.LENGTH_SHORT).show();
+                    imageViewPreview.setVisibility(View.GONE);
+                }
             } else if (requestCode == REQUEST_PICK_IMAGE && data != null && data.getData() != null) {
                 imageUri = data.getData();
                 imageViewPreview.setImageURI(imageUri);
                 imageViewPreview.setVisibility(View.VISIBLE);
             }
+        } else {
+            // Si la captura o selección de imagen fue cancelada, limpia la URI si no es necesaria
+            if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                imageUri = null; // Si se cancela la foto, resetea la URI
+            }
+            imageViewPreview.setVisibility(View.GONE);
         }
     }
 
@@ -259,7 +299,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         currentLongitude = location.getLongitude();
         currentLocation = "Lat: " + String.format("%.4f", currentLatitude) + ", Lon: " + String.format("%.4f", currentLongitude);
         textViewLocation.setText(currentLocation);
-        // locationManager.removeUpdates(this); // Puedes descomentar si solo necesitas una vez
     }
 
     @Override
@@ -292,7 +331,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     private void sendReport() {
         String description = editTextDescription.getText().toString().trim();
         String reportType = spinnerReportType.getSelectedItem().toString();
-        // boolean reportToAuthorities = checkBoxReportToAuthorities.isChecked(); // Este campo no está en la clase Denuncia
 
         if (TextUtils.isEmpty(description)) {
             Toast.makeText(this, "Por favor, describe el problema.", Toast.LENGTH_SHORT).show();
@@ -309,51 +347,41 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         buttonSendReport.setEnabled(false);
 
         String userId = currentUser.getUid();
-        String reportId = UUID.randomUUID().toString(); // Generar un ID único para la denuncia
-        Date fechaHora = new Date(); // Usar java.util.Date() para que coincida con la clase Denuncia
+        String reportId = UUID.randomUUID().toString();
+        Date fechaHora = new Date();
 
-        // Crear un objeto Denuncia
         Denuncia nuevaDenuncia = new Denuncia(
                 reportId,
                 userId,
-                "Reporte de " + reportType, // Título inicial
+                "Reporte de " + reportType,
                 description,
                 reportType,
                 currentLatitude,
                 currentLongitude,
-                null, // La URL de la imagen se actualizará después de la subida
-                fechaHora, // Usar el objeto Date
-                "Pendiente" // Estado inicial
+                null,
+                fechaHora,
+                "Pendiente"
         );
 
-        // Guardar la denuncia usando DBLocal y DBFirebase
-        // Primero, intentar guardar localmente
         boolean localSuccess = dbLocal.insertarDenuncia(nuevaDenuncia) != null;
 
         if (localSuccess) {
             Log.d(TAG, "Reporte guardado localmente: " + reportId);
-            // Luego, intentar guardar en Firebase (con la imagen si existe)
             dbFirebase.guardarDenuncia(nuevaDenuncia, imageUri, new DBFirebase.DenunciaCallback() {
                 @Override
                 public void onSuccess(Denuncia denunciaGuardada) {
-                    // Si la imagen se subió, la URL de la imagen en 'denunciaGuardada' estará actualizada.
-                    // Actualizar la URL de la imagen en la DB local si es necesario
                     if (imageUri != null && denunciaGuardada.getUrlImagen() != null && !denunciaGuardada.getUrlImagen().isEmpty()) {
                         nuevaDenuncia.setUrlImagen(denunciaGuardada.getUrlImagen());
-                        dbLocal.actualizarDenuncia(nuevaDenuncia); // Actualiza la URL en SQLite
+                        dbLocal.actualizarDenuncia(nuevaDenuncia);
                         Log.d(TAG, "URL de imagen actualizada en DB local: " + denunciaGuardada.getUrlImagen());
                     }
 
                     progressBarReport.setVisibility(View.GONE);
                     buttonSendReport.setEnabled(true);
                     Toast.makeText(ReportProblemActivity.this, "Reporte enviado exitosamente!", Toast.LENGTH_LONG).show();
-                    // Limpiar campos y navegar
                     editTextDescription.setText("");
                     imageViewPreview.setVisibility(View.GONE);
                     imageUri = null;
-                    // Opcional: Volver a la pantalla de inicio o a la lista de reportes
-                    // startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
-                    // finish();
                 }
 
                 @Override

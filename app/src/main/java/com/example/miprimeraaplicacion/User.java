@@ -1,103 +1,168 @@
 package com.example.miprimeraaplicacion;
 
 public class User {
-    private String uid;
-    private String username;
+    private String userId;
     private String email;
+    private String password; // Solo para uso interno de DBLocal, no para UI/Firebase
+    private String username;
+    private String fullName; // <-- NUEVO CAMPO: Para nombre completo
     private String phone;
     private String address;
     private String profileImageUrl;
-    private String fullName; // Nuevo campo: Nombre completo
-    private int reportCount; // Nuevo campo: Conteo de reportes (para ProfileActivity)
+    private int reportsCount;
 
-    // Nuevos campos para preferencias de visibilidad
+    // Preferencias de visibilidad
     private boolean showFullNamePublic;
-    private boolean showProfilePhotoInComments;
-    private boolean showEmailPublic;
-    private boolean showPhonePublic;
+    private boolean showProfilePhotoInComments; // <-- NUEVO CAMPO
+    private boolean showEmailPublic;            // <-- NUEVO CAMPO
+    private boolean showPhonePublic;            // <-- NUEVO CAMPO
 
+    // Constructor vacío requerido por Firebase en algunos casos (aunque no lo usemos directamente aquí)
     public User() {
-        // Constructor vacío requerido por Firestore
     }
 
-    // Constructor completo actualizado con los nuevos campos
-    public User(String uid, String username, String email, String phone, String address,
-                String profileImageUrl, String fullName, int reportCount,
+    // Constructor completo para DBLocal, incluyendo todos los campos
+    public User(String userId, String email, String password, String username, String fullName,
+                String phone, String address, String profileImageUrl, int reportsCount,
                 boolean showFullNamePublic, boolean showProfilePhotoInComments,
                 boolean showEmailPublic, boolean showPhonePublic) {
-        this.uid = uid;
-        this.username = username;
+        this.userId = userId;
         this.email = email;
+        this.password = password;
+        this.username = username;
+        this.fullName = fullName; // Asignar nuevo campo
         this.phone = phone;
         this.address = address;
         this.profileImageUrl = profileImageUrl;
-        this.fullName = fullName;
-        this.reportCount = reportCount;
+        this.reportsCount = reportsCount;
         this.showFullNamePublic = showFullNamePublic;
-        this.showProfilePhotoInComments = showProfilePhotoInComments;
-        this.showEmailPublic = showEmailPublic;
-        this.showPhonePublic = showPhonePublic;
+        this.showProfilePhotoInComments = showProfilePhotoInComments; // Asignar nuevo campo
+        this.showEmailPublic = showEmailPublic;                      // Asignar nuevo campo
+        this.showPhonePublic = showPhonePublic;                      // Asignar nuevo campo
     }
 
-    // Getters y Setters existentes
-    public String getUid() { return uid; }
-    public void setUid(String uid) { this.uid = uid; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getProfileImageUrl() { return profileImageUrl; }
-    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+    // Constructor básico para login (email y userId)
+    public User(String userId, String email) {
+        this.userId = userId;
+        this.email = email;
+        // Inicializar otros campos a valores predeterminados para evitar NullPointer
+        this.password = "";
+        this.username = "";
+        this.fullName = "";
+        this.phone = "";
+        this.address = "";
+        this.profileImageUrl = "";
+        this.reportsCount = 0;
+        this.showFullNamePublic = false;
+        this.showProfilePhotoInComments = false;
+        this.showEmailPublic = false;
+        this.showPhonePublic = false;
+    }
 
-    // Getters y Setters para los nuevos campos
 
-    public String getFullName() {
+    // --- Getters ---
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() { // Cuidado con exponer esto en la UI
+        return password;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getFullName() { // <-- NUEVO GETTER
         return fullName;
     }
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+
+    public String getPhone() {
+        return phone;
     }
 
-    public int getReportCount() {
-        return reportCount;
+    public String getAddress() {
+        return address;
     }
-    public void setReportCount(int reportCount) {
-        this.reportCount = reportCount;
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public int getReportsCount() {
+        return reportsCount;
     }
 
     public boolean isShowFullNamePublic() {
         return showFullNamePublic;
     }
+
+    public boolean isShowProfilePhotoInComments() { // <-- NUEVO GETTER
+        return showProfilePhotoInComments;
+    }
+
+    public boolean isShowEmailPublic() { // <-- NUEVO GETTER
+        return showEmailPublic;
+    }
+
+    public boolean isShowPhonePublic() { // <-- NUEVO GETTER
+        return showPhonePublic;
+    }
+
+    // --- Setters ---
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setFullName(String fullName) { // <-- NUEVO SETTER
+        this.fullName = fullName;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public void setReportsCount(int reportsCount) {
+        this.reportsCount = reportsCount;
+    }
+
     public void setShowFullNamePublic(boolean showFullNamePublic) {
         this.showFullNamePublic = showFullNamePublic;
     }
 
-    public boolean isShowProfilePhotoInComments() {
-        return showProfilePhotoInComments;
-    }
-    public void setShowProfilePhotoInComments(boolean showProfilePhotoInComments) {
+    public void setShowProfilePhotoInComments(boolean showProfilePhotoInComments) { // <-- NUEVO SETTER
         this.showProfilePhotoInComments = showProfilePhotoInComments;
     }
 
-    public boolean isShowEmailPublic() {
-        return showEmailPublic;
-    }
-    public void setShowEmailPublic(boolean showEmailPublic) {
+    public void setShowEmailPublic(boolean showEmailPublic) { // <-- NUEVO SETTER
         this.showEmailPublic = showEmailPublic;
     }
 
-    public boolean isShowPhonePublic() {
-        return showPhonePublic;
-    }
-    public void setShowPhonePublic(boolean showPhonePublic) {
+    public void setShowPhonePublic(boolean showPhonePublic) { // <-- NUEVO SETTER
         this.showPhonePublic = showPhonePublic;
-    }
-
-    public String getReportsCount() {
-        return "";
     }
 }

@@ -80,21 +80,8 @@ public class ChatTopicAdapter extends RecyclerView.Adapter<ChatTopicAdapter.Chat
         notifyDataSetChanged();
     }
 
-    private class ChatTopic {
-        public CharSequence getName() {
-            return "Chat Topic Name";
-        }
-
-        public int getLastMessage() {
-            return 0;
-        }
-
-        public int getUnreadCount() {
-            return 0;
-        };
-
-        public boolean getId() {
-            return false;
-        }
-    }
+    // =======================================================================
+    // LA CLASE ANIDADA 'ChatTopic' QUE CAUSABA EL ERROR HA SIDO ELIMINADA.
+    // AHORA SE UTILIZA LA CLASE ChatTopic.java EXTERNA.
+    // =======================================================================
 }
