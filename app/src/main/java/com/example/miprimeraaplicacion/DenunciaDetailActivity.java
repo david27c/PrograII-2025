@@ -1,8 +1,11 @@
 package com.example.miprimeraaplicacion;
 
 import android.annotation.SuppressLint;
+import android.content.Context; // Necesario para SharedPreferences
 import android.content.Intent;
+import android.content.SharedPreferences; // Para manejar el usuario logueado
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -15,15 +18,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 
-import com.bumptech.glide.Glide;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.example.miprimeraaplicacion.Denuncia;
+import com.example.miprimeraaplicacion.User;
+import com.example.miprimeraaplicacion.DBLocal;
+
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.temporal.TemporalAdjuster;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -42,16 +49,25 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     private View buttonEdit, buttonDelete, buttonPostComment;
 
     private String denunciaId;
-    private FirebaseAuth mAuth;
-    private DBFirebase dbFirebase;
+    // Eliminamos FirebaseAuth mAuth;
+    private DBLocal dbLocal; // Cambiamos DBFirebase por DBLocal
 
+    // Necesitamos una constante para el ID del usuario logueado en SharedPreferences
+    private static final String PREF_USER_ID = "logged_in_user_id";
+    private String currentUserId; // Para almacenar el ID del usuario logueado
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_denuncia_detail);
 
-        mAuth = FirebaseAuth.getInstance();
-        dbFirebase = new DBFirebase(this);
+        // Eliminamos la inicialización de FirebaseAuth
+        dbLocal = new DBLocal(this); // Inicializamos DBLocal
+
+        // Obtener el ID del usuario logueado desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        currentUserId = sharedPref.getString(PREF_USER_ID, null); // "null" si no hay usuario logueado
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -79,7 +95,9 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         // Obtener el ID de la denuncia del Intent
         if (getIntent().hasExtra(EXTRA_DENUNCIA_ID)) {
             denunciaId = getIntent().getStringExtra(EXTRA_DENUNCIA_ID);
-            loadDenunciaDetails(denunciaId);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                loadDenunciaDetails(denunciaId);
+            }
         } else {
             Toast.makeText(this, "ID de denuncia no proporcionado.", Toast.LENGTH_SHORT).show();
             finish();
@@ -134,93 +152,82 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void loadDenunciaDetails(String id) {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        // Verificamos si hay un usuario logueado localmente
+        if (currentUserId == null || currentUserId.isEmpty()) {
             Toast.makeText(this, "Debes iniciar sesión para ver los detalles.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        dbFirebase.obtenerDenunciaPorId(id, new DBFirebase.DenunciaCallback() {
-            @Override
-            public void onSuccess(Denuncia denuncia) {
-                if (denuncia != null) {
-                    textViewTitle.setText(denuncia.getTitulo());
-                    textViewDescription.setText(denuncia.getDescripcion());
-                    textViewLocation.setText(String.format(Locale.getDefault(), "Ubicación: Lat: %.4f, Lon: %.4f",
-                            denuncia.getLatitud(), denuncia.getLongitud()));
+        // Usamos DBLocal para obtener la denuncia
+        Denuncia denuncia = dbLocal.obtenerDenunciaPorId(id); // Asume que DBLocal tiene este método
+        if (denuncia != null) {
+            textViewTitle.setText(denuncia.getTitulo());
+            textViewDescription.setText(denuncia.getDescripcion());
+            textViewLocation.setText(String.format(Locale.getDefault(), "Ubicación: Lat: %.4f, Lon: %.4f",
+                    denuncia.getLatitud(), denuncia.getLongitud()));
 
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                    // CORRECCIÓN: Usar directamente denuncia.getFechaHora() que ya es un Date
-                    if (denuncia.getFechaHora() != null) {
-                        textViewDateTime.setText("Fecha y Hora: " + sdf.format(denuncia.getFechaHora()));
-                    } else {
-                        textViewDateTime.setText("Fecha y Hora: N/A");
-                    }
-
-                    textViewStatus.setText("Estado: " + denuncia.getEstado());
-                    String status = denuncia.getEstado();
-                    if ("Resuelto".equals(status)) {
-                        textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_green_dark));
-                    } else if ("En Proceso".equals(status)) {
-                        textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_orange_dark));
-                    } else { // Pendiente o cualquier otro
-                        textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_red_dark));
-                    }
-
-                    if (denuncia.getUrlImagen() != null && !denuncia.getUrlImagen().isEmpty()) {
-                        imageViewReport.setVisibility(View.VISIBLE);
-                        Glide.with(DenunciaDetailActivity.this)
-                                .load(denuncia.getUrlImagen())
-                                .placeholder(R.drawable.placeholder_image)
-                                .error(R.drawable.placeholder_image)
-                                .into(imageViewReport);
-                    } else {
-                        imageViewReport.setVisibility(View.GONE);
-                    }
-
-                    if (mAuth.getCurrentUser() != null && mAuth.getCurrentUser().getUid().equals(denuncia.getIdUsuario())) {
-                        layoutUserActions.setVisibility(View.VISIBLE);
-                    } else {
-                        layoutUserActions.setVisibility(View.GONE);
-                    }
-
-                    loadHistory(denuncia);
-                    loadComments(denuncia);
-
-                } else {
-                    Toast.makeText(DenunciaDetailActivity.this, "Denuncia no encontrada.", Toast.LENGTH_SHORT).show();
-                    finish();
-                }
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            if (denuncia.getFechaHora() != null) {
+                textViewDateTime.setText("Fecha y Hora: " + sdf.format(denuncia.getFechaHora()));
+            } else {
+                textViewDateTime.setText("Fecha y Hora: N/A");
             }
 
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(DenunciaDetailActivity.this, "Error al cargar la denuncia: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Error loading denuncia: " + e.getMessage(), e);
-                finish();
+            textViewStatus.setText("Estado: " + denuncia.getEstado());
+            String status = denuncia.getEstado();
+            if ("Resuelto".equals(status)) {
+                textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_green_dark));
+            } else if ("En Proceso".equals(status)) {
+                textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_orange_dark));
+            } else { // Pendiente o cualquier otro
+                textViewStatus.setTextColor(ContextCompat.getColor(DenunciaDetailActivity.this, android.R.color.holo_red_dark));
             }
-        });
+
+            if (denuncia.getUrlImagen() != null && !denuncia.getUrlImagen().isEmpty()) {
+                imageViewReport.setVisibility(View.VISIBLE);
+                Instant Glide = null;
+                Glide.with((TemporalAdjuster) DenunciaDetailActivity.this)
+                        .load(denuncia.getUrlImagen())
+                        .placeholder(R.drawable.placeholder_image) // Asegúrate de tener este drawable
+                        .error(R.drawable.placeholder_image) // Asegúrate de tener este drawable
+                        .into(imageViewReport);
+            } else {
+                imageViewReport.setVisibility(View.GONE);
+            }
+
+            // Aquí se compara el ID del usuario de la denuncia con el ID del usuario logueado localmente
+            if (currentUserId != null && currentUserId.equals(denuncia.getIdUsuario())) {
+                layoutUserActions.setVisibility(View.VISIBLE);
+            } else {
+                layoutUserActions.setVisibility(View.GONE);
+            }
+
+            loadHistory(denuncia);
+            loadComments(denuncia);
+
+        } else {
+            Toast.makeText(DenunciaDetailActivity.this, "Denuncia no encontrada.", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
 
     private void deleteDenuncia() {
         // Implementa un diálogo de confirmación antes de eliminar (RECOMENDADO)
-        dbFirebase.eliminarDenuncia(denunciaId, new DBFirebase.VoidCallback() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(DenunciaDetailActivity.this, "Denuncia eliminada exitosamente.", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(DenunciaDetailActivity.this, "Error al eliminar denuncia: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Error deleting denuncia: " + e.getMessage(), e);
-            }
-        });
+        // dbLocal.eliminarDenuncia(denunciaId, new DBLocal.VoidCallback() { // Si tienes un callback asíncrono
+        boolean deleted = dbLocal.eliminarDenuncia(denunciaId); // Asumiendo un método síncrono en DBLocal
+        if (deleted) {
+            Toast.makeText(DenunciaDetailActivity.this, "Denuncia eliminada exitosamente.", Toast.LENGTH_SHORT).show();
+            finish();
+        } else {
+            Toast.makeText(DenunciaDetailActivity.this, "Error al eliminar denuncia.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error deleting denuncia with ID: " + denunciaId);
+        }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void postComment() {
         String commentText = editTextComment.getText().toString().trim();
         if (TextUtils.isEmpty(commentText)) {
@@ -228,47 +235,34 @@ public class DenunciaDetailActivity extends AppCompatActivity {
             return;
         }
 
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        // Verificamos si hay un usuario logueado localmente
+        if (currentUserId == null || currentUserId.isEmpty()) {
             Toast.makeText(this, "Debes iniciar sesión para comentar.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String userId = currentUser.getUid();
+        // Obtener datos del usuario desde DBLocal
+        User currentUser = dbLocal.obtenerUsuarioPorId(currentUserId); // Asume que DBLocal tiene este método
+        String userName = (currentUser != null && currentUser.getUsername() != null && !currentUser.getUsername().isEmpty()) ? currentUser.getUsername() : "Usuario Anónimo";
 
-        dbFirebase.obtenerDatosDeUsuario(userId, new DBFirebase.UserCallback() {
-            @Override
-            public void onSuccess(User user) {
-                String userName = (user != null && user.getUsername() != null && !user.getUsername().isEmpty()) ? user.getUsername() : "Usuario Anónimo";
+        Map<String, Object> comment = new HashMap<>();
+        comment.put("userId", currentUserId);
+        comment.put("userName", userName);
+        comment.put("commentText", commentText);
+        comment.put("timestamp", System.currentTimeMillis());
 
-                Map<String, Object> comment = new HashMap<>();
-                comment.put("userId", userId);
-                comment.put("userName", userName);
-                comment.put("commentText", commentText);
-                comment.put("timestamp", System.currentTimeMillis());
-
-                dbFirebase.agregarComentarioADenuncia(denunciaId, comment, new DBFirebase.VoidCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(DenunciaDetailActivity.this, "Comentario publicado.", Toast.LENGTH_SHORT).show();
-                        editTextComment.setText("");
-                        loadDenunciaDetails(denunciaId); // Recargar para ver el nuevo comentario
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        Toast.makeText(DenunciaDetailActivity.this, "Error al publicar comentario: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        Log.e(TAG, "Error posting comment: " + e.getMessage(), e);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(DenunciaDetailActivity.this, "Error al obtener datos de usuario para comentario: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Error getting user data for comment: " + e.getMessage(), e);
-            }
-        });
+        // Asumiendo que DBLocal tiene un método para agregar comentarios
+        // Este método en DBLocal debería manejar la estructura de almacenamiento de comentarios
+        // Por ejemplo, añadiéndolos a una columna JSON en la tabla de denuncias, o en una tabla de comentarios separada.
+        boolean commentAdded = dbLocal.agregarComentarioADenuncia(denunciaId, comment); // Asume que retorna un boolean
+        if (commentAdded) {
+            Toast.makeText(DenunciaDetailActivity.this, "Comentario publicado.", Toast.LENGTH_SHORT).show();
+            editTextComment.setText("");
+            loadDenunciaDetails(denunciaId); // Recargar para ver el nuevo comentario
+        } else {
+            Toast.makeText(DenunciaDetailActivity.this, "Error al publicar comentario.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error posting comment for denuncia: " + denunciaId);
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -277,7 +271,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
 
         TextView historyItem = new TextView(this);
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        // CORRECCIÓN: Usar directamente denuncia.getFechaHora() que ya es un Date
         if (denuncia.getFechaHora() != null) {
             historyItem.setText("Reporte creado el " + sdf.format(denuncia.getFechaHora()));
         } else {
@@ -287,9 +280,13 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         layoutHistory.addView(historyItem);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void loadComments(Denuncia denuncia) {
         layoutComments.removeAllViews();
 
+        // Asumimos que Denuncia tiene un método getComments() que devuelve la lista de comentarios
+        // Si los comentarios están almacenados de otra forma en DBLocal (ej. en una tabla separada),
+        // necesitarías un método en DBLocal para obtener los comentarios por denunciaId.
         List<Map<String, Object>> commentsList = denuncia.getComments();
 
         if (commentsList != null && !commentsList.isEmpty()) {

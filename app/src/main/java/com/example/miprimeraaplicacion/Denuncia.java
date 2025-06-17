@@ -1,10 +1,9 @@
 package com.example.miprimeraaplicacion;
 
-import com.google.firebase.firestore.ServerTimestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections; // Importar Collections para la lista vacía
+import java.util.Collections;
 
 public class Denuncia {
     private String idDenuncia;
@@ -15,14 +14,11 @@ public class Denuncia {
     private double latitud;
     private double longitud;
     private String urlImagen;
-    @ServerTimestamp
     private Date fechaHora;
     private String estado;
-    private List<Map<String, Object>> comments; // Campo para los comentarios
+    private List<Map<String, Object>> comments;
 
-    // Constructor vacío requerido por Firestore para deserialización
-    public Denuncia() {
-        // Obligatorio para Firestore
+    public Denuncia(String id, String idUsuario, String titulo, String descripcion, double latitud, double longitud, Date date, String estado, String urlImagen, String tipoDenuncia) {
     }
 
     public Denuncia(String idDenuncia, String idUsuario, String titulo, String descripcion,
@@ -38,11 +34,8 @@ public class Denuncia {
         this.urlImagen = urlImagen;
         this.fechaHora = fechaHora;
         this.estado = estado;
-        // Inicializar como lista vacía para evitar NullPointerException si no hay comentarios en Firestore
         this.comments = Collections.emptyList();
     }
-
-    // --- Getters y Setters ---
 
     public String getIdDenuncia() { return idDenuncia; }
     public void setIdDenuncia(String idDenuncia) { this.idDenuncia = idDenuncia; }
@@ -74,7 +67,6 @@ public class Denuncia {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    // Getter y Setter para comments
     public List<Map<String, Object>> getComments() {
         return comments;
     }

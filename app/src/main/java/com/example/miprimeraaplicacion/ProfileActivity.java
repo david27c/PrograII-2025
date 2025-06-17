@@ -2,12 +2,12 @@ package com.example.miprimeraaplicacion;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context; // Importar Context para SharedPreferences
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences; // Importar SharedPreferences
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log; // Importar Log para depuración
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,8 +23,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+// ELIMINADAS importaciones de Firebase
+// import com.google.firebase.auth.FirebaseAuth;
+// import com.google.firebase.auth.FirebaseUser;
 import com.squareup.picasso.Picasso;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -32,11 +33,12 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class ProfileActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
-    private static final String TAG = "ProfileActivity"; // Para mensajes de Log
+    private static final String TAG = "ProfileActivity";
 
-    private FirebaseAuth mAuth; // Mantener para futuras conexiones Firebase
-    private DBFirebase dbFirebase; // Mantener para futuras conexiones Firebase
-    private DBLocal dbLocal; // Necesario para obtener datos de perfil localmente
+    // ELIMINADAS declaraciones de Firebase
+    // private FirebaseAuth mAuth;
+    // private DBFirebase dbFirebase;
+    private DBLocal dbLocal; // Declaración para la base de datos local
 
     private CircleImageView imageViewProfile;
     private TextView textViewUsername, textViewEmail, textViewPhone, textViewAddress, textViewReportCount;
@@ -44,10 +46,8 @@ public class ProfileActivity extends AppCompatActivity {
     private ProgressBar progressBarProfile;
     private BottomNavigationView bottomNavigationView;
 
-    private Uri imageUri;
-
-    // Declarar userIdToUse a nivel de clase para que sea accesible en loadUserProfile
-    private String currentUserId;
+    private Uri imageUri; // Mantener por si se usa para selección de imagen local
+    private String currentUserId; // Para almacenar el ID del usuario logueado localmente
 
     @SuppressLint({"WrongViewCast", "MissingInflatedId"})
     @Override
@@ -55,8 +55,9 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        mAuth = FirebaseAuth.getInstance();
-        dbFirebase = new DBFirebase(this);
+        // ELIMINADAS inicializaciones de Firebase
+        // mAuth = FirebaseAuth.getInstance();
+        // dbFirebase = new DBFirebase(this);
         dbLocal = new DBLocal(this); // Inicializar DBLocal
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -77,25 +78,17 @@ public class ProfileActivity extends AppCompatActivity {
         progressBarProfile = findViewById(R.id.progressBarProfile);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // --- INICIO DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN (igual que en HomeActivity/MyReportsActivity) ---
-        // Obtener el ID de usuario local
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (SOLO CON SHARED PREFERENCES) ---
+        // Obtener el ID de usuario desde SharedPreferences
         SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        String currentUserIdLocal = sharedPref.getString("current_user_id", null);
+        currentUserId = sharedPref.getString("current_user_id", null); // Obtener el ID de usuario guardado
 
-        // Obtener el usuario de Firebase (puede ser null si Firebase no está conectado/logueado)
-        FirebaseUser currentUserFirebase = mAuth.getCurrentUser();
-
-        // Determinar qué ID de usuario usar
-        if (currentUserFirebase != null) {
-            currentUserId = currentUserFirebase.getUid(); // Priorizar Firebase si está logueado
-        } else if (currentUserIdLocal != null) {
-            currentUserId = currentUserIdLocal; // Si no hay Firebase, pero sí local, usar el local
-        } else {
-            // Si no hay ningún usuario (ni Firebase ni local), redirigir a Login
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            // Si no hay ningún usuario logueado localmente, redirigir a LoginActivity
             Toast.makeText(this, "Necesitas iniciar sesión para ver tu perfil.", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
             startActivity(intent);
-            finish();
+            finish(); // Finalizar ProfileActivity para que el usuario no pueda volver atrás
             return; // Terminar onCreate aquí para evitar más ejecución
         }
         // --- FIN DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN ---
@@ -126,8 +119,8 @@ public class ProfileActivity extends AppCompatActivity {
         });
         bottomNavigationView.setSelectedItemId(R.id.nav_profile);
 
-        // Cargar el perfil del usuario después de haber determinado currentUserId
-        loadUserProfile();
+        // Cargar el perfil del usuario desde DBLocal
+        loadUserProfileFromLocalDb();
 
         buttonEditProfile.setOnClickListener(v -> {
             Toast.makeText(ProfileActivity.this, "Navegar a la pantalla de edición de perfil", Toast.LENGTH_SHORT).show();
@@ -164,113 +157,67 @@ public class ProfileActivity extends AppCompatActivity {
         return true;
     }
 
-    private void loadUserProfile() {
-        // currentUserId ya se ha determinado en onCreate()
-        if (currentUserId == null) {
-            // Esto no debería ocurrir si onCreate() manejó bien la redirección
-            Toast.makeText(this, "Error: No se pudo determinar el ID de usuario.", Toast.LENGTH_SHORT).show();
-            progressBarProfile.setVisibility(View.GONE);
-            return;
-        }
-
+    private void loadUserProfileFromLocalDb() {
         progressBarProfile.setVisibility(View.VISIBLE);
 
-        // Primero, intentar cargar de Firebase si hay un currentUserFirebase o si Firebase está activo
-        FirebaseUser currentUserFirebase = mAuth.getCurrentUser();
-        if (currentUserFirebase != null) {
-            dbFirebase.obtenerDatosDeUsuario(currentUserId, new DBFirebase.UserCallback() {
-                @Override
-                public void onSuccess(User user) {
-                    progressBarProfile.setVisibility(View.GONE);
-                    if (user != null) {
-                        // Si se obtienen datos de Firebase, mostrarlos
-                        displayUserProfile(user);
-                    } else {
-                        // Si no hay datos en Firebase, intentar obtener de DBLocal
-                        Toast.makeText(ProfileActivity.this, "Perfil no encontrado en la nube. Cargando datos locales.", Toast.LENGTH_SHORT).show();
-                        loadUserProfileFromLocalDb(currentUserId);
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    // Si falla la carga de Firebase, intentar desde DBLocal
-                    Log.e(TAG, "Error al cargar perfil desde Firebase: " + e.getMessage());
-                    Toast.makeText(ProfileActivity.this, "Error al cargar perfil de la nube. Cargando datos locales.", Toast.LENGTH_LONG).show();
-                    loadUserProfileFromLocalDb(currentUserId);
-                }
-            });
-        } else {
-            // Si no hay currentUserFirebase (por problemas de conexión o no logueado con Firebase),
-            // cargar directamente desde DBLocal.
-            loadUserProfileFromLocalDb(currentUserId);
-        }
-    }
-
-    private void loadUserProfileFromLocalDb(String userId) {
-        // En tu DBLocal actual, los métodos loginUser y registerUser solo manejan email y password.
-        // No hay un método para obtener un objeto 'User' completo con username, phone, address, etc.
-        // Por ahora, solo podemos mostrar el email del usuario local.
-        // PARA MOSTRAR TODOS LOS DATOS, NECESITAS ACTUALIZAR DBLocal y la clase User.
-        User localUser = dbLocal.getUserProfile(userId); // <-- ESTE MÉTODO DEBE EXISTIR EN DBLocal
+        // Obtener el perfil del usuario de DBLocal usando el currentUserId
+        User user = dbLocal.getUserProfile(currentUserId);
 
         progressBarProfile.setVisibility(View.GONE);
-        if (localUser != null) {
-            displayUserProfile(localUser);
+
+        if (user != null) {
+            // Asigna los datos a los TextViews
+            textViewUsername.setText("Usuario: " + (user.getUsername() != null ? user.getUsername() : "N/A"));
+            textViewEmail.setText("Correo: " + (user.getEmail() != null ? user.getEmail() : "N/A"));
+            textViewPhone.setText("Teléfono: " + (user.getPhone() != null ? user.getPhone() : "N/A"));
+            textViewAddress.setText("Dirección: " + (user.getAddress() != null ? user.getAddress() : "N/A"));
+            textViewReportCount.setText("Reportes enviados: " + user.getReportsCount());
+
+            if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
+                try {
+                    // Intenta cargar como URI local (file:// o content://)
+                    Uri profileUri = Uri.parse(user.getProfileImageUrl());
+                    Picasso.get().load(profileUri)
+                            .placeholder(R.drawable.ic_default_profile) // Placeholder mientras carga
+                            .error(R.drawable.ic_default_profile)     // Imagen si hay error al cargar
+                            .into(imageViewProfile);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al cargar imagen de perfil local: " + e.getMessage());
+                    imageViewProfile.setImageResource(R.drawable.ic_default_profile); // Si hay un error, usa la imagen por defecto
+                }
+            } else {
+                imageViewProfile.setImageResource(R.drawable.ic_default_profile); // Si no hay URL, usa la imagen por defecto
+            }
+            Log.d(TAG, "Perfil cargado desde DBLocal para usuario: " + user.getUsername());
+
         } else {
-            // Si no hay datos en DBLocal para el userId (puede ser que solo se guardó userId y email en Login)
-            // Mostrar un mensaje de que los datos no están disponibles o mostrar el email.
-            textViewUsername.setText("Usuario: N/A");
-            textViewEmail.setText("Correo: " + dbLocal.getUserEmail(userId)); // Necesitas un método para obtener solo el email por ID
-            textViewPhone.setText("Teléfono: N/A");
-            textViewAddress.setText("Dirección: N/A");
-            textViewReportCount.setText("Reportes enviados: N/A");
-            imageViewProfile.setImageResource(R.drawable.ic_default_profile);
-            Toast.makeText(this, "No se encontraron datos de perfil completos localmente.", Toast.LENGTH_SHORT).show();
+            // Manejar caso donde no se encuentra el usuario en DBLocal (aunque esto no debería pasar si currentUserId está bien)
+            Toast.makeText(this, "No se encontraron datos de perfil localmente para este usuario.", Toast.LENGTH_LONG).show();
+            Log.w(TAG, "No se encontró perfil para userId: " + currentUserId + " en DBLocal.");
+            // Opcional: limpiar SharedPreferences y redirigir a Login si el usuario no existe localmente
+            signOutUser();
         }
     }
-
-    // Método auxiliar para mostrar los datos del perfil
-    private void displayUserProfile(User user) {
-        // Se asume que la clase User tiene todos estos getters
-        textViewUsername.setText("Usuario: " + (user.getUsername() != null ? user.getUsername() : "N/A"));
-        textViewEmail.setText("Correo: " + (user.getEmail() != null ? user.getEmail() : "N/A"));
-        textViewPhone.setText("Teléfono: " + (user.getPhone() != null ? user.getPhone() : "N/A"));
-        textViewAddress.setText("Dirección: " + (user.getAddress() != null ? user.getAddress() : "N/A"));
-        textViewReportCount.setText("Reportes enviados: " + user.getReportsCount()); // Ajusta si User no tiene este campo
-
-        if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().isEmpty()) {
-            Picasso.get().load(user.getProfileImageUrl())
-                    .placeholder(R.drawable.ic_default_profile)
-                    .error(R.drawable.ic_default_profile)
-                    .into(imageViewProfile);
-        } else {
-            imageViewProfile.setImageResource(R.drawable.ic_default_profile);
-        }
-    }
-
 
     private void signOutUser() {
         new AlertDialog.Builder(this)
                 .setTitle("Cerrar Sesión")
                 .setMessage("¿Estás seguro de que quieres cerrar tu sesión?")
                 .setPositiveButton("Sí", (dialog, which) -> {
-                    // Si se cierra sesión, limpiar el userId local de SharedPreferences
+                    // Limpiar el userId local de SharedPreferences
                     SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.remove("current_user_id");
+                    editor.remove("current_user_id"); // Eliminar el ID de usuario
                     editor.apply();
 
-                    // Intentar cerrar sesión de Firebase también, si estaba logueado
-                    if (mAuth.getCurrentUser() != null) {
-                        mAuth.signOut();
-                    }
+                    // No hay mAuth.signOut() porque ya no usamos Firebase Auth
 
                     Toast.makeText(ProfileActivity.this, "Sesión cerrada.", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+                    // Flags para limpiar el stack de actividades y asegurar que LoginActivity sea la única en el stack
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
-                    finish();
+                    finish(); // Finalizar ProfileActivity
                 })
                 .setNegativeButton("No", null)
                 .show();

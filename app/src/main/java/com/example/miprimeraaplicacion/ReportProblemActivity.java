@@ -1,14 +1,16 @@
 package com.example.miprimeraaplicacion;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment; // Nueva importación
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,17 +32,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider; // Nueva importación
+import androidx.core.content.FileProvider;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+// ELIMINADAS importaciones de Firebase
+// import com.google.firebase.auth.FirebaseAuth;
+// import com.google.firebase.auth.FirebaseUser;
 
-import java.io.File; // Nueva importación
-import java.io.IOException; // Nueva importación
-import java.text.SimpleDateFormat; // Nueva importación
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale; // Nueva importación
+import java.util.Locale;
 import java.util.UUID;
 
 public class ReportProblemActivity extends AppCompatActivity implements LocationListener {
@@ -59,33 +62,43 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     private ProgressBar progressBarReport;
     private BottomNavigationView bottomNavigationView;
 
-    private Uri imageUri; // Esta URI ahora se usará para la cámara también
+    private Uri imageUri; // URI de la imagen seleccionada/capturada
     private LocationManager locationManager;
     private String currentLocation = "Ubicación desconocida";
     private double currentLatitude = 0.0;
     private double currentLongitude = 0.0;
 
-    private FirebaseAuth mAuth;
-    private DBLocal dbLocal;
-    private DBFirebase dbFirebase;
+    // ELIMINADAS declaraciones de Firebase
+    // private FirebaseAuth mAuth;
+    // private DBFirebase dbFirebase;
+    private DBLocal dbLocal; // Declaración para la base de datos local
+
+    private String currentUserId; // Para almacenar el ID del usuario logueado localmente
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_report_problem);
 
-        mAuth = FirebaseAuth.getInstance();
+        // ELIMINADA inicialización de Firebase Auth
+        // mAuth = FirebaseAuth.getInstance();
 
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (SOLO CON SHARED PREFERENCES) ---
+        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        currentUserId = sharedPref.getString("current_user_id", null);
+
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            Toast.makeText(this, "Debes iniciar sesión para reportar un problema.", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(ReportProblemActivity.this, LoginActivity.class);
             startActivity(intent);
             finish();
             return;
         }
+        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
-        dbLocal = new DBLocal(this);
-        dbFirebase = new DBFirebase(this);
+        dbLocal = new DBLocal(this); // Inicializar DBLocal
+        // ELIMINADA inicialización de DBFirebase
+        // dbFirebase = new DBFirebase(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -112,7 +125,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
                 finish();
                 return true;
             } else if (itemId == R.id.nav_report) {
-                return true;
+                return true; // Ya estás en Reportar Problema
             } else if (itemId == R.id.nav_my_reports) {
                 startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
                 finish();
@@ -163,8 +176,11 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     }
 
     private void checkPermissionsAndDispatchTakePictureIntent() {
+        // Para Android 10 (API 29) y superior, WRITE_EXTERNAL_STORAGE ya no es necesario
+        // para acceder a los propios archivos de la app o a la galería
+        // Considera READ_MEDIA_IMAGES para Android 13+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     PERMISSION_REQUEST_CODE);
@@ -173,22 +189,17 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         }
     }
 
-    // *** MODIFICADO: Lógica para guardar la foto capturada ***
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        // Asegurarse de que haya una aplicación de cámara para manejar el intent
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            // Crear el archivo donde la foto debería ir
             File photoFile = null;
             try {
                 photoFile = createImageFile();
             } catch (IOException ex) {
-                // Error al crear el archivo
                 Log.e(TAG, "Error al crear archivo de imagen: " + ex.getMessage());
                 Toast.makeText(this, "Error al crear archivo para la foto.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Continuar solo si el archivo fue creado exitosamente
             if (photoFile != null) {
                 imageUri = FileProvider.getUriForFile(this,
                         "com.example.miprimeraaplicacion.fileprovider", // Debe coincidir con el 'authorities' en AndroidManifest.xml
@@ -199,27 +210,37 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         }
     }
 
-    // *** NUEVO MÉTODO: Crear un archivo de imagen temporal ***
     private File createImageFile() throws IOException {
-        // Crear un nombre de archivo de imagen con marca de tiempo
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
-                imageFileName,  /* prefijo */
-                ".jpg",         /* sufijo */
-                storageDir      /* directorio */
+                imageFileName,
+                ".jpg",
+                storageDir
         );
         return image;
     }
 
     private void checkPermissionsAndPickImage() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                    PERMISSION_REQUEST_CODE);
+        // Para Android 13 (API 33) y superior, usar READ_MEDIA_IMAGES
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_MEDIA_IMAGES},
+                        PERMISSION_REQUEST_CODE);
+            } else {
+                pickImageFromGallery();
+            }
         } else {
-            pickImageFromGallery();
+            // Para versiones anteriores, usar READ_EXTERNAL_STORAGE
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        PERMISSION_REQUEST_CODE);
+            } else {
+                pickImageFromGallery();
+            }
         }
     }
 
@@ -251,9 +272,9 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     requestLocationUpdates();
-                } else if (permissions[0].equals(Manifest.permission.CAMERA) || permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                } else if (permissions[0].equals(Manifest.permission.CAMERA)) {
                     dispatchTakePictureIntent();
-                } else if (permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                } else if (permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE) || permissions[0].equals(Manifest.permission.READ_MEDIA_IMAGES)) {
                     pickImageFromGallery();
                 }
             } else {
@@ -265,13 +286,11 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         }
     }
 
-    // *** MODIFICADO: Lógica para manejar resultados de la cámara y galería ***
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_IMAGE_CAPTURE) {
-                // La URI ya está en 'imageUri' porque se la pasamos a la Intent de la cámara
                 if (imageUri != null) {
                     imageViewPreview.setImageURI(imageUri);
                     imageViewPreview.setVisibility(View.VISIBLE);
@@ -285,9 +304,8 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
                 imageViewPreview.setVisibility(View.VISIBLE);
             }
         } else {
-            // Si la captura o selección de imagen fue cancelada, limpia la URI si no es necesaria
             if (requestCode == REQUEST_IMAGE_CAPTURE) {
-                imageUri = null; // Si se cancela la foto, resetea la URI
+                imageUri = null;
             }
             imageViewPreview.setVisibility(View.GONE);
         }
@@ -318,6 +336,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     protected void onPause() {
         super.onPause();
         if (locationManager != null) {
+            // Es importante detener las actualizaciones de ubicación para ahorrar batería
             locationManager.removeUpdates(this);
         }
     }
@@ -325,6 +344,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     @Override
     protected void onResume() {
         super.onResume();
+        // Reanudar las actualizaciones de ubicación cuando la actividad vuelve a estar en primer plano
         requestLocationUpdates();
     }
 
@@ -337,64 +357,47 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             return;
         }
 
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(this, "Debes iniciar sesión para reportar un problema.", Toast.LENGTH_SHORT).show();
+        // Ya validamos currentUserId en onCreate, pero una doble verificación nunca está de más
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            Toast.makeText(this, "Error: No se pudo obtener el ID de usuario. Por favor, reinicia la app.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         progressBarReport.setVisibility(View.VISIBLE);
         buttonSendReport.setEnabled(false);
 
-        String userId = currentUser.getUid();
-        String reportId = UUID.randomUUID().toString();
+        String reportId = UUID.randomUUID().toString(); // Generar un ID único para el reporte
         Date fechaHora = new Date();
+
+        String imageUrlString = (imageUri != null) ? imageUri.toString() : null;
 
         Denuncia nuevaDenuncia = new Denuncia(
                 reportId,
-                userId,
-                "Reporte de " + reportType,
+                currentUserId, // Usar el ID de usuario local de SharedPreferences
+                "Reporte de " + reportType, // Título inicial del reporte
                 description,
                 reportType,
                 currentLatitude,
                 currentLongitude,
-                null,
+                imageUrlString, // Guarda la URI local de la imagen
                 fechaHora,
-                "Pendiente"
+                "Pendiente" // Estado inicial
         );
 
-        boolean localSuccess = dbLocal.insertarDenuncia(nuevaDenuncia) != null;
+        // Insertar la denuncia en DBLocal
+        Denuncia insertedDenuncia = dbLocal.insertarDenuncia(nuevaDenuncia);
 
-        if (localSuccess) {
-            Log.d(TAG, "Reporte guardado localmente: " + reportId);
-            dbFirebase.guardarDenuncia(nuevaDenuncia, imageUri, new DBFirebase.DenunciaCallback() {
-                @Override
-                public void onSuccess(Denuncia denunciaGuardada) {
-                    if (imageUri != null && denunciaGuardada.getUrlImagen() != null && !denunciaGuardada.getUrlImagen().isEmpty()) {
-                        nuevaDenuncia.setUrlImagen(denunciaGuardada.getUrlImagen());
-                        dbLocal.actualizarDenuncia(nuevaDenuncia);
-                        Log.d(TAG, "URL de imagen actualizada en DB local: " + denunciaGuardada.getUrlImagen());
-                    }
+        progressBarReport.setVisibility(View.GONE);
+        buttonSendReport.setEnabled(true);
 
-                    progressBarReport.setVisibility(View.GONE);
-                    buttonSendReport.setEnabled(true);
-                    Toast.makeText(ReportProblemActivity.this, "Reporte enviado exitosamente!", Toast.LENGTH_LONG).show();
-                    editTextDescription.setText("");
-                    imageViewPreview.setVisibility(View.GONE);
-                    imageUri = null;
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    progressBarReport.setVisibility(View.GONE);
-                    buttonSendReport.setEnabled(true);
-                    Toast.makeText(ReportProblemActivity.this, "Reporte guardado localmente, pero falló en la nube: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    Log.e(TAG, "Error al guardar reporte en Firebase: " + e.getMessage());
-                }
-            });
+        if (insertedDenuncia != null) {
+            Log.d(TAG, "Reporte guardado localmente: " + insertedDenuncia.getIdDenuncia());
+            Toast.makeText(this, "Reporte guardado exitosamente!", Toast.LENGTH_LONG).show();
+            // Limpiar los campos después de enviar
+            editTextDescription.setText("");
+            imageViewPreview.setVisibility(View.GONE);
+            imageUri = null; // Limpiar la URI para el próximo reporte
         } else {
-            progressBarReport.setVisibility(View.GONE);
-            buttonSendReport.setEnabled(true);
             Toast.makeText(this, "Error al guardar el reporte localmente.", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Error al insertar denuncia en SQLite.");
         }

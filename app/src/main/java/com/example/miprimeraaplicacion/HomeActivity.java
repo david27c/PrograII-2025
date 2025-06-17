@@ -4,6 +4,7 @@ import android.content.Context; // Necesario para SharedPreferences
 import android.content.Intent;
 import android.content.SharedPreferences; // Necesario para SharedPreferences
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,17 +21,17 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+// REMOVIDO: import com.google.firebase.auth.FirebaseAuth;
+// REMOVIDO: import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private FirebaseAuth mAuth;
+    // REMOVIDO: private FirebaseAuth mAuth;
     private DBLocal dbLocal;
-    private DBFirebase dbFirebase;
+    // REMOVIDO: private DBFirebase dbFirebase; // Ya no se usa Firebase
 
     private RecyclerView recyclerViewReports;
     private DenunciaAdapter denunciaAdapter;
@@ -46,17 +47,14 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        mAuth = FirebaseAuth.getInstance();
+        // REMOVIDO: mAuth = FirebaseAuth.getInstance();
 
-        // --- INICIO DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN ---
-        // Primero, intentamos obtener el usuario actual de Firebase
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        // Luego, verificamos si hay un usuario localmente logueado en SharedPreferences
+        // --- INICIO DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN (SOLO DBLocal/SharedPreferences) ---
         SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
         String currentUserIdLocal = sharedPref.getString("current_user_id", null);
 
-        // Si NO hay usuario de Firebase Y NO hay usuario local, entonces redirigir a Login
-        if (currentUser == null && currentUserIdLocal == null) {
+        // Si NO hay usuario local, entonces redirigir a Login
+        if (currentUserIdLocal == null) {
             Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
             startActivity(intent);
             finish();
@@ -64,9 +62,8 @@ public class HomeActivity extends AppCompatActivity {
         }
         // --- FIN DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
-
         dbLocal = new DBLocal(this);
-        dbFirebase = new DBFirebase(this);
+        // REMOVIDO: dbFirebase = new DBFirebase(this); // Ya no se usa Firebase
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -117,9 +114,6 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // NOTA: loadReports() seguirá intentando cargar desde Firebase.
-        // Si tu problema de conexión persiste, verás un Toast de error,
-        // pero la interfaz de HomeActivity sí debería cargarse.
         loadReports();
     }
 
@@ -144,24 +138,25 @@ public class HomeActivity extends AppCompatActivity {
 
     private void loadReports() {
         progressBar.setVisibility(View.VISIBLE);
+        // Cargar denuncias desde DBLocal
+        List<Denuncia> denuncias = dbLocal.obtenerTodasLasDenuncias();
 
-        dbFirebase.obtenerTodasLasDenuncias(new DBFirebase.ListDenunciasCallback() {
-            @Override
-            public void onSuccess(List<Denuncia> denuncias) {
-                progressBar.setVisibility(View.GONE);
-                denunciaList.clear();
-                denunciaList.addAll(denuncias);
-                denunciaAdapter.notifyDataSetChanged();
-                if (denuncias.isEmpty()) {
-                    Toast.makeText(HomeActivity.this, "No hay denuncias disponibles.", Toast.LENGTH_SHORT).show();
-                }
-            }
+        progressBar.setVisibility(View.GONE);
+        denunciaList.clear();
+        denunciaList.addAll(denuncias);
+        denunciaAdapter.notifyDataSetChanged();
 
-            @Override
-            public void onFailure(Exception e) {
-                progressBar.setVisibility(View.GONE);
-                Toast.makeText(HomeActivity.this, "Error al cargar las denuncias: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+        if (denuncias.isEmpty()) {
+            Toast.makeText(HomeActivity.this, "No hay denuncias disponibles localmente.", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.d("HomeActivity", "Denuncias cargadas desde DBLocal: " + denuncias.size());
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Recargar reportes en onResume para reflejar cambios si se regresa de otra actividad
+        loadReports();
     }
 }

@@ -23,8 +23,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+// REMOVIDO: import com.google.firebase.auth.FirebaseAuth;
+// REMOVIDO: import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +41,9 @@ public class MyReportsActivity extends AppCompatActivity {
     private Spinner spinnerStatusFilter;
     private BottomNavigationView bottomNavigationView;
 
-    private FirebaseAuth mAuth;
-    private DBFirebase dbFirebase;
-    private DBLocal dbLocal;
+    // REMOVIDO: private FirebaseAuth mAuth;
+    // REMOVIDO: private DBFirebase dbFirebase;
+    private DBLocal dbLocal; // Solo DBLocal
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -51,9 +51,9 @@ public class MyReportsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_reports);
 
-        mAuth = FirebaseAuth.getInstance();
-        dbFirebase = new DBFirebase(this);
-        dbLocal = new DBLocal(this);
+        // REMOVIDO: mAuth = FirebaseAuth.getInstance();
+        // REMOVIDO: dbFirebase = new DBFirebase(this);
+        dbLocal = new DBLocal(this); // Inicializar DBLocal
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -81,7 +81,7 @@ public class MyReportsActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selectedStatus = parent.getItemAtPosition(position).toString();
-                loadMyReports(selectedStatus);
+                loadMyReports(selectedStatus); // Cargar reportes locales
             }
 
             @Override
@@ -101,7 +101,6 @@ public class MyReportsActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (itemId == R.id.nav_my_reports) {
-                // Ya estamos en MyReportsActivity
                 return true;
             } else if (itemId == R.id.nav_chat) {
                 startActivity(new Intent(MyReportsActivity.this, CommunityChatActivity.class));
@@ -116,7 +115,7 @@ public class MyReportsActivity extends AppCompatActivity {
         });
         bottomNavigationView.setSelectedItemId(R.id.nav_my_reports);
 
-        loadMyReports("Todos");
+        loadMyReports("Todos"); // Cargar todos los reportes inicialmente
     }
 
     @Override
@@ -139,23 +138,11 @@ public class MyReportsActivity extends AppCompatActivity {
     }
 
     private void loadMyReports(String statusFilter) {
-        // Obtener el ID de usuario local
+        // Obtener el ID de usuario local desde SharedPreferences
         SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        String currentUserIdLocal = sharedPref.getString("current_user_id", null);
+        String currentUserId = sharedPref.getString("current_user_id", null);
 
-        // Obtener el usuario de Firebase
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-
-        // Declarar userIdToUse como final (o efectivamente final)
-        final String userIdToUse; // <-- CAMBIO AQUÍ: Declarado como final
-
-        // Determinar qué ID de usuario usar
-        if (currentUser != null) {
-            userIdToUse = currentUser.getUid(); // Si hay usuario Firebase, usar su UID
-        } else if (currentUserIdLocal != null) {
-            userIdToUse = currentUserIdLocal; // Si no hay Firebase, pero sí local, usar el local
-        } else {
-            // Si no hay ningún usuario (ni Firebase ni local), mostrar mensaje y salir
+        if (currentUserId == null) {
             Toast.makeText(this, "Necesitas iniciar sesión para ver tus reportes.", Toast.LENGTH_LONG).show();
             textViewNoReports.setText("Inicia sesión para ver tus reportes.");
             textViewNoReports.setVisibility(View.VISIBLE);
@@ -168,60 +155,29 @@ public class MyReportsActivity extends AppCompatActivity {
         textViewNoReports.setVisibility(View.GONE);
         recyclerViewMyReports.setVisibility(View.GONE);
 
-        // Intentar cargar desde Firebase si hay un usuario de Firebase
-        if (currentUser != null) {
-            dbFirebase.obtenerDenunciasDeUsuario(userIdToUse, statusFilter, new DBFirebase.ListDenunciasCallback() {
-                @Override
-                public void onSuccess(List<Denuncia> denuncias) {
-                    myDenunciaList.clear();
-                    myDenunciaList.addAll(denuncias);
-                    denunciaAdapter.notifyDataSetChanged();
-                    progressBarMyReports.setVisibility(View.GONE);
-
-                    if (myDenunciaList.isEmpty()) {
-                        textViewNoReports.setText("No tienes reportes en la nube para el filtro seleccionado.");
-                        textViewNoReports.setVisibility(View.VISIBLE);
-                        recyclerViewMyReports.setVisibility(View.GONE);
-                    } else {
-                        textViewNoReports.setVisibility(View.GONE);
-                        recyclerViewMyReports.setVisibility(View.VISIBLE);
-                    }
-                    Log.d(TAG, "Denuncias cargadas desde Firebase: " + denuncias.size());
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    Log.e(TAG, "Error al cargar denuncias desde Firebase: " + e.getMessage());
-                    Toast.makeText(MyReportsActivity.this, "Error al cargar reportes de la nube. Intentando cargar localmente.", Toast.LENGTH_LONG).show();
-
-                    // Si falla Firebase, intentar cargar desde la DB local
-                    loadReportsFromLocalDb(userIdToUse, statusFilter);
-                }
-            });
-        } else {
-            // Si no hay usuario de Firebase, cargar directamente desde la DB local
-            loadReportsFromLocalDb(userIdToUse, statusFilter);
-        }
-    }
-
-    private void loadReportsFromLocalDb(String userId, String statusFilter) {
-        List<Denuncia> localDenuncias = dbLocal.obtenerDenunciasPorUsuario(userId);
-        myDenunciaList.clear();
+        List<Denuncia> loadedDenuncias;
 
         if (statusFilter != null && !statusFilter.isEmpty() && !statusFilter.equals("Todos")) {
-            for (Denuncia d : localDenuncias) {
+            // Filtrar por estado y por usuario
+            List<Denuncia> allUserDenuncias = dbLocal.obtenerDenunciasPorUsuario(currentUserId);
+            loadedDenuncias = new ArrayList<>();
+            for (Denuncia d : allUserDenuncias) {
                 if (d.getEstado().equals(statusFilter)) {
-                    myDenunciaList.add(d);
+                    loadedDenuncias.add(d);
                 }
             }
         } else {
-            myDenunciaList.addAll(localDenuncias);
+            // Cargar todas las denuncias del usuario
+            loadedDenuncias = dbLocal.obtenerDenunciasPorUsuario(currentUserId);
         }
+
+        myDenunciaList.clear();
+        myDenunciaList.addAll(loadedDenuncias);
         denunciaAdapter.notifyDataSetChanged();
         progressBarMyReports.setVisibility(View.GONE);
 
         if (myDenunciaList.isEmpty()) {
-            textViewNoReports.setText("No tienes reportes (solo locales) para el filtro seleccionado.");
+            textViewNoReports.setText("No tienes reportes para el filtro seleccionado.");
             textViewNoReports.setVisibility(View.VISIBLE);
             recyclerViewMyReports.setVisibility(View.GONE);
         } else {
@@ -232,12 +188,14 @@ public class MyReportsActivity extends AppCompatActivity {
     }
 
     public void updateReportStatus(Denuncia denuncia, String newStatus) {
-        denuncia.setEstado(newStatus);
-        // CAMBIO AQUÍ: `dbLocal.actualizarDenuncia` devuelve `int`, no `boolean`.
-        int rowsAffected = dbLocal.actualizarDenuncia(denuncia); // <-- CAMBIO DE TIPO Y NOMBRE
-        if (rowsAffected > 0) { // <-- CAMBIO DE CONDICIÓN
+        denuncia.setEstado(newStatus); // Actualiza el estado en el objeto Denuncia
+
+        // Llamada a DBLocal.actualizarDenuncia que devuelve int
+        int rowsAffected = dbLocal.actualizarDenuncia(denuncia);
+
+        if (rowsAffected > 0) {
             Toast.makeText(MyReportsActivity.this, "Estado actualizado localmente.", Toast.LENGTH_SHORT).show();
-            // Asegurarse de que spinnerStatusFilter no sea null antes de usarlo.
+            // Recargar la lista para reflejar el cambio y el filtro actual
             if (spinnerStatusFilter != null && spinnerStatusFilter.getSelectedItem() != null) {
                 loadMyReports(spinnerStatusFilter.getSelectedItem().toString());
             } else {
@@ -245,6 +203,18 @@ public class MyReportsActivity extends AppCompatActivity {
             }
         } else {
             Toast.makeText(MyReportsActivity.this, "Error al actualizar estado localmente.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Recargar los reportes en onResume para reflejar cualquier cambio
+        // (por ejemplo, si se editó una denuncia en DenunciaDetailActivity)
+        if (spinnerStatusFilter != null && spinnerStatusFilter.getSelectedItem() != null) {
+            loadMyReports(spinnerStatusFilter.getSelectedItem().toString());
+        } else {
+            loadMyReports("Todos");
         }
     }
 }

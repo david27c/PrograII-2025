@@ -40,4 +40,24 @@
     <item name="spinnerStatusFilter" type="id" />
     <item name="progressBarProfileChanges" type="id" />
     <item name="idlogin" type="id" />
+    <item name="textViewUserEmail" type="id" />
+    <item name="textViewUserName" type="id" />
+    <item name="buttonSignOut" type="id" />
+    <item name="editTextOldPassword" type="id" />
+    <item name="buttonChangePassword" type="id" />
+    <item name="checkBoxNotifications" type="id" />
+    <item name="switchDarkMode" type="id" />
+    <item name="layoutProfileDetails" type="id" />
+    <item name="layoutSecurity" type="id" />
+    <item name="layoutPreferences" type="id" />
+    <item name="bottomNavigationView" type="id" />
+    <item name="navigation_settings" type="id" />
+    <item name="navigation_home" type="id" />
+    <item name="navigation_denuncias" type="id" />
+    <item name="navigation_profile" type="id" />
+    <item name="textViewMessage" type="id" />
+    <item name="textViewMessageSent" type="id" />
+    <item name="textViewTimeSent" type="id" />
+    <item name="textViewMessageReceived" type="id" />
+    <item name="textViewTimeReceived" type="id" />
 </resources>

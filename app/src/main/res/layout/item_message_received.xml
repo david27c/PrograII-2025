@@ -4,42 +4,29 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="start"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="64dp"
+    android:paddingVertical="4dp">
 
     <TextView
         android:id="@+id/textViewSenderName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Nombre de Usuario"
         android:textSize="12sp"
+        android:textColor="#555555"
         android:textStyle="bold"
-        android:textColor="#333333"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="2dp"/>
+        android:layout_marginBottom="2dp"
+        android:text="Nombre del Remitente" />
 
     <TextView
-        android:id="@+id/textViewMessageReceived"
+        android:id="@+id/textViewMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_message_received"
-        android:paddingStart="12dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="8dp"
-        android:textColor="#333333"
-        android:textSize="15sp"
-        android:maxWidth="280dp"
-        android:text="Este es un mensaje recibido de otro usuario." />
-
-    <TextView
-        android:id="@+id/textViewTimeReceived"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="10:31 AM"
-        android:textSize="10sp"
-        android:textColor="#888888"
-        android:layout_marginTop="2dp"
-        android:layout_marginStart="8dp"/>
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:text="Este es un mensaje que recibí." />
 
 </LinearLayout>

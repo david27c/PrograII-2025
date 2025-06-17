@@ -79,9 +79,4 @@ public class ChatTopicAdapter extends RecyclerView.Adapter<ChatTopicAdapter.Chat
         chatTopicList.addAll(newTopics);
         notifyDataSetChanged();
     }
-
-    // =======================================================================
-    // LA CLASE ANIDADA 'ChatTopic' QUE CAUSABA EL ERROR HA SIDO ELIMINADA.
-    // AHORA SE UTILIZA LA CLASE ChatTopic.java EXTERNA.
-    // =======================================================================
 }

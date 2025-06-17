@@ -1,7 +1,11 @@
 package com.example.miprimeraaplicacion;
 
+import android.content.Context;
+import android.content.SharedPreferences; // Necesario para SharedPreferences
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -15,20 +19,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.example.miprimeraaplicacion.User; // Para obtener el nombre de usuario
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID; // Para generar IDs únicos
 
 public class IndividualChatActivity extends AppCompatActivity {
 
@@ -41,14 +37,17 @@ public class IndividualChatActivity extends AppCompatActivity {
     private String chatTopicId;
     private String chatTopicName;
 
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
-    private CollectionReference messagesRef; // Referencia a la colección de mensajes del chat
-    private ListenerRegistration messagesListener; // Listener para mensajes en tiempo real
+    // REMOVIDO: private FirebaseAuth mAuth;
+    // REMOVIDO: private FirebaseFirestore db;
+    private DBLocal dbLocal; // Usaremos DBLocal
+
+    // REMOVIDO: private CollectionReference messagesRef;
+    // REMOVIDO: private ListenerRegistration messagesListener; // Ya no hay listener en tiempo real con SQLite
 
     private MessageAdapter messageAdapter;
     private List<Message> messageList;
 
+    private String currentUserId; // El ID del usuario logueado
     private String currentUserName = "Usuario Anónimo"; // Valor por defecto
 
     @Override
@@ -56,8 +55,9 @@ public class IndividualChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_individual_chat);
 
-        mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        // REMOVIDO: mAuth = FirebaseAuth.getInstance();
+        // REMOVIDO: db = FirebaseFirestore.getInstance();
+        dbLocal = new DBLocal(this); // Inicializar DBLocal
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -78,7 +78,7 @@ public class IndividualChatActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle("Chat con " + chatTopicName);
             }
-            messagesRef = db.collection("chatTopics").document(chatTopicId).collection("messages");
+            // REMOVIDO: messagesRef = db.collection("chatTopics").document(chatTopicId).collection("messages");
         } else {
             Toast.makeText(this, "Tema de chat no especificado.", Toast.LENGTH_SHORT).show();
             finish();
@@ -92,14 +92,24 @@ public class IndividualChatActivity extends AppCompatActivity {
         messageAdapter = new MessageAdapter(this, messageList);
         recyclerViewMessages.setAdapter(messageAdapter);
 
+        // Obtener el ID del usuario logueado desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        currentUserId = sharedPref.getString("current_user_id", null);
+
+        if (currentUserId == null) {
+            Toast.makeText(this, "No hay usuario logueado.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         // Obtener el nombre de usuario actual (para mostrar en los mensajes)
-        loadCurrentUserName();
+        loadCurrentUserName(currentUserId);
 
         // Listener para el botón de enviar mensaje
         buttonSendMessage.setOnClickListener(v -> sendMessage());
 
-        // Iniciar la escucha de mensajes en tiempo real
-        startListeningForMessages();
+        // Cargar mensajes inicialmente
+        loadMessages();
     }
 
     // Método para manejar el botón de regreso de la Toolbar
@@ -109,65 +119,35 @@ public class IndividualChatActivity extends AppCompatActivity {
         return true;
     }
 
-    private void loadCurrentUserName() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
-            // Intenta obtener el nombre de usuario de tu colección 'users'
-            db.collection("users").document(currentUser.getUid())
-                    .get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists() && documentSnapshot.getString("username") != null) {
-                            currentUserName = documentSnapshot.getString("username");
-                        } else if (currentUser.getDisplayName() != null && !currentUser.getDisplayName().isEmpty()) {
-                            currentUserName = currentUser.getDisplayName(); // Usa el nombre de Firebase si está disponible
-                        } else {
-                            currentUserName = "Usuario " + currentUser.getUid().substring(0, 4); // Nombre corto
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        // Si falla, usa el nombre por defecto
-                        currentUserName = "Usuario Anónimo";
-                    });
+    private void loadCurrentUserName(String userId) {
+        User user = dbLocal.getUserById(userId);
+        if (user != null && user.getUsername() != null && !user.getUsername().isEmpty()) {
+            currentUserName = user.getUsername();
+        } else {
+            currentUserName = "Usuario " + userId.substring(0, 4); // Nombre corto si no hay username
         }
     }
 
-
-    private void startListeningForMessages() {
+    private void loadMessages() {
         progressBarChat.setVisibility(View.VISIBLE);
         textViewNoMessages.setVisibility(View.GONE);
+        recyclerViewMessages.setVisibility(View.GONE);
 
-        // Escuchar mensajes en tiempo real, ordenados por marca de tiempo
-        messagesListener = messagesRef.orderBy("timestamp", Query.Direction.ASCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@androidx.annotation.Nullable QuerySnapshot snapshots,
-                                        @androidx.annotation.Nullable FirebaseFirestoreException e) {
-                        progressBarChat.setVisibility(View.GONE);
-                        if (e != null) {
-                            Toast.makeText(IndividualChatActivity.this, "Error al cargar mensajes: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            textViewNoMessages.setText("Error al cargar mensajes.");
-                            textViewNoMessages.setVisibility(View.VISIBLE);
-                            return;
-                        }
+        List<Message> loadedMessages = dbLocal.getChatMessagesForTopic(chatTopicId);
 
-                        List<Message> newMessages = new ArrayList<>();
-                        for (DocumentSnapshot doc : snapshots.getDocuments()) { // Iterar sobre DocumentReferences
-                            Message message = doc.toObject(Message.class);
-                            newMessages.add(message);
-                        }
-                        messageAdapter.setMessages(newMessages); // Actualizar toda la lista de mensajes
+        messageList.clear();
+        messageList.addAll(loadedMessages);
+        messageAdapter.notifyDataSetChanged();
 
-                        if (newMessages.isEmpty()) {
-                            textViewNoMessages.setVisibility(View.VISIBLE);
-                            recyclerViewMessages.setVisibility(View.GONE);
-                        } else {
-                            textViewNoMessages.setVisibility(View.GONE);
-                            recyclerViewMessages.setVisibility(View.VISIBLE);
-                            // Desplazarse al último mensaje
-                            recyclerViewMessages.scrollToPosition(messageList.size() - 1);
-                        }
-                    }
-                });
+        progressBarChat.setVisibility(View.GONE);
+
+        if (messageList.isEmpty()) {
+            textViewNoMessages.setVisibility(View.VISIBLE);
+            textViewNoMessages.setText("No hay mensajes en este chat.");
+        } else {
+            recyclerViewMessages.setVisibility(View.VISIBLE);
+            recyclerViewMessages.scrollToPosition(messageList.size() - 1); // Desplazarse al último mensaje
+        }
     }
 
     private void sendMessage() {
@@ -178,70 +158,128 @@ public class IndividualChatActivity extends AppCompatActivity {
             return;
         }
 
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        if (currentUserId == null) {
             Toast.makeText(this, "Debes iniciar sesión para enviar mensajes.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String senderId = currentUser.getUid();
         long timestamp = System.currentTimeMillis();
 
-        Message message = new Message(senderId, currentUserName, messageText, timestamp);
+        // Crear el objeto Message
+        Message message = new Message(UUID.randomUUID().toString(), chatTopicId, currentUserId, currentUserName, messageText, timestamp);
 
-        messagesRef.add(message)
-                .addOnSuccessListener(documentReference -> {
-                    editTextMessage.setText(""); // Limpiar el campo de texto
-                    // Ya que estamos escuchando en tiempo real, el mensaje se añadirá automáticamente al RecyclerView
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(IndividualChatActivity.this, "Error al enviar mensaje: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        // Guardar el mensaje en DBLocal
+        if (dbLocal.addChatMessage(message)) {
+            editTextMessage.setText(""); // Limpiar el campo de texto
+            loadMessages(); // Recargar los mensajes para mostrar el nuevo
 
-        // Opcional: Actualizar el "lastMessage" y "lastMessageTimestamp" en el documento del chatTopic
-        db.collection("chatTopics").document(chatTopicId)
-                .update("lastMessage", messageText,
-                        "lastMessageTimestamp", timestamp)
-                .addOnFailureListener(e -> System.err.println("Error updating chat topic last message: " + e.getMessage()));
+            // Opcional: Actualizar el "lastMessage" y "lastMessageTimestamp" en el ChatTopic
+            ChatTopic currentTopic = dbLocal.getChatTopicById(chatTopicId);
+            if (currentTopic != null) {
+                currentTopic.setLastMessage(messageText);
+                currentTopic.setLastMessageTimestamp(timestamp);
+                dbLocal.updateChatTopic(currentTopic);
+            }
+
+        } else {
+            Toast.makeText(IndividualChatActivity.this, "Error al enviar mensaje.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (messagesListener != null) {
-            messagesListener.remove(); // Detener la escucha al salir de la actividad
-        }
+    protected void onResume() {
+        super.onResume();
+        // Recargar mensajes cada vez que la actividad se vuelve visible
+        loadMessages();
     }
 
-    private class MessageAdapter extends RecyclerView.Adapter {
-        public MessageAdapter(IndividualChatActivity individualChatActivity, List<Message> messageList) {
+    // REMOVIDO: onStop ya no es necesario para listeners de Firebase
 
+    // --- Adaptador para los mensajes del chat ---
+    public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
+
+        private Context context;
+        private List<Message> messageList;
+        private String currentLoggedInUserId; // ID del usuario logueado para determinar si el mensaje es propio
+
+        private static final int VIEW_TYPE_MESSAGE_SENT = 1;
+        private static final int VIEW_TYPE_MESSAGE_RECEIVED = 2;
+
+        public MessageAdapter(Context context, List<Message> messageList) {
+            this.context = context;
+            this.messageList = messageList;
+            // Obtener el ID del usuario logueado para diferenciar mensajes propios
+            SharedPreferences sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+            this.currentLoggedInUserId = sharedPref.getString("current_user_id", null);
         }
 
         public void setMessages(List<Message> newMessages) {
+            this.messageList.clear();
+            this.messageList.addAll(newMessages);
+            notifyDataSetChanged();
+        }
 
+        @Override
+        public int getItemViewType(int position) {
+            Message message = messageList.get(position);
+            // Si el ID del remitente del mensaje es igual al ID del usuario logueado
+            if (message.getSenderId() != null && message.getSenderId().equals(currentLoggedInUserId)) {
+                return VIEW_TYPE_MESSAGE_SENT;
+            } else {
+                return VIEW_TYPE_MESSAGE_RECEIVED;
+            }
         }
 
         @NonNull
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return null;
+        public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view;
+            if (viewType == VIEW_TYPE_MESSAGE_SENT) {
+                view = LayoutInflater.from(context).inflate(R.layout.item_message_sent, parent, false);
+            } else {
+                view = LayoutInflater.from(context).inflate(R.layout.item_message_received, parent, false);
+            }
+            return new MessageViewHolder(view);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
+            Message message = messageList.get(position);
+            holder.textViewMessage.setText(message.getText());
+            // Formatear la marca de tiempo (opcional, podrías necesitar una utilidad de fecha)
+            // holder.textViewTimestamp.setText(formatTimestamp(message.getTimestamp()));
 
+            // Solo mostrar el nombre del remitente si no es el usuario actual
+            if (getItemViewType(position) == VIEW_TYPE_MESSAGE_RECEIVED) {
+                holder.textViewSenderName.setText(message.getSenderName());
+                holder.textViewSenderName.setVisibility(View.VISIBLE);
+            } else {
+                holder.textViewSenderName.setVisibility(View.GONE);
+            }
         }
 
         @Override
         public int getItemCount() {
-            return 0;
+            return messageList.size();
         }
-    }
 
-    private class Message {
-        public Message(String senderId, String currentUserName, String messageText, long timestamp) {
+        public class MessageViewHolder extends RecyclerView.ViewHolder {
+            TextView textViewMessage;
+            TextView textViewSenderName; // Para el nombre del remitente en mensajes recibidos
+            // TextView textViewTimestamp; // Si decides mostrar la marca de tiempo
 
+            public MessageViewHolder(@NonNull View itemView) {
+                super(itemView);
+                textViewMessage = itemView.findViewById(R.id.textViewMessage);
+                textViewSenderName = itemView.findViewById(R.id.textViewSenderName);
+                // textViewTimestamp = itemView.findViewById(R.id.textViewTimestamp);
+            }
+        }
+
+        // Método de utilidad para formatear la marca de tiempo (puedes moverlo a una clase de utilidades)
+        private String formatTimestamp(long timestamp) {
+            // Ejemplo básico, puedes usar SimpleDateFormat para un formato más bonito
+            return new Date(timestamp).toString();
         }
     }
 }

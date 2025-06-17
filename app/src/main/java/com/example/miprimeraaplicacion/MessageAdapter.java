@@ -1,13 +1,15 @@
 package com.example.miprimeraaplicacion;
 
 import android.content.Context;
+import android.content.SharedPreferences; // Importación necesaria
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.firebase.auth.FirebaseAuth;
+// *** Se elimina importación de Firebase Auth ya no necesaria ***
+// import com.google.firebase.auth.FirebaseAuth;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
@@ -19,13 +21,14 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private Context context;
     private List<Message> messageList;
-    private String currentUserId;
+    private String currentUserId; // Este ID debe venir de SharedPreferences ahora
 
     public MessageAdapter(Context context, List<Message> messageList) {
         this.context = context;
         this.messageList = messageList;
-        this.currentUserId = FirebaseAuth.getInstance().getCurrentUser() != null ?
-                FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+        // *** CAMBIO CRÍTICO: Obtener currentUserId de SharedPreferences ***
+        SharedPreferences sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        this.currentUserId = sharedPref.getString("current_user_id", null);
     }
 
     @Override

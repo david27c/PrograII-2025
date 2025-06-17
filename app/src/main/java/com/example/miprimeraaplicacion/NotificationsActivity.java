@@ -1,11 +1,13 @@
 package com.example.miprimeraaplicacion;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences; // Importar para SharedPreferences
 import android.os.Bundle;
-import android.view.Menu; // Importar para el menú de la Toolbar
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-// import android.view.ViewGroup; // Ya no es necesario si NotificationAdapter es externo
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,19 +19,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
+// REMOVIDO: import com.google.firebase.auth.FirebaseAuth;
+// REMOVIDO: import com.google.firebase.auth.FirebaseUser;
+// REMOVIDO: import com.google.firebase.firestore.FirebaseFirestore;
+// REMOVIDO: import com.google.firebase.firestore.ListenerRegistration;
+// REMOVIDO: import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class NotificationsActivity extends AppCompatActivity {
 
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
+    private static final String TAG = "NotificationsActivity";
+
+    // REMOVIDO: private FirebaseAuth mAuth;
+    // REMOVIDO: private FirebaseFirestore db;
+    private DBLocal dbLocal; // Solo DBLocal
 
     private RecyclerView recyclerViewNotifications;
     private NotificationAdapter notificationAdapter;
@@ -39,21 +44,22 @@ public class NotificationsActivity extends AppCompatActivity {
     private TextView textViewNoNotifications;
     private BottomNavigationView bottomNavigationView;
 
-    private ListenerRegistration notificationsListener; // Listener para notificaciones en tiempo real
+    // REMOVIDO: private ListenerRegistration notificationsListener; // Ya no hay listener en tiempo real con SQLite
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_notifications); // Asumiendo que el XML se llama activity_notifications.xml
+        setContentView(R.layout.activity_notifications);
 
-        mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        // REMOVIDO: mAuth = FirebaseAuth.getInstance();
+        // REMOVIDO: db = FirebaseFirestore.getInstance();
+        dbLocal = new DBLocal(this); // Inicializar DBLocal
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Habilita el botón de regreso
-            getSupportActionBar().setTitle("Notificaciones"); // Título para la Toolbar
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Notificaciones");
         }
 
         recyclerViewNotifications = findViewById(R.id.recyclerViewNotifications);
@@ -63,12 +69,10 @@ public class NotificationsActivity extends AppCompatActivity {
 
         recyclerViewNotifications.setLayoutManager(new LinearLayoutManager(this));
         notificationList = new ArrayList<>();
-        // Ahora se usa el NotificationAdapter externo
         notificationAdapter = new NotificationAdapter(this, notificationList);
         recyclerViewNotifications.setAdapter(notificationAdapter);
 
-        // Configurar la navegación inferior (SOLO LOS 5 ITEMS PRINCIPALES)
-        bottomNavigationView.setOnNavigationItemSelectedListener(item -> { // Usando lambda
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(NotificationsActivity.this, HomeActivity.class));
@@ -93,23 +97,18 @@ public class NotificationsActivity extends AppCompatActivity {
             }
             return false;
         });
-        // Como esta es la actividad de Notificaciones, no se seleccionará a sí misma en la BottomNavigationView
-        // Si llegas a NotificationsActivity desde un BottomNavigationView en otra pantalla,
-        // la BottomNavigationView en esta pantalla no necesita tener ningún elemento seleccionado por defecto,
-        // o podrías elegir uno de los 5 principales si lo consideras apropiado (ej. nav_home).
-        // Por simplicidad, y dado que es la actividad de destino de un icono de Toolbar, no se establecerá un item seleccionado aquí.
-        // bottomNavigationView.setSelectedItemId(R.id.nav_notifications); // Esta línea se debe quitar o cambiar
 
-        // Iniciar la escucha de notificaciones en tiempo real
-        startListeningForNotifications();
+        //bottomNavigationView.setSelectedItemId(R.id.nav_notifications); // Esta línea generalmente se quita aquí
+        // o se selecciona un item principal si esta actividad no es un destino directo de BottomNav
+
+        // Cargar notificaciones inicialmente
+        loadNotifications();
     }
 
-    // *** NUEVOS MÉTODOS PARA EL MENÚ DE LA TOOLBAR (solo para Configuración en esta actividad) ***
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Infla el menú de la Toolbar. Solo queremos "Configuración" aquí.
-        getMenuInflater().inflate(R.menu.toolbar_menu, menu); // Asegúrate de tener res/menu/toolbar_menu.xml
-        // Puedes ocultar el ítem de notificaciones si quieres, ya que ya estás en la actividad de notificaciones.
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+        // Puedes ocultar el ítem de notificaciones si ya estás en la actividad de notificaciones
         MenuItem notificationsItem = menu.findItem(R.id.action_notifications);
         if (notificationsItem != null) {
             notificationsItem.setVisible(false);
@@ -120,28 +119,27 @@ public class NotificationsActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) { // Usamos action_settings de toolbar_menu.xml
+        if (id == R.id.action_settings) {
             startActivity(new Intent(NotificationsActivity.this, SettingsActivity.class));
+            return true;
+        } else if (id == android.R.id.home) { // Para el botón de regreso de la Toolbar
+            onBackPressed();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
-    // *** FIN DE NUEVOS MÉTODOS ***
 
-    // Método para manejar el botón de regreso de la Toolbar
-    @Override
-    public boolean onSupportNavigateUp() {
-        finish(); // Cierra esta actividad y regresa a la anterior en la pila
-        return true;
-    }
+    private void loadNotifications() {
+        // Obtener el ID de usuario local desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        String currentUserId = sharedPref.getString("current_user_id", null);
 
-    private void startListeningForNotifications() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        if (currentUserId == null) {
             Toast.makeText(this, "Debes iniciar sesión para ver tus notificaciones.", Toast.LENGTH_SHORT).show();
             textViewNoNotifications.setText("Inicia sesión para ver tus notificaciones.");
             textViewNoNotifications.setVisibility(View.VISIBLE);
             recyclerViewNotifications.setVisibility(View.GONE);
+            progressBarNotifications.setVisibility(View.GONE);
             return;
         }
 
@@ -149,52 +147,28 @@ public class NotificationsActivity extends AppCompatActivity {
         textViewNoNotifications.setVisibility(View.GONE);
         recyclerViewNotifications.setVisibility(View.GONE);
 
-        // Escuchar notificaciones en tiempo real para el usuario actual
-        notificationsListener = db.collection("users").document(currentUser.getUid())
-                .collection("notifications") // Subcolección de notificaciones para cada usuario
-                .orderBy("timestamp", Query.Direction.DESCENDING) // Ordenar por las más recientes
-                .addSnapshotListener((snapshots, e) -> {
-                    progressBarNotifications.setVisibility(View.GONE);
-                    if (e != null) {
-                        Toast.makeText(NotificationsActivity.this, "Error al cargar notificaciones: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        textViewNoNotifications.setText("Error al cargar notificaciones.");
-                        textViewNoNotifications.setVisibility(View.VISIBLE);
-                        return;
-                    }
+        // Cargar notificaciones desde DBLocal
+        List<Notification> loadedNotifications = dbLocal.getAllNotificationsForUser(currentUserId);
 
-                    List<Notification> newNotifications = new ArrayList<>();
-                    if (snapshots != null) { // Verificar si snapshots no es null
-                        for (com.google.firebase.firestore.DocumentSnapshot doc : snapshots.getDocuments()) {
-                            Notification notification = doc.toObject(Notification.class);
-                            if (notification != null) {
-                                notification.setId(doc.getId()); // Es importante guardar el ID del documento
-                                newNotifications.add(notification);
-                            }
-                        }
-                    }
-                    notificationAdapter.updateNotifications(newNotifications);
+        notificationList.clear();
+        notificationList.addAll(loadedNotifications);
+        notificationAdapter.updateNotifications(notificationList); // Usar updateNotifications del adapter
+        progressBarNotifications.setVisibility(View.GONE);
 
-                    if (newNotifications.isEmpty()) {
-                        textViewNoNotifications.setVisibility(View.VISIBLE);
-                        recyclerViewNotifications.setVisibility(View.GONE);
-                    } else {
-                        textViewNoNotifications.setVisibility(View.GONE);
-                        recyclerViewNotifications.setVisibility(View.VISIBLE);
-                    }
-                });
+        if (notificationList.isEmpty()) {
+            textViewNoNotifications.setText("No tienes notificaciones.");
+            textViewNoNotifications.setVisibility(View.VISIBLE);
+            recyclerViewNotifications.setVisibility(View.GONE);
+        } else {
+            textViewNoNotifications.setVisibility(View.GONE);
+            recyclerViewNotifications.setVisibility(View.VISIBLE);
+        }
+        Log.d(TAG, "Notificaciones cargadas desde DBLocal: " + notificationList.size());
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (notificationsListener != null) {
-            notificationsListener.remove(); // Detener la escucha al salir de la actividad
-        }
+    protected void onResume() {
+        super.onResume();
+        loadNotifications(); // Recargar notificaciones cada vez que la actividad se vuelve visible
     }
-
-    // ==========================================================================================
-    // AVISO IMPORTANTE: LAS CLASES 'NotificationAdapter' y 'Notification' QUE ESTABAN AQUÍ HAN SIDO
-    // ELIMINADAS. DEBEN EXISTIR COMO ARCHIVOS SEPARADOS EN EL MISMO PAQUETE.
-    // LA PRESENCIA DE DEFINICIONES ANIDADAS E INCOMPLETAS AQUÍ CAUSA ERRORES.
-    // ==========================================================================================
 }

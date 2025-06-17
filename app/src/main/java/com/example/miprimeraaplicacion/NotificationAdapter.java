@@ -2,6 +2,7 @@ package com.example.miprimeraaplicacion;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences; // Importar para SharedPreferences
 import android.graphics.Typeface;
 import android.os.Build;
 import android.view.LayoutInflater;
@@ -23,10 +24,12 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
     private Context context;
     private List<Notification> notificationList;
+    private DBLocal dbLocal; // Instancia de DBLocal para actualizar el estado de lectura de la notificación
 
     public NotificationAdapter(Context context, List<Notification> notificationList) {
         this.context = context;
         this.notificationList = notificationList;
+        this.dbLocal = new DBLocal(context); // Inicializar DBLocal aquí
     }
 
     @NonNull
@@ -46,8 +49,9 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
         holder.textViewNotificationTimestamp.setText(sdf.format(new Date(notification.getTimestamp())));
 
+        // Asegúrate de que tengas un color llamado unread_notification_background en res/values/colors.xml
+        // Ejemplo: <color name="unread_notification_background">#E0E0E0</color> (gris claro)
         if (!notification.isRead()) {
-            // Asegúrate de que R.color.unread_notification_background esté definido en res/values/colors.xml
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.unread_notification_background));
             holder.textViewNotificationTitle.setTypeface(null, Typeface.BOLD);
             holder.textViewNotificationMessage.setTypeface(null, Typeface.BOLD);
@@ -58,29 +62,22 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         }
 
         holder.itemView.setOnClickListener(v -> {
+            // Marcar la notificación como leída en la base de datos local
             notification.setRead(true);
+            dbLocal.updateNotificationReadStatus(notification.getId(), true); // Usar el ID de la notificación
+
             // Actualizar la vista de este ítem para reflejar el cambio visual
             notifyItemChanged(position);
 
-            // Asegurarse de que el SDK sea el correcto para VANILLA_ICE_CREAM (API 34+)
-            // Si tu targetSdk es menor, usa Build.VERSION_CODES.R o similar, o quita esta verificación
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Usamos R (API 30) como ejemplo de un API más común
-                if (notification.getRelatedId() != null && !notification.getRelatedId().isEmpty()) {
-                    Intent intent = new Intent(context, DenunciaDetailActivity.class);
-                    intent.putExtra("reportId", notification.getRelatedId());
-                    context.startActivity(intent);
-                } else {
-                    Toast.makeText(context, "Notificación: " + notification.getTitle(), Toast.LENGTH_SHORT).show();
-                }
+            // Redirigir según el relatedId
+            if (notification.getRelatedId() != null && !notification.getRelatedId().isEmpty()) {
+                // Aquí puedes añadir lógica para diferenciar tipos de relatedId si es necesario
+                // Por ejemplo, si es un relatedId de denuncia:
+                Intent intent = new Intent(context, DenunciaDetailActivity.class);
+                intent.putExtra("denunciaId", notification.getRelatedId()); // Usar "denunciaId" como extra
+                context.startActivity(intent);
             } else {
-                // Lógica para versiones antiguas de Android
-                if (notification.getRelatedId() != null && !notification.getRelatedId().isEmpty()) {
-                    Intent intent = new Intent(context, DenunciaDetailActivity.class);
-                    intent.putExtra("reportId", notification.getRelatedId());
-                    context.startActivity(intent);
-                } else {
-                    Toast.makeText(context, "Notificación: " + notification.getTitle(), Toast.LENGTH_SHORT).show();
-                }
+                Toast.makeText(context, "Notificación: " + notification.getTitle(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -106,9 +103,4 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         notificationList.addAll(newNotifications);
         notifyDataSetChanged();
     }
-
-    // =======================================================================
-    // LA CLASE ANIDADA 'Notification' QUE CAUSABA EL ERROR HA SIDO ELIMINADA.
-    // AHORA SE UTILIZA LA CLASE Notification.java EXTERNA.
-    // =======================================================================
 }

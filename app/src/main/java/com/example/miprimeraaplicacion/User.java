@@ -18,7 +18,7 @@ public class User {
     private boolean showPhonePublic;            // <-- NUEVO CAMPO
 
     // Constructor vacío requerido por Firebase en algunos casos (aunque no lo usemos directamente aquí)
-    public User() {
+    public User(String id, String email, String password, String username, String fullName, String phone, String address, String profileImageUrl, int reportsCount) {
     }
 
     // Constructor completo para DBLocal, incluyendo todos los campos
