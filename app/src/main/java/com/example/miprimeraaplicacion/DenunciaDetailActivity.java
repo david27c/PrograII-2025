@@ -1,9 +1,9 @@
 package com.example.miprimeraaplicacion;
 
 import android.annotation.SuppressLint;
-import android.content.Context; // Necesario para SharedPreferences
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences; // Para manejar el usuario logueado
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,14 +23,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 
-import com.example.miprimeraaplicacion.Denuncia;
-import com.example.miprimeraaplicacion.User;
-import com.example.miprimeraaplicacion.DBLocal;
-
+import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.temporal.TemporalAdjuster;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -49,12 +44,10 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     private View buttonEdit, buttonDelete, buttonPostComment;
 
     private String denunciaId;
-    // Eliminamos FirebaseAuth mAuth;
-    private DBLocal dbLocal; // Cambiamos DBFirebase por DBLocal
+    private DBLocal dbLocal;
 
-    // Necesitamos una constante para el ID del usuario logueado en SharedPreferences
     private static final String PREF_USER_ID = "logged_in_user_id";
-    private String currentUserId; // Para almacenar el ID del usuario logueado
+    private String currentUserId;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -62,12 +55,10 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_denuncia_detail);
 
-        // Eliminamos la inicialización de FirebaseAuth
-        dbLocal = new DBLocal(this); // Inicializamos DBLocal
+        dbLocal = new DBLocal(this);
 
-        // Obtener el ID del usuario logueado desde SharedPreferences
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        currentUserId = sharedPref.getString(PREF_USER_ID, null); // "null" si no hay usuario logueado
+        currentUserId = sharedPref.getString(PREF_USER_ID, null);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -92,7 +83,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         buttonPostComment = findViewById(R.id.buttonPostComment);
         editTextComment = findViewById(R.id.editTextComment);
 
-        // Obtener el ID de la denuncia del Intent
         if (getIntent().hasExtra(EXTRA_DENUNCIA_ID)) {
             denunciaId = getIntent().getStringExtra(EXTRA_DENUNCIA_ID);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -111,7 +101,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
 
         buttonPostComment.setOnClickListener(v -> postComment());
 
-        // Listener para abrir la ubicación en un mapa (opcional)
         textViewLocation.setOnClickListener(v -> {
             if (textViewLocation.getText().toString().startsWith("Ubicación: Lat:")) {
                 String locationText = textViewLocation.getText().toString();
@@ -142,11 +131,10 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         return true;
     }
 
-    // Este método es para que el botón de regreso de la toolbar funcione
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            onBackPressed(); // Vuelve a la actividad anterior
+            onBackPressed();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -154,15 +142,13 @@ public class DenunciaDetailActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void loadDenunciaDetails(String id) {
-        // Verificamos si hay un usuario logueado localmente
         if (currentUserId == null || currentUserId.isEmpty()) {
             Toast.makeText(this, "Debes iniciar sesión para ver los detalles.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        // Usamos DBLocal para obtener la denuncia
-        Denuncia denuncia = dbLocal.obtenerDenunciaPorId(id); // Asume que DBLocal tiene este método
+        Denuncia denuncia = dbLocal.obtenerDenunciaPorId(id);
         if (denuncia != null) {
             textViewTitle.setText(denuncia.getTitulo());
             textViewDescription.setText(denuncia.getDescripcion());
@@ -188,8 +174,8 @@ public class DenunciaDetailActivity extends AppCompatActivity {
 
             if (denuncia.getUrlImagen() != null && !denuncia.getUrlImagen().isEmpty()) {
                 imageViewReport.setVisibility(View.VISIBLE);
-                Instant Glide = null;
-                Glide.with((TemporalAdjuster) DenunciaDetailActivity.this)
+                // CORRECCIÓN AQUÍ: Llamada correcta a Glide
+                Glide.with(DenunciaDetailActivity.this) // Usar el contexto de la actividad
                         .load(denuncia.getUrlImagen())
                         .placeholder(R.drawable.placeholder_image) // Asegúrate de tener este drawable
                         .error(R.drawable.placeholder_image) // Asegúrate de tener este drawable
@@ -198,7 +184,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
                 imageViewReport.setVisibility(View.GONE);
             }
 
-            // Aquí se compara el ID del usuario de la denuncia con el ID del usuario logueado localmente
             if (currentUserId != null && currentUserId.equals(denuncia.getIdUsuario())) {
                 layoutUserActions.setVisibility(View.VISIBLE);
             } else {
@@ -215,9 +200,7 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     }
 
     private void deleteDenuncia() {
-        // Implementa un diálogo de confirmación antes de eliminar (RECOMENDADO)
-        // dbLocal.eliminarDenuncia(denunciaId, new DBLocal.VoidCallback() { // Si tienes un callback asíncrono
-        boolean deleted = dbLocal.eliminarDenuncia(denunciaId); // Asumiendo un método síncrono en DBLocal
+        boolean deleted = dbLocal.eliminarDenuncia(denunciaId);
         if (deleted) {
             Toast.makeText(DenunciaDetailActivity.this, "Denuncia eliminada exitosamente.", Toast.LENGTH_SHORT).show();
             finish();
@@ -235,14 +218,12 @@ public class DenunciaDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // Verificamos si hay un usuario logueado localmente
         if (currentUserId == null || currentUserId.isEmpty()) {
             Toast.makeText(this, "Debes iniciar sesión para comentar.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Obtener datos del usuario desde DBLocal
-        User currentUser = dbLocal.obtenerUsuarioPorId(currentUserId); // Asume que DBLocal tiene este método
+        User currentUser = dbLocal.obtenerUsuarioPorId(currentUserId);
         String userName = (currentUser != null && currentUser.getUsername() != null && !currentUser.getUsername().isEmpty()) ? currentUser.getUsername() : "Usuario Anónimo";
 
         Map<String, Object> comment = new HashMap<>();
@@ -251,14 +232,11 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         comment.put("commentText", commentText);
         comment.put("timestamp", System.currentTimeMillis());
 
-        // Asumiendo que DBLocal tiene un método para agregar comentarios
-        // Este método en DBLocal debería manejar la estructura de almacenamiento de comentarios
-        // Por ejemplo, añadiéndolos a una columna JSON en la tabla de denuncias, o en una tabla de comentarios separada.
-        boolean commentAdded = dbLocal.agregarComentarioADenuncia(denunciaId, comment); // Asume que retorna un boolean
+        boolean commentAdded = dbLocal.agregarComentarioADenuncia(denunciaId, comment);
         if (commentAdded) {
             Toast.makeText(DenunciaDetailActivity.this, "Comentario publicado.", Toast.LENGTH_SHORT).show();
             editTextComment.setText("");
-            loadDenunciaDetails(denunciaId); // Recargar para ver el nuevo comentario
+            loadDenunciaDetails(denunciaId);
         } else {
             Toast.makeText(DenunciaDetailActivity.this, "Error al publicar comentario.", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Error posting comment for denuncia: " + denunciaId);
@@ -284,9 +262,6 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     private void loadComments(Denuncia denuncia) {
         layoutComments.removeAllViews();
 
-        // Asumimos que Denuncia tiene un método getComments() que devuelve la lista de comentarios
-        // Si los comentarios están almacenados de otra forma en DBLocal (ej. en una tabla separada),
-        // necesitarías un método en DBLocal para obtener los comentarios por denunciaId.
         List<Map<String, Object>> commentsList = denuncia.getComments();
 
         if (commentsList != null && !commentsList.isEmpty()) {

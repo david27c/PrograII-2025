@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services") version "4.4.2" apply false // VERIFICAR LA ÚLTIMA VERSIÓN
 }
 
 android {
@@ -38,11 +39,14 @@ dependencies {
     implementation(libs.constraintlayout)
 
     implementation("androidx.room:room-runtime:2.6.1")
-    implementation("com.squareup.picasso:picasso:2.71828")
+    implementation("com.squareup.picasso:picasso:2.71828") // Deja solo una de estas
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation ("com.google.code.gson:gson:2.10.1")
-    implementation ("com.squareup.picasso:picasso:2.71828")
+
+    // Dependencia de Glide
+    implementation ("com.github.bumptech.glide:glide:4.16.0") // Revisa la última versión si es necesario
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

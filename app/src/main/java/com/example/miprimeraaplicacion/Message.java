@@ -1,48 +1,48 @@
-// Archivo: MiPrimeraAplicacion/app/src/main/java/com/example/miprimeraaplicacion/Message.java
 package com.example.miprimeraaplicacion;
 
 public class Message {
-    private String id; // Nuevo campo para el ID del mensaje
-    private String chatTopicId; // Nuevo campo para el ID del tema de chat
+    private String messageId;
+    private String chatTopicId;
     private String senderId;
-    private String senderName; // Nombre del usuario que envía el mensaje
+    private String senderName;
     private String text;
     private long timestamp;
+    private boolean read;
 
-    public Message() {
-        // Constructor vacío requerido por Firestore y para facilidad de uso
-    }
-
-    public Message(String id, String chatTopicId, String senderId, String senderName, String text, long timestamp) {
-        this.id = id;
+    public Message(String messageId, String chatTopicId, String senderId, String senderName, String text, long timestamp) {
+        this.messageId = messageId;
         this.chatTopicId = chatTopicId;
         this.senderId = senderId;
         this.senderName = senderName;
         this.text = text;
         this.timestamp = timestamp;
+        this.read = false; // Por defecto, un mensaje nuevo se considera no leído
     }
 
-    // Constructor existente para casos donde ID y chatTopicId no son necesarios de inmediato
-    public Message(String senderId, String senderName, String text, long timestamp) {
+    // Opcional: Constructor si necesitas inicializar el estado de lectura al crear el objeto
+    public Message(String messageId, String chatTopicId, String senderId, String senderName, String text, long timestamp, boolean read) {
+        this.messageId = messageId;
+        this.chatTopicId = chatTopicId;
         this.senderId = senderId;
         this.senderName = senderName;
         this.text = text;
         this.timestamp = timestamp;
+        this.read = read;
     }
 
-    // Getters y Setters para los nuevos campos
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getMessageId() { return messageId; }
     public String getChatTopicId() { return chatTopicId; }
-    public void setChatTopicId(String chatTopicId) { this.chatTopicId = chatTopicId; }
-
-    // Getters y Setters existentes
     public String getSenderId() { return senderId; }
-    public void setSenderId(String senderId) { this.senderId = senderId; }
     public String getSenderName() { return senderName; }
-    public void setSenderName(String senderName) { this.senderName = senderName; }
     public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
     public long getTimestamp() { return timestamp; }
+    public boolean isRead() { return read; } // La convención para getters booleanos es 'is'
+
+    public void setMessageId(String messageId) { this.messageId = messageId; }
+    public void setChatTopicId(String chatTopicId) { this.chatTopicId = chatTopicId; }
+    public void setSenderId(String senderId) { this.senderId = senderId; }
+    public void setSenderName(String senderName) { this.senderName = senderName; }
+    public void setText(String text) { this.text = text; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+    public void setRead(boolean read) { this.read = read; }
 }
