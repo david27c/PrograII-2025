@@ -1,5 +1,7 @@
 package com.example.miprimeraaplicacion;
 
+import static android.content.ContentValues.TAG;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -23,21 +25,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-// ELIMINADAS importaciones de Firebase
-// import com.google.firebase.auth.FirebaseAuth;
-// import com.google.firebase.auth.FirebaseUser;
 import com.squareup.picasso.Picasso;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    private static final String TAG_PROFILE = "ProfileActivityDebug"; // Nueva etiqueta para logs
     private static final int PICK_IMAGE_REQUEST = 1;
-    private static final String TAG = "ProfileActivity";
 
-    // ELIMINADAS declaraciones de Firebase
-    // private FirebaseAuth mAuth;
-    // private DBFirebase dbFirebase;
     private DBLocal dbLocal; // Declaración para la base de datos local
 
     private CircleImageView imageViewProfile;
@@ -53,12 +49,12 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG_PROFILE, "onCreate() de ProfileActivity: Inicio."); // LOG
         setContentView(R.layout.activity_profile);
+        Log.d(TAG_PROFILE, "onCreate(): Layout activity_profile establecido."); // LOG
 
-        // ELIMINADAS inicializaciones de Firebase
-        // mAuth = FirebaseAuth.getInstance();
-        // dbFirebase = new DBFirebase(this);
         dbLocal = new DBLocal(this); // Inicializar DBLocal
+        Log.d(TAG_PROFILE, "onCreate(): DBLocal inicializado."); // LOG
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -66,6 +62,8 @@ public class ProfileActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Mi Perfil");
         }
+        Log.d(TAG_PROFILE, "onCreate(): Toolbar configurada."); // LOG
+
 
         imageViewProfile = findViewById(R.id.imageViewProfile);
         textViewUsername = findViewById(R.id.textViewUsername);
@@ -77,16 +75,19 @@ public class ProfileActivity extends AppCompatActivity {
         buttonLogout = findViewById(R.id.buttonLogout);
         progressBarProfile = findViewById(R.id.progressBarProfile);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        Log.d(TAG_PROFILE, "onCreate(): Vistas principales inicializadas (findViewById)."); // LOG
 
-        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (SOLO CON SHARED PREFERENCES) ---
-        // Obtener el ID de usuario desde SharedPreferences
-        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        currentUserId = sharedPref.getString("current_user_id", null); // Obtener el ID de usuario guardado
 
-        if (currentUserId == null || currentUserId.isEmpty()) {
-            // Si no hay ningún usuario logueado localmente, redirigir a LoginActivity
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (CORREGIDA PARA USAR DBLocal) ---
+        currentUserId = dbLocal.getLoggedInUserId(this); // Obtener el ID de usuario logueado desde DBLocal
+        Log.d(TAG_PROFILE, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
+
+        if (currentUserId == null || currentUserId.isEmpty()) { // Verificación más robusta
+            Log.d(TAG_PROFILE, "onCreate(): No hay usuario logueado o ID vacío. Redirigiendo a LoginActivity."); // LOG
             Toast.makeText(this, "Necesitas iniciar sesión para ver tu perfil.", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+            // Flags para limpiar el stack de actividades y asegurar que LoginActivity sea la única en el stack
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish(); // Finalizar ProfileActivity para que el usuario no pueda volver atrás
             return; // Terminar onCreate aquí para evitar más ejecución
@@ -94,42 +95,57 @@ public class ProfileActivity extends AppCompatActivity {
         // --- FIN DE LA LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
 
-        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+        bottomNavigationView.setOnItemSelectedListener(item -> { // Usar setOnItemSelectedListener para versiones recientes
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(ProfileActivity.this, HomeActivity.class));
                 finish();
+                Log.d(TAG_PROFILE, "BottomNav: Redirigiendo a HomeActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_report) {
                 startActivity(new Intent(ProfileActivity.this, ReportProblemActivity.class));
                 finish();
+                Log.d(TAG_PROFILE, "BottomNav: Redirigiendo a ReportProblemActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_my_reports) {
                 startActivity(new Intent(ProfileActivity.this, MyReportsActivity.class));
                 finish();
+                Log.d(TAG_PROFILE, "BottomNav: Redirigiendo a MyReportsActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_chat) {
                 startActivity(new Intent(ProfileActivity.this, CommunityChatActivity.class));
                 finish();
+                Log.d(TAG_PROFILE, "BottomNav: Redirigiendo a CommunityChatActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_profile) {
+                Log.d(TAG_PROFILE, "BottomNav: Ya en ProfileActivity."); // LOG
                 return true; // Ya estás en Perfil
             }
             return false;
         });
-        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
+        bottomNavigationView.setSelectedItemId(R.id.nav_profile); // Seleccionar el ítem de perfil en el BottomNavigationView
+        Log.d(TAG_PROFILE, "onCreate(): BottomNavigationView configurado."); // LOG
+
 
         // Cargar el perfil del usuario desde DBLocal
         loadUserProfileFromLocalDb();
+        Log.d(TAG_PROFILE, "onCreate(): Método loadUserProfileFromLocalDb() llamado."); // LOG
+
 
         buttonEditProfile.setOnClickListener(v -> {
             Toast.makeText(ProfileActivity.this, "Navegar a la pantalla de edición de perfil", Toast.LENGTH_SHORT).show();
             // Implementar la navegación a tu EditProfileActivity aquí
             // Intent intent = new Intent(ProfileActivity.this, EditProfileActivity.class);
             // startActivity(intent);
+            Log.d(TAG_PROFILE, "onClick: Botón Editar Perfil presionado."); // LOG
         });
 
-        buttonLogout.setOnClickListener(v -> signOutUser());
+        buttonLogout.setOnClickListener(v -> {
+            signOutUser();
+            Log.d(TAG_PROFILE, "onClick: Botón Cerrar Sesión presionado."); // LOG
+        });
+
+        Log.d(TAG_PROFILE, "onCreate() de ProfileActivity: Fin."); // LOG
     }
 
     @Override

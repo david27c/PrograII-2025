@@ -1380,4 +1380,5 @@ public class DBLocal extends SQLiteOpenHelper {
             }
         }).start();
     }
+    
 }

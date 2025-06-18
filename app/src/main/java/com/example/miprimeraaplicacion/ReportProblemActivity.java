@@ -81,7 +81,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         Log.d(TAG_REPORT, "onCreate(): DBLocal inicializado."); // LOG
 
         // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (USANDO DBLocal) ---
-        // Estas líneas REEMPLAZAN las líneas de SharedPreferences que tenías.
         currentUserId = dbLocal.getLoggedInUserId(this); // Obtener el ID de usuario logueado desde DBLocal
         Log.d(TAG_REPORT, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
 
@@ -95,6 +94,87 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             finish(); // Finaliza esta actividad
             return; // Terminar la ejecución de onCreate aquí si no hay usuario
         }
+        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
+
+        // Configuración de la Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Reportar Problema");
+        }
+        Log.d(TAG_REPORT, "onCreate(): Toolbar configurada."); // LOG
+
+        // Inicializar vistas
+        editTextDescription = findViewById(R.id.editTextDescription);
+        buttonTakePhoto = findViewById(R.id.buttonTakePhoto);
+        buttonSelectGallery = findViewById(R.id.buttonSelectGallery);
+        buttonSendReport = findViewById(R.id.buttonSendReport);
+        imageViewPreview = findViewById(R.id.imageViewPreview);
+        spinnerReportType = findViewById(R.id.spinnerReportType); // Asegúrate de que este ID existe
+        textViewLocation = findViewById(R.id.textViewLocation);
+        checkBoxReportToAuthorities = findViewById(R.id.checkBoxReportToAuthorities);
+        progressBarReport = findViewById(R.id.progressBarReport);
+        bottomNavigationView = findViewById(R.id.bottom_navigation); // Asegúrate de que este ID existe
+
+        Log.d(TAG_REPORT, "onCreate(): Vistas principales inicializadas (findViewById)."); // LOG
+
+        // Asignar Listeners a los botones
+        buttonTakePhoto.setOnClickListener(v -> {
+            checkPermissionsAndDispatchTakePictureIntent();
+            Log.d(TAG_REPORT, "onClick: Botón Tomar Foto presionado."); // LOG
+        });
+
+        buttonSelectGallery.setOnClickListener(v -> {
+            checkPermissionsAndPickImage();
+            Log.d(TAG_REPORT, "onClick: Botón Seleccionar de Galería presionado."); // LOG
+        });
+
+        buttonSendReport.setOnClickListener(v -> {
+            sendReport();
+            Log.d(TAG_REPORT, "onClick: Botón Enviar Reporte presionado."); // LOG
+        });
+
+        // Configurar el BottomNavigationView
+        bottomNavigationView.setOnItemSelectedListener(item -> { // Usar setOnItemSelectedListener para versiones recientes
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
+                finish();
+                Log.d(TAG_REPORT, "BottomNav: Redirigiendo a HomeActivity."); // LOG
+                return true;
+            } else if (itemId == R.id.nav_report) {
+                // Ya estamos aquí
+                Log.d(TAG_REPORT, "BottomNav: Ya en ReportProblemActivity."); // LOG
+                return true;
+            } else if (itemId == R.id.nav_my_reports) {
+                startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
+                finish();
+                Log.d(TAG_REPORT, "BottomNav: Redirigiendo a MyReportsActivity."); // LOG
+                return true;
+            } else if (itemId == R.id.nav_chat) {
+                startActivity(new Intent(ReportProblemActivity.this, CommunityChatActivity.class));
+                finish();
+                Log.d(TAG_REPORT, "BottomNav: Redirigiendo a CommunityChatActivity."); // LOG
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(ReportProblemActivity.this, ProfileActivity.class));
+                finish();
+                Log.d(TAG_REPORT, "BottomNav: Redirigiendo a ProfileActivity."); // LOG
+                return true;
+            }
+            return false;
+        });
+
+        bottomNavigationView.setSelectedItemId(R.id.nav_report); // Cambia nav_report por el ID real de tu item de reporte
+        Log.d(TAG_REPORT, "onCreate(): BottomNavigationView configurado."); // LOG
+
+
+        // Solicitar actualizaciones de ubicación al inicio
+        requestLocationUpdates();
+        Log.d(TAG_REPORT, "onCreate(): Solicitando actualizaciones de ubicación."); // LOG
+
+        Log.d(TAG_REPORT, "onCreate() de ReportProblemActivity: Fin."); // LOG
     }
 
     @Override
