@@ -1,6 +1,7 @@
 package com.example.miprimeraaplicacion;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences; // Necesario para SharedPreferences
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -19,7 +20,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.miprimeraaplicacion.User; // Para obtener el nombre de usuario
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.UUID; // Para generar IDs únicos
 
 public class IndividualChatActivity extends AppCompatActivity {
+    private static final String TAG_INDIVIDUAL_CHAT = "IndividualChatActivityDebug";
 
     private RecyclerView recyclerViewMessages;
     private EditText editTextMessage;
@@ -36,14 +37,7 @@ public class IndividualChatActivity extends AppCompatActivity {
 
     private String chatTopicId;
     private String chatTopicName;
-
-    // REMOVIDO: private FirebaseAuth mAuth;
-    // REMOVIDO: private FirebaseFirestore db;
     private DBLocal dbLocal; // Usaremos DBLocal
-
-    // REMOVIDO: private CollectionReference messagesRef;
-    // REMOVIDO: private ListenerRegistration messagesListener; // Ya no hay listener en tiempo real con SQLite
-
     private MessageAdapter messageAdapter;
     private List<Message> messageList;
 
@@ -53,23 +47,47 @@ public class IndividualChatActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_individual_chat);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate() de IndividualChatActivity: Inicio."); // LOG
 
-        // REMOVIDO: mAuth = FirebaseAuth.getInstance();
-        // REMOVIDO: db = FirebaseFirestore.getInstance();
-        dbLocal = new DBLocal(this); // Inicializar DBLocal
+        setContentView(R.layout.activity_individual_chat);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): Layout establecido."); // LOG
+
+        // Inicializar DBLocal al principio del onCreate
+        dbLocal = new DBLocal(this);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): DBLocal inicializado."); // LOG
+
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN ---
+        // Obtener el ID del usuario logueado desde DBLocal (CORREGIDO)
+        // Esto REEMPLAZA la línea de SharedPreferences que tenías aquí
+        currentUserId = dbLocal.getLoggedInUserId(this);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
+
+        if (currentUserId == null || currentUserId.isEmpty()) { // Añadir .isEmpty() para robustez
+            Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): No hay usuario logueado. Redirigiendo a LoginActivity."); // LOG
+            Toast.makeText(this, "Debes iniciar sesión para acceder al chat.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(IndividualChatActivity.this, LoginActivity.class);
+            // Limpia la pila de actividades para que el usuario no pueda volver con el botón de atrás.
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish(); // Finaliza esta actividad
+            return; // Terminar onCreate aquí
+        }
+        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): Toolbar inicializada."); // LOG
 
         recyclerViewMessages = findViewById(R.id.recyclerViewMessages);
         editTextMessage = findViewById(R.id.editTextMessage);
         buttonSendMessage = findViewById(R.id.buttonSendMessage);
         progressBarChat = findViewById(R.id.progressBarChat);
         textViewNoMessages = findViewById(R.id.textViewNoMessages);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): Vistas principales inicializadas (findViewById)."); // LOG
+
 
         // Obtener ID y nombre del tema de chat del Intent
         if (getIntent().hasExtra("chatTopicId") && getIntent().hasExtra("chatTopicName")) {
@@ -78,10 +96,11 @@ public class IndividualChatActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle("Chat con " + chatTopicName);
             }
-            // REMOVIDO: messagesRef = db.collection("chatTopics").document(chatTopicId).collection("messages");
+            Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): Tema de chat recibido: ID=" + chatTopicId + ", Nombre=" + chatTopicName); // LOG
         } else {
             Toast.makeText(this, "Tema de chat no especificado.", Toast.LENGTH_SHORT).show();
             finish();
+            Log.e(TAG_INDIVIDUAL_CHAT, "onCreate(): Tema de chat no especificado en el Intent."); // LOG
             return;
         }
 
@@ -89,27 +108,29 @@ public class IndividualChatActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerViewMessages.setLayoutManager(layoutManager);
         messageList = new ArrayList<>();
-        messageAdapter = new MessageAdapter(this, messageList);
+        // El adaptador ahora se inicializa con el currentUserId directamente
+        // Asegúrate de que tu MessageAdapter tiene un constructor que acepte Context, List<Message> y String (userId)
+        messageAdapter = new MessageAdapter(this, messageList, currentUserId); // Pasar currentUserId al adaptador
         recyclerViewMessages.setAdapter(messageAdapter);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): RecyclerView y Adapter configurados."); // LOG
 
-        // Obtener el ID del usuario logueado desde SharedPreferences
-        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        currentUserId = sharedPref.getString("current_user_id", null);
-
-        if (currentUserId == null) {
-            Toast.makeText(this, "No hay usuario logueado.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
 
         // Obtener el nombre de usuario actual (para mostrar en los mensajes)
         loadCurrentUserName(currentUserId);
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): Nombre de usuario actual cargado: " + currentUserName); // LOG
+
 
         // Listener para el botón de enviar mensaje
-        buttonSendMessage.setOnClickListener(v -> sendMessage());
+        buttonSendMessage.setOnClickListener(v -> {
+            sendMessage();
+            Log.d(TAG_INDIVIDUAL_CHAT, "onClick: Botón Enviar Mensaje presionado."); // LOG
+        });
 
         // Cargar mensajes inicialmente
         loadMessages();
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate(): Método loadMessages() llamado."); // LOG
+
+        Log.d(TAG_INDIVIDUAL_CHAT, "onCreate() de IndividualChatActivity: Fin."); // LOG
     }
 
     // Método para manejar el botón de regreso de la Toolbar
@@ -205,7 +226,7 @@ public class IndividualChatActivity extends AppCompatActivity {
         private static final int VIEW_TYPE_MESSAGE_SENT = 1;
         private static final int VIEW_TYPE_MESSAGE_RECEIVED = 2;
 
-        public MessageAdapter(Context context, List<Message> messageList) {
+        public MessageAdapter(Context context, List<Message> messageList, String currentUserId) {
             this.context = context;
             this.messageList = messageList;
             // Obtener el ID del usuario logueado para diferenciar mensajes propios

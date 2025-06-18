@@ -90,4 +90,8 @@ public class Denuncia {
         comment.put("timestamp", timestamp); // Usa el timestamp como String
         this.comments.add(comment);
     }
+
+    public String getId() {
+        return "";
+    }
 }

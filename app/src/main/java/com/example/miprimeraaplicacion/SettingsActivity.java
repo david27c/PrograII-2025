@@ -1,5 +1,7 @@
 package com.example.miprimeraaplicacion;
 
+import static android.content.ContentValues.TAG;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -37,7 +39,7 @@ import java.util.Map;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    private static final String TAG = "SettingsActivity";
+    private static final String TAG_SETTINGS = "SettingsActivityDebug"; // Nueva etiqueta para logs
 
     private DBLocal dbLocal;
     private String currentUserId; // Para almacenar el ID del usuario logueado
@@ -75,9 +77,25 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG_SETTINGS, "onCreate() de SettingsActivity: Inicio."); // LOG
         setContentView(R.layout.activity_settings);
+        Log.d(TAG_SETTINGS, "onCreate(): Layout activity_settings establecido."); // LOG
 
-        dbLocal = new DBLocal(this);
+        dbLocal = new DBLocal(this); // Inicializar DBLocal al principio del onCreate
+        Log.d(TAG_SETTINGS, "onCreate(): DBLocal inicializado."); // LOG
+
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (MODIFICADA) ---
+        // Obtener el ID de usuario logueado desde DBLocal
+        currentUserId = dbLocal.getLoggedInUserId(this);
+        Log.d(TAG_SETTINGS, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
+
+        if (currentUserId == null || currentUserId.isEmpty()) { // Verificación más robusta (null o vacío)
+            Log.d(TAG_SETTINGS, "onCreate(): No hay usuario logueado o ID vacío. Redirigiendo a LoginActivity."); // LOG
+            Toast.makeText(this, "No hay sesión activa. Redirigiendo...", Toast.LENGTH_LONG).show();
+            redirectToLogin(); // Redirige al login y finaliza esta actividad
+            return; // Detener la ejecución si no hay usuario logueado
+        }
+        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
         // Configurar la Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -86,6 +104,7 @@ public class SettingsActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Configuración");
         }
+        Log.d(TAG_SETTINGS, "onCreate(): Toolbar configurada."); // LOG
 
         // Configurar BottomNavigationView
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
@@ -94,22 +113,28 @@ public class SettingsActivity extends AppCompatActivity {
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(SettingsActivity.this, HomeActivity.class));
                 finish();
+                Log.d(TAG_SETTINGS, "BottomNav: Redirigiendo a HomeActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_notifications) {
                 startActivity(new Intent(SettingsActivity.this, NotificationsActivity.class));
                 finish();
+                Log.d(TAG_SETTINGS, "BottomNav: Redirigiendo a NotificationsActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 // Ya estamos en Settings, puedes ir a ProfileActivity si es diferente, o no hacer nada
                 startActivity(new Intent(SettingsActivity.this, ProfileActivity.class));
                 finish();
+                Log.d(TAG_SETTINGS, "BottomNav: Redirigiendo a ProfileActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_settings) {
                 // Ya estamos aquí
+                Log.d(TAG_SETTINGS, "BottomNav: Ya en SettingsActivity."); // LOG
                 return true;
             }
             return false;
         });
+        Log.d(TAG_SETTINGS, "onCreate(): BottomNavigationView configurado."); // LOG
+
 
         // Inicializar vistas de Configuración de Perfil
         imageViewProfile = findViewById(R.id.imageViewProfile);
@@ -123,6 +148,7 @@ public class SettingsActivity extends AppCompatActivity {
         editTextConfirmNewPassword = findViewById(R.id.editTextConfirmNewPassword);
         buttonSaveProfileChanges = findViewById(R.id.buttonSaveProfileChanges);
         progressBarProfileChanges = findViewById(R.id.progressBarProfileChanges);
+        Log.d(TAG_SETTINGS, "onCreate(): Vistas de Perfil inicializadas."); // LOG
 
         // Inicializar vistas de Preferencias de Visibilidad
         checkBoxShowFullName = findViewById(R.id.checkBoxShowFullName);
@@ -130,6 +156,7 @@ public class SettingsActivity extends AppCompatActivity {
         checkBoxShowEmail = findViewById(R.id.checkBoxShowEmail);
         checkBoxShowPhoneNumber = findViewById(R.id.checkBoxShowPhoneNumber);
         buttonSaveVisibilityPreferences = findViewById(R.id.buttonSaveVisibilityPreferences);
+        Log.d(TAG_SETTINGS, "onCreate(): Vistas de Visibilidad inicializadas."); // LOG
 
 
         // Inicializar vistas de Configuración General
@@ -141,18 +168,14 @@ public class SettingsActivity extends AppCompatActivity {
         textViewAppVersion = findViewById(R.id.textViewAppVersion);
         textViewCredits = findViewById(R.id.textViewCredits);
         buttonLogout = findViewById(R.id.buttonLogout);
+        Log.d(TAG_SETTINGS, "onCreate(): Vistas de Configuración General inicializadas."); // LOG
 
-        // Verificar sesión y cargar datos del usuario
-        currentUserId = dbLocal.getLoggedInUserId(this);
-        if (currentUserId == null) {
-            Toast.makeText(this, "No hay sesión activa. Redirigiendo...", Toast.LENGTH_LONG).show();
-            redirectToLogin();
-            return; // Detener la ejecución si no hay usuario logueado
-        } else {
-            loadUserProfile();
-            loadGeneralPreferences(); // Cargar preferencias generales como notificaciones
-            loadVisibilityPreferences(); // Cargar preferencias de visibilidad
-        }
+        // Cargar datos del usuario y preferencias (ya que currentUserId no es nulo/vacío)
+        loadUserProfile();
+        loadGeneralPreferences(); // Cargar preferencias generales como notificaciones
+        loadVisibilityPreferences(); // Cargar preferencias de visibilidad
+        Log.d(TAG_SETTINGS, "onCreate(): Datos de usuario y preferencias cargadas."); // LOG
+
 
         // Asignar Listeners
         buttonSaveProfileChanges.setOnClickListener(v -> saveProfileChanges());
@@ -171,10 +194,12 @@ public class SettingsActivity extends AppCompatActivity {
         switchPushNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
             savePushNotificationPreference(isChecked);
         });
+        Log.d(TAG_SETTINGS, "onCreate(): Listeners configurados."); // LOG
 
         // Establecer la versión de la aplicación (ejemplo, puedes obtenerla dinámicamente)
         // textViewAppVersion.setText("Versión de la App: " + BuildConfig.VERSION_NAME); // Si usas BuildConfig
         textViewAppVersion.setText("Versión de la App: 1.0.0"); // Valor hardcodeado de ejemplo
+        Log.d(TAG_SETTINGS, "onCreate(): Versión de la App establecida."); // LOG
 
         // Seleccionar el ítem correcto en el BottomNavigationView
         Menu menu = bottomNavigationView.getMenu();
@@ -185,6 +210,9 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
             }
         }
+        Log.d(TAG_SETTINGS, "onCreate(): Ítem de BottomNavigationView seleccionado."); // LOG
+
+        Log.d(TAG_SETTINGS, "onCreate() de SettingsActivity: Fin."); // LOG
     }
 
     // Método para cargar los datos del perfil del usuario

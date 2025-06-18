@@ -1,5 +1,7 @@
 package com.example.miprimeraaplicacion;
 
+import static android.content.ContentValues.TAG;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -34,8 +36,8 @@ import java.util.Map;
 
 public class DenunciaDetailActivity extends AppCompatActivity {
 
+    private static final String TAG_DETAIL = "DenunciaDetailActivityDebug";
     public static final String EXTRA_DENUNCIA_ID = "denuncia_id";
-    private static final String TAG = "DenunciaDetailActivity";
 
     private ImageView imageViewReport;
     private TextView textViewTitle, textViewDescription, textViewLocation, textViewDateTime, textViewStatus;
@@ -53,12 +55,32 @@ public class DenunciaDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG_DETAIL, "onCreate() de DenunciaDetailActivity: Inicio."); // LOG
+
         setContentView(R.layout.activity_denuncia_detail);
+        Log.d(TAG_DETAIL, "onCreate(): Layout establecido."); // LOG
 
-        dbLocal = new DBLocal(this);
+        dbLocal = new DBLocal(this); // Inicializar DBLocal al principio del onCreate
+        Log.d(TAG_DETAIL, "onCreate(): DBLocal inicializado."); // LOG
 
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        currentUserId = sharedPref.getString(PREF_USER_ID, null);
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (MODIFICADA) ---
+        // ESTAS LÍNEAS REEMPLAZAN:
+        // SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        // currentUserId = sharedPref.getString(PREF_USER_ID, null);
+        currentUserId = dbLocal.getLoggedInUserId(this); // <--- OBTENER EL USER ID DESDE DBLocal
+        Log.d(TAG_DETAIL, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
+
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            Log.d(TAG_DETAIL, "onCreate(): No hay usuario logueado. Redirigiendo a LoginActivity."); // LOG
+            Toast.makeText(this, "Debes iniciar sesión para ver los detalles de la denuncia.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(DenunciaDetailActivity.this, LoginActivity.class);
+            // Limpia la pila de actividades para que el usuario no pueda volver con el botón de atrás.
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish(); // Finaliza esta DenunciaDetailActivity
+            return; // Terminar onCreate aquí para evitar que se ejecute el resto del código
+        }
+        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -66,6 +88,7 @@ public class DenunciaDetailActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Detalle del Reporte");
         }
+        Log.d(TAG_DETAIL, "onCreate(): Toolbar inicializada."); // LOG
 
         imageViewReport = findViewById(R.id.imageViewReport);
         textViewTitle = findViewById(R.id.textViewTitle);
@@ -73,33 +96,42 @@ public class DenunciaDetailActivity extends AppCompatActivity {
         textViewLocation = findViewById(R.id.textViewLocation);
         textViewDateTime = findViewById(R.id.textViewDateTime);
         textViewStatus = findViewById(R.id.textViewStatus);
-
         layoutUserActions = findViewById(R.id.layoutUserActions);
         layoutHistory = findViewById(R.id.layoutHistory);
         layoutComments = findViewById(R.id.layoutComments);
-
         buttonEdit = findViewById(R.id.buttonEdit);
         buttonDelete = findViewById(R.id.buttonDelete);
         buttonPostComment = findViewById(R.id.buttonPostComment);
         editTextComment = findViewById(R.id.editTextComment);
+        Log.d(TAG_DETAIL, "onCreate(): Vistas principales inicializadas (findViewById)."); // LOG
+
 
         if (getIntent().hasExtra(EXTRA_DENUNCIA_ID)) {
             denunciaId = getIntent().getStringExtra(EXTRA_DENUNCIA_ID);
+            Log.d(TAG_DETAIL, "onCreate(): ID de denuncia recibido: " + denunciaId); // LOG
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                loadDenunciaDetails(denunciaId);
+                loadDenunciaDetails(denunciaId); // Cargar los detalles de la denuncia
             }
         } else {
             Toast.makeText(this, "ID de denuncia no proporcionado.", Toast.LENGTH_SHORT).show();
             finish();
+            Log.e(TAG_DETAIL, "onCreate(): ID de denuncia no proporcionado en el Intent."); // LOG
         }
 
         buttonEdit.setOnClickListener(v -> {
             Toast.makeText(DenunciaDetailActivity.this, "Funcionalidad de editar reporte (por implementar)", Toast.LENGTH_SHORT).show();
+            Log.d(TAG_DETAIL, "onClick: Botón Editar presionado."); // LOG
         });
 
-        buttonDelete.setOnClickListener(v -> deleteDenuncia());
+        buttonDelete.setOnClickListener(v -> {
+            deleteDenuncia();
+            Log.d(TAG_DETAIL, "onClick: Botón Eliminar presionado."); // LOG
+        });
 
-        buttonPostComment.setOnClickListener(v -> postComment());
+        buttonPostComment.setOnClickListener(v -> {
+            postComment();
+            Log.d(TAG_DETAIL, "onClick: Botón Publicar Comentario presionado."); // LOG
+        });
 
         textViewLocation.setOnClickListener(v -> {
             if (textViewLocation.getText().toString().startsWith("Ubicación: Lat:")) {
@@ -114,15 +146,20 @@ public class DenunciaDetailActivity extends AppCompatActivity {
                     mapIntent.setPackage("com.google.android.apps.maps");
                     if (mapIntent.resolveActivity(getPackageManager()) != null) {
                         startActivity(mapIntent);
+                        Log.d(TAG_DETAIL, "onClick: Abriendo ubicación en Google Maps."); // LOG
                     } else {
                         Toast.makeText(DenunciaDetailActivity.this, "No se encontró una aplicación de mapas.", Toast.LENGTH_SHORT).show();
+                        Log.w(TAG_DETAIL, "onClick: No se encontró una aplicación de mapas para abrir la ubicación."); // LOG
                     }
                 } catch (NumberFormatException e) {
-                    Log.e(TAG, "Error al parsear latitud/longitud: " + e.getMessage());
+                    Log.e(TAG_DETAIL, "Error al parsear latitud/longitud: " + e.getMessage()); // LOG
                     Toast.makeText(DenunciaDetailActivity.this, "Ubicación inválida para abrir en mapa.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+        Log.d(TAG_DETAIL, "onCreate(): Listeners configurados."); // LOG
+
+        Log.d(TAG_DETAIL, "onCreate() de DenunciaDetailActivity: Fin."); // LOG
     }
 
     @Override

@@ -14,15 +14,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-// *** Se eliminan importaciones de Firebase Auth ya no usadas ***
-// import com.google.android.gms.tasks.OnCompleteListener;
-// import com.google.android.gms.tasks.Task;
-// import com.google.firebase.auth.AuthResult;
-// import com.google.firebase.auth.FirebaseAuth;
-// import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
-// import com.google.firebase.auth.FirebaseAuthInvalidUserException;
-// import com.google.firebase.auth.FirebaseUser;
-
 public class LoginActivity extends AppCompatActivity {
 
     EditText editTextEmail, editTextPassword;
@@ -95,24 +86,19 @@ public class LoginActivity extends AppCompatActivity {
 
         textViewError.setVisibility(View.GONE);
 
-        String userId = dbLocal.loginUser(email, password); // Llamada al método de login en DBLocal
+        // Llama al método de login en DBLocal para verificar las credenciales
+        String userId = dbLocal.loginUser(email, password);
 
         if (userId != null) {
             // Inicio de sesión exitoso localmente
             Toast.makeText(LoginActivity.this, "¡Inicio de sesión exitoso (localmente)!", Toast.LENGTH_SHORT).show();
-
-            // Guarda el userId localmente para futuras operaciones
-            SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("current_user_id", userId);
-            editor.apply(); // Usa apply() para guardar de forma asíncrona
+            dbLocal.saveLoggedInUserId(this, userId);
 
             // Navegar a la pantalla principal (HomeActivity)
             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(intent);
             finish(); // Finaliza esta actividad de login
         } else {
-            // Fallo de inicio de sesión local
             textViewError.setText("Credenciales incorrectas o usuario no registrado localmente.");
             textViewError.setVisibility(View.VISIBLE);
         }
@@ -121,9 +107,12 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Verifica si hay un userId guardado localmente (para persistencia de sesión local)
-        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        String currentUserId = sharedPref.getString("current_user_id", null);
+        // *** CAMBIO CLAVE AQUÍ: Usar el método de DBLocal para verificar el userId guardado ***
+        // Asegúrate de que dbLocal esté inicializado si no lo estaba ya por onCreate (aunque en tu caso sí lo está)
+        if (dbLocal == null) {
+            dbLocal = new DBLocal(this);
+        }
+        String currentUserId = dbLocal.getLoggedInUserId(this); // Utiliza el método de DBLocal
 
         if (currentUserId != null) {
             // Si hay un usuario logueado localmente, lo enviamos directamente a la pantalla principal
@@ -131,6 +120,5 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
             finish(); // Finaliza esta actividad
         }
-        // La verificación de Firebase Auth ha sido eliminada por completo.
     }
 }

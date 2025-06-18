@@ -8,6 +8,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +24,7 @@ import java.util.UUID; // Para generar IDs únicos
 
 public class CommunityChatActivity extends AppCompatActivity {
 
+    private static final String TAG_CHAT = "CommunityChatActivityDebug";
     private com.example.miprimeraaplicacion.DBLocal dbLocal; // Usar DBLocal
 
     private RecyclerView recyclerViewChatTopics;
@@ -36,52 +38,83 @@ public class CommunityChatActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG_CHAT, "onCreate() de CommunityChatActivity: Inicio."); // LOG
+
         setContentView(R.layout.activity_community_chat);
+        Log.d(TAG_CHAT, "onCreate(): Layout establecido."); // LOG
 
         dbLocal = new com.example.miprimeraaplicacion.DBLocal(this); // Inicializar DBLocal
+        Log.d(TAG_CHAT, "onCreate(): DBLocal inicializado."); // LOG
+
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN ---
+        String currentUserId = dbLocal.getLoggedInUserId(this);
+        Log.d(TAG_CHAT, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
+
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            Log.d(TAG_CHAT, "onCreate(): No hay usuario logueado. Redirigiendo a LoginActivity."); // LOG
+            Toast.makeText(this, "Debes iniciar sesión para acceder al chat comunitario.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(CommunityChatActivity.this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return; // Terminar onCreate aquí para evitar que se ejecute el resto del código
+        }
+        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Chat Comunitario");
         }
+        Log.d(TAG_CHAT, "onCreate(): Toolbar inicializada."); // LOG
 
         recyclerViewChatTopics = findViewById(R.id.recyclerViewChatTopics);
         progressBarChat = findViewById(R.id.progressBarChat);
         textViewNoChats = findViewById(R.id.textViewNoChats);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        Log.d(TAG_CHAT, "onCreate(): Vistas principales inicializadas (findViewById)."); // LOG
 
         recyclerViewChatTopics.setLayoutManager(new LinearLayoutManager(this));
         chatTopicList = new ArrayList<>();
         chatTopicAdapter = new ChatTopicAdapter(this, chatTopicList);
         recyclerViewChatTopics.setAdapter(chatTopicAdapter);
+        Log.d(TAG_CHAT, "onCreate(): RecyclerView y Adapter configurados."); // LOG
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+        bottomNavigationView.setOnItemSelectedListener(item -> { // Usa setOnItemSelectedListener para versiones recientes
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(CommunityChatActivity.this, HomeActivity.class));
                 finish();
+                Log.d(TAG_CHAT, "BottomNav: Redirigiendo a HomeActivity."); // LOG
                 return true;
-            } else if (itemId == R.id.nav_report) {
+            } else if (itemId == R.id.nav_report) { // Asumiendo nav_report para ReportProblemActivity
                 startActivity(new Intent(CommunityChatActivity.this, ReportProblemActivity.class));
                 finish();
+                Log.d(TAG_CHAT, "BottomNav: Redirigiendo a ReportProblemActivity."); // LOG
                 return true;
-            } else if (itemId == R.id.nav_my_reports) {
+            } else if (itemId == R.id.nav_my_reports) { // Asumiendo este ID
                 startActivity(new Intent(CommunityChatActivity.this, MyReportsActivity.class));
                 finish();
+                Log.d(TAG_CHAT, "BottomNav: Redirigiendo a MyReportsActivity."); // LOG
                 return true;
             } else if (itemId == R.id.nav_chat) {
-                return true;
+                Log.d(TAG_CHAT, "BottomNav: Ya en CommunityChatActivity."); // LOG
+                return true; // Ya estamos en esta actividad
             } else if (itemId == R.id.nav_profile) {
                 startActivity(new Intent(CommunityChatActivity.this, ProfileActivity.class));
                 finish();
+                Log.d(TAG_CHAT, "BottomNav: Redirigiendo a ProfileActivity."); // LOG
                 return true;
             }
             return false;
         });
-        bottomNavigationView.setSelectedItemId(R.id.nav_chat);
+        bottomNavigationView.setSelectedItemId(R.id.nav_chat); // Asegura que "Chat" esté seleccionado al inicio
+        Log.d(TAG_CHAT, "onCreate(): BottomNavigationView listener y selección inicial configurados."); // LOG
 
-        loadChatTopics();
+        loadChatTopics(); // Cargar los temas de chat
+        Log.d(TAG_CHAT, "onCreate(): Método loadChatTopics() llamado."); // LOG
+
+        Log.d(TAG_CHAT, "onCreate() de CommunityChatActivity: Fin."); // LOG
     }
 
     @Override

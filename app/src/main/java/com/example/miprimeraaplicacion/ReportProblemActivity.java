@@ -49,7 +49,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     private static final int REQUEST_PICK_IMAGE = 2;
     private static final int PERMISSION_REQUEST_CODE = 100;
     private static final String TAG = "ReportProblemActivity";
-
     private EditText editTextDescription;
     private Button buttonTakePhoto, buttonSelectGallery, buttonSendReport;
     private ImageView imageViewPreview;
@@ -67,76 +66,35 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
 
     private DBLocal dbLocal;
     private String currentUserId;
+    private static final String TAG_REPORT = "ReportActivityDebug";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_report_problem);
+        Log.d(TAG_REPORT, "onCreate() de ReportProblemActivity: Inicio."); // LOG
 
-        SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        currentUserId = sharedPref.getString("current_user_id", null);
+        setContentView(R.layout.activity_report_problem);
+        Log.d(TAG_REPORT, "onCreate(): Layout establecido."); // LOG
+
+        // --- ¡IMPORTANTE! dbLocal DEBE INICIALIZARSE ANTES DE USARSE PARA LA VERIFICACIÓN DE SESIÓN ---
+        dbLocal = new DBLocal(this);
+        Log.d(TAG_REPORT, "onCreate(): DBLocal inicializado."); // LOG
+
+        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (USANDO DBLocal) ---
+        // Estas líneas REEMPLAZAN las líneas de SharedPreferences que tenías.
+        currentUserId = dbLocal.getLoggedInUserId(this); // Obtener el ID de usuario logueado desde DBLocal
+        Log.d(TAG_REPORT, "onCreate(): ID de usuario recuperado de DBLocal: " + currentUserId); // LOG
 
         if (currentUserId == null || currentUserId.isEmpty()) {
+            Log.d(TAG_REPORT, "onCreate(): No hay usuario logueado. Redirigiendo a LoginActivity."); // LOG
             Toast.makeText(this, "Debes iniciar sesión para reportar un problema.", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(ReportProblemActivity.this, LoginActivity.class);
+            // Aseguramos que la pila de actividades se limpie al ir a Login
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            finish();
-            return;
+            finish(); // Finaliza esta actividad
+            return; // Terminar la ejecución de onCreate aquí si no hay usuario
         }
-
-        dbLocal = new DBLocal(this);
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Reportar un Problema");
-        }
-
-        editTextDescription = findViewById(R.id.editTextDescription);
-        buttonTakePhoto = findViewById(R.id.buttonTakePhoto);
-        buttonSelectGallery = findViewById(R.id.buttonSelectGallery);
-        buttonSendReport = findViewById(R.id.buttonSendReport);
-        imageViewPreview = findViewById(R.id.imageViewPreview);
-        spinnerReportType = findViewById(R.id.spinnerReportType);
-        textViewLocation = findViewById(R.id.textViewLocation);
-        checkBoxReportToAuthorities = findViewById(R.id.checkBoxReportToAuthorities);
-        progressBarReport = findViewById(R.id.progressBarReport);
-        bottomNavigationView = findViewById(R.id.bottom_navigation);
-
-        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            // Asegúrate de que las actividades de destino estén declaradas en AndroidManifest.xml
-            // y que los Intent sean correctos.
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
-                finish(); // Finaliza ReportProblemActivity para que no se quede en el back stack
-                return true;
-            } else if (itemId == R.id.nav_report) {
-                return true; // Ya estás en Reportar Problema
-            } else if (itemId == R.id.nav_my_reports) {
-                startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
-                finish(); // Finaliza ReportProblemActivity
-                return true;
-            } else if (itemId == R.id.nav_chat) {
-                startActivity(new Intent(ReportProblemActivity.this, CommunityChatActivity.class));
-                finish(); // Finaliza ReportProblemActivity
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(ReportProblemActivity.this, ProfileActivity.class));
-                finish(); // Finaliza ReportProblemActivity
-                return true;
-            }
-            return false;
-        });
-        bottomNavigationView.setSelectedItemId(R.id.nav_report);
-
-        buttonTakePhoto.setOnClickListener(v -> checkPermissionsAndDispatchTakePictureIntent());
-        buttonSelectGallery.setOnClickListener(v -> checkPermissionsAndPickImage());
-        buttonSendReport.setOnClickListener(v -> sendReport());
-
-        // Asegúrate de que requestLocationUpdates() sea llamado después de inicializar locationManager
-        requestLocationUpdates();
     }
 
     @Override

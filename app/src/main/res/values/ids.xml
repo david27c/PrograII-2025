@@ -62,4 +62,5 @@
     <item name="textViewTimeReceived" type="id" />
     <item name="nav_notifications" type="id" />
     <item name="nav_settings" type="id" />
+    <item name="recyclerViewDenuncias" type="id" />
 </resources>

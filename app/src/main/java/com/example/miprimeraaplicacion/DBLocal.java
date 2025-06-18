@@ -1,5 +1,6 @@
 package com.example.miprimeraaplicacion;
 
+import android.content.SharedPreferences;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
@@ -87,6 +88,41 @@ public class DBLocal extends SQLiteOpenHelper {
     private static final Gson gson = new Gson();
     // Tipo para la lista de comentarios, necesario para GSON
     private static final Type COMMENTS_TYPE = new TypeToken<List<Map<String, Object>>>(){}.getType();
+
+// Dentro de la clase DBLocal
+
+    // Constantes para SharedPreferences
+    private static final String PREFS_NAME = "MyLoginPrefs";
+    private static final String KEY_LOGGED_IN_USER_ID = "loggedInUserId";
+
+    /**
+     * Guarda el ID del usuario que ha iniciado sesión en SharedPreferences.
+     * Debería llamarse cuando el usuario inicia sesión exitosamente.
+     * @param context El contexto de la aplicación.
+     * @param userId El ID del usuario que ha iniciado sesión.
+     */
+    public void saveLoggedInUserId(Context context, String userId) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(KEY_LOGGED_IN_USER_ID, userId);
+        editor.apply(); // Usa apply() para guardar asíncronamente y no bloquear el hilo principal
+        Log.d("DBLocal", "User ID saved: " + userId); // Log para depuración
+    }
+
+    public String getLoggedInUserId(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String userId = prefs.getString(KEY_LOGGED_IN_USER_ID, null); // Devuelve null si no se encuentra la clave
+        Log.d("DBLocal", "Retrieved user ID: " + userId); // Log para depuración
+        return userId;
+    }
+
+    public void clearLoggedInUserId(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove(KEY_LOGGED_IN_USER_ID); // Elimina la clave
+        editor.apply();
+        Log.d("DBLocal", "Logged in user ID cleared."); // Log para depuración
+    }
 
 
     public DBLocal(Context context) {
