@@ -270,20 +270,32 @@ public class CreateAccountActivity extends AppCompatActivity {
         String userId = UUID.randomUUID().toString();
         String profileImageUrl = (profileImageUri != null) ? profileImageUri.toString() : "";
 
+        // Inicializa las variables que no se obtienen directamente del UI de registro
+        // Puedes obtenerlas de otros campos, o darles valores por defecto aquí.
+        String phone = ""; // Si no hay campo de teléfono en el registro, usa cadena vacía o null
+        String address = ""; // Si no hay campo de dirección, usa cadena vacía o null
+        int reportsCount = 0; // Por defecto al registrar una nueva cuenta
+        boolean showFullNamePublic = false; // Por defecto
+        boolean showProfilePhotoInComments = false; // Por defecto
+        boolean showEmailPublic = false; // Por defecto
+        boolean showPhonePublic = false; // Por defecto
+
+
+        // ¡ORDEN CORREGIDO DE ARGUMENTOS para que coincida con el constructor de User!
         User newUser = new User(
                 userId,
-                email,
-                password,
-                username,
+                username, // Segundo argumento en el constructor de User
+                email,    // Tercer argumento en el constructor de User
+                password, // Cuarto argumento en el constructor de User
                 fullName,
-                null, // phone (asumiendo que no se captura en este formulario)
-                null, // address (asumiendo que no se captura en este formulario)
+                phone,
+                address,
                 profileImageUrl,
-                0, // reportsCount
-                false, // showFullNamePublic
-                false, // showProfilePhotoInComments
-                false, // showEmailPublic
-                false  // showPhonePublic
+                reportsCount,
+                showFullNamePublic,
+                showProfilePhotoInComments,
+                showEmailPublic,
+                showPhonePublic
         );
 
         if (dbLocal.addUser(newUser)) {

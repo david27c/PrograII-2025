@@ -60,4 +60,6 @@
     <item name="textViewTimeSent" type="id" />
     <item name="textViewMessageReceived" type="id" />
     <item name="textViewTimeReceived" type="id" />
+    <item name="nav_notifications" type="id" />
+    <item name="nav_settings" type="id" />
 </resources>

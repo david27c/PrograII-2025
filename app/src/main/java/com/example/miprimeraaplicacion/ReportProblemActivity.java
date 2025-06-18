@@ -35,9 +35,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-// ELIMINADAS importaciones de Firebase
-// import com.google.firebase.auth.FirebaseAuth;
-// import com.google.firebase.auth.FirebaseUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,28 +59,20 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     private ProgressBar progressBarReport;
     private BottomNavigationView bottomNavigationView;
 
-    private Uri imageUri; // URI de la imagen seleccionada/capturada
+    private Uri imageUri;
     private LocationManager locationManager;
     private String currentLocation = "Ubicación desconocida";
     private double currentLatitude = 0.0;
     private double currentLongitude = 0.0;
 
-    // ELIMINADAS declaraciones de Firebase
-    // private FirebaseAuth mAuth;
-    // private DBFirebase dbFirebase;
-    private DBLocal dbLocal; // Declaración para la base de datos local
-
-    private String currentUserId; // Para almacenar el ID del usuario logueado localmente
+    private DBLocal dbLocal;
+    private String currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_report_problem);
 
-        // ELIMINADA inicialización de Firebase Auth
-        // mAuth = FirebaseAuth.getInstance();
-
-        // --- LÓGICA DE VERIFICACIÓN DE SESIÓN (SOLO CON SHARED PREFERENCES) ---
         SharedPreferences sharedPref = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
         currentUserId = sharedPref.getString("current_user_id", null);
 
@@ -94,11 +83,8 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             finish();
             return;
         }
-        // --- FIN DE LÓGICA DE VERIFICACIÓN DE SESIÓN ---
 
-        dbLocal = new DBLocal(this); // Inicializar DBLocal
-        // ELIMINADA inicialización de DBFirebase
-        // dbFirebase = new DBFirebase(this);
+        dbLocal = new DBLocal(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -120,23 +106,25 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
 
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            // Asegúrate de que las actividades de destino estén declaradas en AndroidManifest.xml
+            // y que los Intent sean correctos.
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(ReportProblemActivity.this, HomeActivity.class));
-                finish();
+                finish(); // Finaliza ReportProblemActivity para que no se quede en el back stack
                 return true;
             } else if (itemId == R.id.nav_report) {
                 return true; // Ya estás en Reportar Problema
             } else if (itemId == R.id.nav_my_reports) {
                 startActivity(new Intent(ReportProblemActivity.this, MyReportsActivity.class));
-                finish();
+                finish(); // Finaliza ReportProblemActivity
                 return true;
             } else if (itemId == R.id.nav_chat) {
                 startActivity(new Intent(ReportProblemActivity.this, CommunityChatActivity.class));
-                finish();
+                finish(); // Finaliza ReportProblemActivity
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 startActivity(new Intent(ReportProblemActivity.this, ProfileActivity.class));
-                finish();
+                finish(); // Finaliza ReportProblemActivity
                 return true;
             }
             return false;
@@ -147,6 +135,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         buttonSelectGallery.setOnClickListener(v -> checkPermissionsAndPickImage());
         buttonSendReport.setOnClickListener(v -> sendReport());
 
+        // Asegúrate de que requestLocationUpdates() sea llamado después de inicializar locationManager
         requestLocationUpdates();
     }
 
@@ -171,14 +160,11 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
 
     @Override
     public boolean onSupportNavigateUp() {
-        finish();
+        finish(); // Cierra la actividad actual al presionar la flecha hacia atrás en la Toolbar
         return true;
     }
 
     private void checkPermissionsAndDispatchTakePictureIntent() {
-        // Para Android 10 (API 29) y superior, WRITE_EXTERNAL_STORAGE ya no es necesario
-        // para acceder a los propios archivos de la app o a la galería
-        // Considera READ_MEDIA_IMAGES para Android 13+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             ActivityCompat.requestPermissions(this,
@@ -202,7 +188,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             }
             if (photoFile != null) {
                 imageUri = FileProvider.getUriForFile(this,
-                        "com.example.miprimeraaplicacion.fileprovider", // Debe coincidir con el 'authorities' en AndroidManifest.xml
+                        "com.example.miprimeraaplicacion.fileprovider",
                         photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                 startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
@@ -223,7 +209,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     }
 
     private void checkPermissionsAndPickImage() {
-        // Para Android 13 (API 33) y superior, usar READ_MEDIA_IMAGES
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
@@ -233,7 +218,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
                 pickImageFromGallery();
             }
         } else {
-            // Para versiones anteriores, usar READ_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
@@ -254,13 +238,18 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
         } else {
-            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, this);
-            } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, this);
+            if (locationManager != null) { // Agrega esta verificación
+                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, this);
+                } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, this);
+                } else {
+                    textViewLocation.setText("GPS deshabilitado. No se pudo obtener la ubicación.");
+                    Toast.makeText(this, "Por favor, habilita el GPS para obtener tu ubicación.", Toast.LENGTH_LONG).show();
+                }
             } else {
-                textViewLocation.setText("GPS deshabilitado. No se pudo obtener la ubicación.");
-                Toast.makeText(this, "Por favor, habilita el GPS para obtener tu ubicación.", Toast.LENGTH_LONG).show();
+                Log.e(TAG, "LocationManager es null en requestLocationUpdates");
+                textViewLocation.setText("Error al inicializar la ubicación.");
             }
         }
     }
@@ -305,6 +294,7 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             }
         } else {
             if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                // Si la captura de imagen fue cancelada o falló, asegúrate de que imageUri sea null
                 imageUri = null;
             }
             imageViewPreview.setVisibility(View.GONE);
@@ -336,17 +326,38 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
     protected void onPause() {
         super.onPause();
         if (locationManager != null) {
-            // Es importante detener las actualizaciones de ubicación para ahorrar batería
+            // Detener las actualizaciones de ubicación para ahorrar batería
             locationManager.removeUpdates(this);
+            Log.d(TAG, "Location updates removed in onPause.");
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Reanudar las actualizaciones de ubicación cuando la actividad vuelve a estar en primer plano
-        requestLocationUpdates();
+        // Reanudar las actualizaciones de ubicación solo si los permisos están concedidos
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            requestLocationUpdates();
+            Log.d(TAG, "Location updates requested in onResume.");
+        } else {
+            Log.d(TAG, "Location permission not granted in onResume, not requesting updates.");
+        }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (locationManager != null) {
+            locationManager.removeUpdates(this);
+            Log.d(TAG, "Location updates removed in onDestroy.");
+        }
+        // Cerrar la base de datos si es necesario (aunque SQLiteOpenHelper maneja esto a menudo)
+        if (dbLocal != null) {
+            dbLocal.close();
+            Log.d(TAG, "DBLocal closed in onDestroy.");
+        }
+    }
+
 
     private void sendReport() {
         String description = editTextDescription.getText().toString().trim();
@@ -357,7 +368,6 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
             return;
         }
 
-        // Ya validamos currentUserId en onCreate, pero una doble verificación nunca está de más
         if (currentUserId == null || currentUserId.isEmpty()) {
             Toast.makeText(this, "Error: No se pudo obtener el ID de usuario. Por favor, reinicia la app.", Toast.LENGTH_SHORT).show();
             return;
@@ -366,40 +376,58 @@ public class ReportProblemActivity extends AppCompatActivity implements Location
         progressBarReport.setVisibility(View.VISIBLE);
         buttonSendReport.setEnabled(false);
 
-        String reportId = UUID.randomUUID().toString(); // Generar un ID único para el reporte
-        Date fechaHora = new Date();
+        String reportId = UUID.randomUUID().toString();
+
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        String fechaHoraString = sdf.format(now);
 
         String imageUrlString = (imageUri != null) ? imageUri.toString() : null;
 
         Denuncia nuevaDenuncia = new Denuncia(
                 reportId,
-                currentUserId, // Usar el ID de usuario local de SharedPreferences
-                "Reporte de " + reportType, // Título inicial del reporte
+                currentUserId,
+                "Reporte de " + reportType,
                 description,
                 reportType,
                 currentLatitude,
                 currentLongitude,
-                imageUrlString, // Guarda la URI local de la imagen
-                fechaHora,
-                "Pendiente" // Estado inicial
+                imageUrlString,
+                fechaHoraString,
+                "Pendiente"
         );
 
-        // Insertar la denuncia en DBLocal
-        Denuncia insertedDenuncia = dbLocal.insertarDenuncia(nuevaDenuncia);
+        // Usar el método asíncrono si está disponible en DBLocal para evitar bloquear el UI thread
+        if (dbLocal != null) {
+            dbLocal.addDenunciaAsync(nuevaDenuncia, new DBLocal.VoidCallback() {
+                @Override
+                public void onSuccess() {
+                    runOnUiThread(() -> {
+                        progressBarReport.setVisibility(View.GONE);
+                        buttonSendReport.setEnabled(true);
+                        Log.d(TAG, "Reporte guardado localmente: " + nuevaDenuncia.getIdDenuncia());
+                        Toast.makeText(ReportProblemActivity.this, "Reporte guardado exitosamente!", Toast.LENGTH_LONG).show();
+                        editTextDescription.setText("");
+                        imageViewPreview.setVisibility(View.GONE);
+                        imageUri = null;
+                    });
+                }
 
-        progressBarReport.setVisibility(View.GONE);
-        buttonSendReport.setEnabled(true);
-
-        if (insertedDenuncia != null) {
-            Log.d(TAG, "Reporte guardado localmente: " + insertedDenuncia.getIdDenuncia());
-            Toast.makeText(this, "Reporte guardado exitosamente!", Toast.LENGTH_LONG).show();
-            // Limpiar los campos después de enviar
-            editTextDescription.setText("");
-            imageViewPreview.setVisibility(View.GONE);
-            imageUri = null; // Limpiar la URI para el próximo reporte
+                @Override
+                public void onFailure(Exception e) {
+                    runOnUiThread(() -> {
+                        progressBarReport.setVisibility(View.GONE);
+                        buttonSendReport.setEnabled(true);
+                        Toast.makeText(ReportProblemActivity.this, "Error al guardar el reporte localmente: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Error al insertar denuncia en SQLite: " + e.getMessage());
+                    });
+                }
+            });
         } else {
-            Toast.makeText(this, "Error al guardar el reporte localmente.", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Error al insertar denuncia en SQLite.");
+            progressBarReport.setVisibility(View.GONE);
+            buttonSendReport.setEnabled(true);
+            Toast.makeText(this, "Error interno: DBLocal no inicializada.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "DBLocal es null al intentar enviar el reporte.");
         }
     }
 }

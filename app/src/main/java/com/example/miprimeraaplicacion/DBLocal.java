@@ -222,17 +222,19 @@ public class DBLocal extends SQLiteOpenHelper {
         Cursor cursor = null;
         String userId = null;
         try {
-            cursor = db.query(TABLE_USERS, new String[]{COL_USER_ID}, COL_EMAIL + " = ? AND " + COL_PASSWORD + " = ?",
+            // Se busca por EMAIL y PASSWORD
+            cursor = db.query(TABLE_USERS, new String[]{COL_USER_ID},
+                    COL_EMAIL + " = ? AND " + COL_PASSWORD + " = ?",
                     new String[]{email, password}, null, null, null);
 
             if (cursor != null && cursor.moveToFirst()) {
                 userId = cursor.getString(cursor.getColumnIndex(COL_USER_ID));
-                Log.d("DBLocal", "Credenciales válidas para el usuario ID: " + userId);
+                Log.d("DBLocal", "Credenciales válidas para el usuario ID: " + userId + " (Email: " + email + ")");
             } else {
-                Log.d("DBLocal", "Credenciales incorrectas para el email: " + email);
+                Log.d("DBLocal", "Credenciales incorrectas o usuario no registrado para el email: " + email);
             }
         } catch (Exception e) {
-            Log.e("DBLocal", "Error al validar credenciales: " + e.getMessage());
+            Log.e("DBLocal", "Error al validar credenciales para el email: " + email + ": " + e.getMessage());
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -267,9 +269,8 @@ public class DBLocal extends SQLiteOpenHelper {
                 boolean showEmailPublic = cursor.getInt(cursor.getColumnIndex(COL_SHOW_EMAIL_PUBLIC)) == 1;
                 boolean showPhonePublic = cursor.getInt(cursor.getColumnIndex(COL_SHOW_PHONE_PUBLIC)) == 1;
 
-                user = new User(id, email, password, username, fullName, phone, address,
-                        profileImageUrl, reportsCount, showFullNamePublic,
-                        showProfilePhotoInComments, showEmailPublic, showPhonePublic);
+                user = new User(id, email, password, username, fullName,
+                        phone, address, profileImageUrl, reportsCount, showFullNamePublic, showProfilePhotoInComments, showEmailPublic, showPhonePublic);
                 Log.d("DBLocal", "Usuario obtenido exitosamente por ID: " + userId);
             } else {
                 Log.d("DBLocal", "Usuario no encontrado para ID: " + userId);
@@ -285,14 +286,50 @@ public class DBLocal extends SQLiteOpenHelper {
         return user;
     }
 
-    /**
-     * Obtiene el perfil de un usuario de la base de datos por su ID.
-     * Este método es un alias para obtenerUsuarioPorId, si ya lo tienes.
-     * @param userId El ID del usuario.
-     * @return El objeto User si se encuentra, o null si no.
-     */
+    @SuppressLint("Range")
     public User getUserProfile(String userId) {
-        return obtenerUsuarioPorId(userId); // Reutiliza el método existente
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        User user = null;
+        try {
+            // Ahora la consulta se hace directamente por COL_USER_ID
+            cursor = db.query(TABLE_USERS, null, COL_USER_ID + " = ?",
+                    new String[]{userId}, null, null, null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                // Se extraen todos los datos del cursor para crear el objeto User
+                String id = cursor.getString(cursor.getColumnIndex(COL_USER_ID));
+                String email = cursor.getString(cursor.getColumnIndex(COL_EMAIL));
+                String password = cursor.getString(cursor.getColumnIndex(COL_PASSWORD));
+                String username = cursor.getString(cursor.getColumnIndex(COL_USERNAME));
+                String fullName = cursor.getString(cursor.getColumnIndex(COL_FULL_NAME));
+                String phone = cursor.getString(cursor.getColumnIndex(COL_PHONE));
+                String address = cursor.getString(cursor.getColumnIndex(COL_ADDRESS));
+                String profileImageUrl = cursor.getString(cursor.getColumnIndex(COL_PROFILE_IMAGE_URL));
+                int reportsCount = cursor.getInt(cursor.getColumnIndex(COL_REPORTS_COUNT));
+
+                // Leer los booleanos de visibilidad (0 o 1)
+                boolean showFullNamePublic = cursor.getInt(cursor.getColumnIndex(COL_SHOW_FULL_NAME_PUBLIC)) == 1;
+                boolean showProfilePhotoInComments = cursor.getInt(cursor.getColumnIndex(COL_SHOW_PROFILE_PHOTO_IN_COMMENTS)) == 1;
+                boolean showEmailPublic = cursor.getInt(cursor.getColumnIndex(COL_SHOW_EMAIL_PUBLIC)) == 1;
+                boolean showPhonePublic = cursor.getInt(cursor.getColumnIndex(COL_SHOW_PHONE_PUBLIC)) == 1;
+
+                user = new User(id, username, email, password, fullName, phone, address, profileImageUrl, reportsCount,
+                        showFullNamePublic, showProfilePhotoInComments, showEmailPublic, showPhonePublic);
+
+                Log.d("DBLocal", "Perfil de usuario cargado para ID: " + userId + " (Email: " + email + ")");
+            } else {
+                Log.d("DBLocal", "No se encontró perfil para el usuario ID: " + userId);
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Error al obtener perfil de usuario por ID " + userId + ": " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
+        }
+        return user;
     }
 
     // Método para actualizar un usuario
@@ -400,7 +437,7 @@ public class DBLocal extends SQLiteOpenHelper {
     }
 
     @SuppressLint("Range")
-    public String getLoggedInUserId() {
+    public String getLoggedInUserId(SettingsActivity settingsActivity) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = null;
         String userId = null;
@@ -421,7 +458,7 @@ public class DBLocal extends SQLiteOpenHelper {
         return userId;
     }
 
-    public void clearLoggedInUserId() {
+    public void clearLoggedInUserId(SettingsActivity settingsActivity) {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
             db.delete("LoggedInUser", null, null);
@@ -671,10 +708,6 @@ public class DBLocal extends SQLiteOpenHelper {
         return rowsAffected > 0;
     }
 
-
-    // --- Métodos CRUD para NOTIFICACIONES ---
-
-    // Método para agregar una nueva notificación
     public boolean addNotification(Notification notification) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -937,11 +970,6 @@ public class DBLocal extends SQLiteOpenHelper {
         return result != -1;
     }
 
-    /**
-     * Obtiene todos los mensajes para un tema de chat específico.
-     * @param chatTopicId El ID del tema de chat.
-     * @return Una lista de objetos Message ordenados por timestamp.
-     */
     @SuppressLint("Range")
     public List<Message> getChatMessagesForTopic(String chatTopicId) {
         List<Message> messageList = new ArrayList<>();
@@ -989,20 +1017,6 @@ public class DBLocal extends SQLiteOpenHelper {
         void onFailure(Exception e);
     }
 
-    // --- Métodos Asíncronos ---
-    // (Estos métodos asíncronos son ejemplos, puedes adaptarlos o crear más según tus necesidades en la UI)
-
-    public void getUserProfileAsync(String userId, UserCallback callback) {
-        new Thread(() -> {
-            User user = getUserProfile(userId); // Llama al método síncrono
-            if (user != null) {
-                callback.onSuccess(user);
-            } else {
-                callback.onFailure(new Exception("Usuario no encontrado o no se pudieron cargar los detalles."));
-            }
-        }).start();
-    }
-
     public void addDenunciaAsync(Denuncia denuncia, VoidCallback callback) {
         new Thread(() -> {
             Denuncia insertedDenuncia = insertarDenuncia(denuncia); // Llama al método síncrono
@@ -1030,23 +1044,10 @@ public class DBLocal extends SQLiteOpenHelper {
         return obtenerUsuarioPorId(userId);
     }
 
-    /**
-     * Valida las credenciales de un usuario. Alias para `validateUserCredentials`.
-     * Utilizado por LoginActivity.
-     * @param email El email del usuario.
-     * @param password La contraseña del usuario.
-     * @return El ID del usuario si las credenciales son válidas, o null si no.
-     */
     public String loginUser(String email, String password) {
         return validateUserCredentials(email, password);
     }
 
-    /**
-     * Obtiene todas las denuncias asociadas a un ID de usuario específico.
-     * Utilizado por MyReportsActivity.
-     * @param userId El ID del usuario cuyas denuncias se desean obtener.
-     * @return Una lista de objetos Denuncia.
-     */
     @SuppressLint("Range")
     public List<Denuncia> obtenerDenunciasPorUsuario(String userId) {
         List<Denuncia> denunciaList = new ArrayList<>();
@@ -1255,5 +1256,92 @@ public class DBLocal extends SQLiteOpenHelper {
             db.close();
         }
         return updated;
+    }
+    // Dentro de la clase DBLocal, después de tus otros métodos CRUD síncronos
+// ...
+
+    // Obtener perfil de usuario (ACTUALIZADO para leer todos los campos, incluyendo visibilidad y teléfono)
+    @SuppressLint("Range")
+
+    private boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    @SuppressLint("Range") String name = cursor.getString(cursor.getColumnIndex("name"));
+                    if (columnName.equalsIgnoreCase(name)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e("DBLocal", "Error checking column existence: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return false;
+    }
+
+    public void getUserProfileAsync(String userId, UserCallback callback) {
+        new Thread(() -> {
+            try {
+                User user = getUserProfile(userId); // Llama al método síncrono existente
+                if (user != null) {
+                    callback.onSuccess(user);
+                } else {
+                    callback.onFailure(new Exception("Usuario no encontrado o no se pudieron cargar los detalles."));
+                }
+            } catch (Exception e) {
+                callback.onFailure(e);
+            }
+        }).start();
+    }
+
+    public void updateUserPasswordAsync(String userId, String currentPassword, String newPassword, VoidCallback callback) {
+        new Thread(() -> {
+            try {
+                boolean success = updateUserPassword(userId, currentPassword, newPassword); // Llama al método síncrono existente
+                if (success) {
+                    callback.onSuccess();
+                } else {
+                    callback.onFailure(new Exception("Error al actualizar la contraseña. Contraseña actual incorrecta o fallo en la base de datos."));
+                }
+            } catch (Exception e) {
+                callback.onFailure(e);
+            }
+        }).start();
+    }
+
+    public void updateUserProfileAsync(User user, VoidCallback callback) {
+        new Thread(() -> {
+            try {
+                boolean success = updateUser(user); // Asumiendo que tienes un método 'updateUser' síncrono que actualiza el perfil
+                if (success) {
+                    callback.onSuccess();
+                } else {
+                    callback.onFailure(new Exception("Error al actualizar el perfil del usuario."));
+                }
+            } catch (Exception e) {
+                callback.onFailure(e);
+            }
+        }).start();
+    }
+
+    public void deleteUserAsync(String userId, VoidCallback callback) {
+        new Thread(() -> {
+            try {
+                boolean success = deleteUser(userId); // Llama al método síncrono existente
+                if (success) {
+                    callback.onSuccess();
+                } else {
+                    callback.onFailure(new Exception("Error al eliminar el usuario."));
+                }
+            } catch (Exception e) {
+                callback.onFailure(e);
+            }
+        }).start();
     }
 }
